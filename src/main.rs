@@ -1,6 +1,7 @@
 mod board;
 mod logic;
 mod lookup;
+mod piece;
 
 use std::time::Instant;
 

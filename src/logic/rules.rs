@@ -3,6 +3,7 @@ use super::{CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, IND
 };
 
 /// Returns whether an attacker piece can capture a target piece.
+/// 
 /// The capture rules are the sames as rock-paper-scissors.
 /// The wise piece can neither capture or be captured.
 pub fn can_take(attacker: u8, target: u8) -> bool {
@@ -85,6 +86,7 @@ pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool
 }
 
 /// Returns true if the chosen action leads to a win.
+/// 
 /// To win, one allied piece (except wise) must reach the last row in the opposite side.
 pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
     let index_start: usize = (action & INDEX_MASK) as usize;

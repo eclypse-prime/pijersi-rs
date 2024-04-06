@@ -1,4 +1,5 @@
 use crate::logic::actions::play_action;
+use crate::piece::{PieceColour, PieceType, init_piece};
 
 /// This struct represents a Pijersi board.
 /// 
@@ -11,6 +12,7 @@ pub struct Board {
 }
 
 impl Board {
+    /// Board constructor: the cells are empty on initialization, the current player is white.
     pub fn new() -> Self {
         Self {
             cells: [0u8; 45],
@@ -18,6 +20,9 @@ impl Board {
         }
     }
 
+    /// Initializes the the board to the starting configuration.
+    /// 
+    /// Sets the pieces to their original position and the current player to white.
     pub fn init(&mut self) {
         self.cells[0] = init_piece(PieceColour::Black, None, PieceType::Scissors);
         self.cells[1] = init_piece(PieceColour::Black, None, PieceType::Paper);
@@ -48,6 +53,7 @@ impl Board {
         self.cells[33] = init_piece(PieceColour::White, None, PieceType::Scissors);
     }
 
+    /// Prints the current pieces on the board.
     pub fn print(&self) {
         print!(" ");
         for i in 0..45 {
@@ -95,6 +101,7 @@ impl Board {
         }
     }
 
+    /// Plays the chosen move.
     pub fn play(&mut self, action: u64) {
         play_action(&mut self.cells, action);
         self.current_player = 1 - self.current_player;

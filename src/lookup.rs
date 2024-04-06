@@ -1,3 +1,10 @@
+/// An array associating a cell index to the indices of its 1-range neighbours.
+/// 
+/// The array is composed of 45 segments of length 7.
+/// 
+/// The first element of each segment is the number of neighbours of the corresponding cell.
+/// 
+/// The rest of the elements are the indices of the neighbouring cells. Unused values are set to SIZE_MAX.
 pub const NEIGHBOURS1: [usize; 315] = [
     3, 1, 6, 7, usize::MAX, usize::MAX, usize::MAX,
     4, 0, 2, 7, 8, usize::MAX, usize::MAX,
@@ -46,6 +53,13 @@ pub const NEIGHBOURS1: [usize; 315] = [
     3, 37, 38, 43, usize::MAX, usize::MAX, usize::MAX
 ];
 
+/// An array associating a cell index to the indices of its 2-range neighbours.
+/// 
+/// The array is composed of 45 segments of length 7.
+/// 
+/// The first element of each segment is the number of neighbours of the corresponding cell.
+/// 
+/// The rest of the elements are the indices of the neighbouring cells. Unused values are set to SIZE_MAX.
 pub const NEIGHBOURS2: [usize; 315] = [
     2, 2, 14, usize::MAX, usize::MAX, usize::MAX, usize::MAX,
     3, 3, 13, 15, usize::MAX, usize::MAX, usize::MAX,
