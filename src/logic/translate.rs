@@ -1,6 +1,8 @@
 use regex::Regex;
 
-use super::{movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, INDEX_NULL};
+use super::{movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, INDEX_MASK, INDEX_NULL, INDEX_WIDTH, STACK_THRESHOLD};
+
+const ROW_LETTERS: [char; 7] = ['g','f','e','d','c','b','a'];
 
 pub fn coords_to_index(i: usize, j: usize) -> usize {
     if i % 2 == 0 {
@@ -8,6 +10,17 @@ pub fn coords_to_index(i: usize, j: usize) -> usize {
     } else {
         6 + 13 * (i - 1) / 2 + j
     }
+}
+
+pub fn index_to_coords(index: usize) -> (usize, usize) {
+    let mut i: usize = 2 * (index / 13);
+    let mut j: usize = index % 13;
+    
+    if j > 5 {
+        j -= 6;
+        i += 1;
+    }
+    (i, j)
 }
 
 pub fn string_to_index(cell_string: &str) -> usize {
@@ -40,7 +53,13 @@ pub fn string_to_index(cell_string: &str) -> usize {
     coords_to_index(i, j)
 }
 
-pub fn string_to_action(action_string: &str, cells: &[u8; 45]) -> u64 {
+pub fn index_to_string(index: usize) -> String {
+    let (i, j): (usize, usize) = index_to_coords(index);
+
+    ROW_LETTERS[i].to_string() + &(j + 1).to_string()
+}
+
+pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> u64 {
     let action_pattern = Regex::new(r"(\w\d)(\w\d)?(\w\d)").unwrap();
 
     let Some(action_captures) = action_pattern.captures(action_string) else {
@@ -71,4 +90,34 @@ pub fn string_to_action(action_string: &str, cells: &[u8; 45]) -> u64 {
     }
 
     concatenate_action(index_start, index_mid, index_end)
+}
+
+pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
+    let index_start: usize = (action & INDEX_MASK) as usize;
+    let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
+    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+
+    if index_start == INDEX_NULL {
+        return "".to_string();
+    }
+
+    let action_string_start: String = index_to_string(index_start);
+    let action_string_end: String = index_to_string(index_end);
+    
+    let action_string_mid: String = if index_mid == INDEX_NULL {
+        if cells[index_start] >= STACK_THRESHOLD {
+            index_to_string(index_end)
+        }
+        else {
+            "".to_string()
+        }
+    }
+    else if index_mid != INDEX_NULL  && index_start == index_mid && cells[index_start] < STACK_THRESHOLD {
+        "".to_string()
+    }
+    else {
+        index_to_string(index_mid)
+    };
+
+    format!("{action_string_start}{action_string_mid}{action_string_end}")
 }
