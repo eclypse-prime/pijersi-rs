@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use super::{movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, INDEX_NULL, ACTION_NULL};
+use super::{movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, INDEX_NULL};
 
 pub fn coords_to_index(i: usize, j: usize) -> usize {
     if i % 2 == 0 {
