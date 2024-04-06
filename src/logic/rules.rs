@@ -1,6 +1,5 @@
-use super::{
-    CELL_EMPTY, COLOUR_MASK, STACK_TRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS,
-    TYPE_WISE,
+use super::{CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH,
+    STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE,
 };
 
 pub fn can_take(attacker: u8, target: u8) -> bool {
@@ -11,43 +10,52 @@ pub fn can_take(attacker: u8, target: u8) -> bool {
         || (attacker_type == TYPE_ROCK && target_type == TYPE_SCISSORS)
 }
 
-pub fn can_move1(cells: &[u8; 45], piece_start: u8, index_end: usize) -> bool {
+pub fn can_move1(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
+    let target_piece: u8 = cells[index_end];
+
     if cells[index_end] != CELL_EMPTY {
         // If the end piece and the moving piece are the same colour
-        if (cells[index_end] & COLOUR_MASK) == (piece_start & COLOUR_MASK) {
+        if (target_piece & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
             return false;
         }
-        if !can_take(piece_start, cells[index_end]) {
+        if !can_take(moving_piece, target_piece) {
             return false;
         }
     }
     true
 }
 
-pub fn can_move2(cells: &[u8; 45], piece_start: u8, index_start: usize, index_end: usize) -> bool {
+pub fn can_move2(cells: &[u8; 45], moving_piece: u8, index_start: usize, index_end: usize) -> bool {
+    let target_piece: u8 = cells[index_end];
+
     // If there is a piece blocking the move (cell between the start and end positions)
     if cells[(index_end + index_start) / 2] != 0 {
         return false;
     }
-    if cells[index_end] != CELL_EMPTY {
+    if target_piece != CELL_EMPTY {
         // If the end piece and the moving piece are the same colour
-        if (cells[index_end] & COLOUR_MASK) == (piece_start & COLOUR_MASK) {
+        if (target_piece & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
+            return false;
+        }
+        if !can_take(moving_piece, target_piece) {
             return false;
         }
     }
     true
 }
 
-pub fn can_stack(cells: &[u8; 45], piece_start: u8, index_end: usize) -> bool {
+pub fn can_stack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
+    let target_piece: u8 = cells[index_end];
+
     // If the end cell is not empty
     // If the target piece and the moving piece are the same colour
     // If the end piece is not a stack
-    if (cells[index_end] != CELL_EMPTY)
-        && ((cells[index_end] & COLOUR_MASK) == (piece_start & COLOUR_MASK))
-        && (cells[index_end] < STACK_TRESHOLD)
+    if (target_piece != CELL_EMPTY)
+        && (target_piece & COLOUR_MASK) == (moving_piece & COLOUR_MASK)
+        && (target_piece < STACK_THRESHOLD)
     {
         // If the upper piece is Wise and the target piece is not Wise
-        if (piece_start & TYPE_MASK) == TYPE_WISE && (cells[index_end] & TYPE_MASK) != TYPE_WISE {
+        if (moving_piece & TYPE_MASK) == TYPE_WISE && (target_piece & TYPE_MASK) != TYPE_WISE {
             return false;
         }
         return true;
@@ -56,15 +64,31 @@ pub fn can_stack(cells: &[u8; 45], piece_start: u8, index_end: usize) -> bool {
     false
 }
 
-pub fn can_unstack(cells: &[u8; 45], piece_start: u8, index_end: usize) -> bool {
+pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
     if cells[index_end] != CELL_EMPTY {
         // If the cells are the same colour
-        if (cells[index_end] & COLOUR_MASK) == (piece_start & COLOUR_MASK) {
+        if (cells[index_end] & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
             return false;
         }
-        if !can_take(piece_start, cells[index_end]) {
+        if !can_take(moving_piece, cells[index_end]) {
             return false;
         }
     }
     true
+}
+
+pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
+    let index_start: usize = (action & INDEX_MASK) as usize;
+    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+
+    let moving_piece: u8 = cells[index_start];
+
+    if (moving_piece & TYPE_MASK) != TYPE_WISE {
+        if ((moving_piece & COLOUR_MASK) == COLOUR_WHITE && index_end <= 5)
+            || ((moving_piece & COLOUR_MASK) == COLOUR_BLACK && index_end >= 39)
+        {
+            return true;
+        }
+    }
+    false
 }
