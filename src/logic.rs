@@ -15,7 +15,7 @@ const TYPE_MASK: u8 = 0b1100u8;
 const TOP_MASK: u8 = 0b1111u8;
 
 const CELL_EMPTY: u8 = 0x00u8;
-const STACK_TRESHOLD: u8 = 16u8;
+const STACK_THRESHOLD: u8 = 16u8;
 
 const COLOUR_WHITE: u8 = 0b0000u8;
 const COLOUR_BLACK: u8 = 0b0010u8;
