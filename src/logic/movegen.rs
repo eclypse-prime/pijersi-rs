@@ -31,15 +31,15 @@ fn available_piece_actions(
             let index_mid: usize = NEIGHBOURS1[index_mid_loop];
             let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
             // stack, [1/2-range move] optional
-            if can_stack(&cells, piece_start, index_mid) {
+            if can_stack(cells, piece_start, index_mid) {
                 // stack, 2-range move
                 for index_end_loop in
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS2[7 * index_mid] + 1)
                 {
                     let index_end = NEIGHBOURS2[index_end_loop];
-                    if can_move2(&cells, piece_start, index_mid, index_end)
+                    if can_move2(cells, piece_start, index_mid, index_end)
                         || (index_start == ((index_mid + index_end) / 2)
-                            && can_move1(&cells, piece_start, index_end))
+                            && can_move1(cells, piece_start, index_end))
                     {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
@@ -52,7 +52,7 @@ fn available_piece_actions(
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end = NEIGHBOURS1[index_end_loop];
-                    if can_move1(&cells, piece_start, index_end) || index_start == index_end {
+                    if can_move1(cells, piece_start, index_end) || index_start == index_end {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
@@ -65,7 +65,7 @@ fn available_piece_actions(
                 index_actions += 1;
             }
             // 1-range move
-            else if can_move1(&cells, piece_start, index_mid) {
+            else if can_move1(cells, piece_start, index_mid) {
                 player_actions[index_actions] =
                     concatenate_action(index_start, 0x000000FF, index_mid);
                 index_actions += 1;
@@ -78,20 +78,20 @@ fn available_piece_actions(
         {
             let index_mid: usize = NEIGHBOURS2[index_mid_loop];
             let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
-            if can_move2(&cells, piece_start, index_start, index_mid) {
+            if can_move2(cells, piece_start, index_start, index_mid) {
                 // 2-range move, stack or unstack
                 for index_end_loop in
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS1[index_end_loop];
                     // 2-range move, unstack
-                    if can_unstack(&cells, piece_start, index_end) {
+                    if can_unstack(cells, piece_start, index_end) {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
                     }
                     // 2-range move, stack
-                    else if can_stack(&cells, piece_start, index_end) {
+                    else if can_stack(cells, piece_start, index_end) {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
@@ -110,20 +110,20 @@ fn available_piece_actions(
             let index_mid: usize = NEIGHBOURS1[index_mid_loop];
             let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
             // 1-range move, [stack or unstack] optional
-            if can_move1(&cells, piece_start, index_mid) {
+            if can_move1(cells, piece_start, index_mid) {
                 // 1-range move, stack or unstack
                 for index_end_loop in
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS1[index_end_loop];
                     // 1-range move, unstack
-                    if can_unstack(&cells, piece_start, index_end) {
+                    if can_unstack(cells, piece_start, index_end) {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
                     }
                     // 1-range move, stack
-                    else if can_stack(&cells, piece_start, index_end) {
+                    else if can_stack(cells, piece_start, index_end) {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
@@ -140,13 +140,13 @@ fn available_piece_actions(
                 index_actions += 1;
             }
             // stack, [1/2-range move] optional
-            else if can_stack(&cells, piece_start, index_mid) {
+            else if can_stack(cells, piece_start, index_mid) {
                 // stack, 2-range move
                 for index_end_loop in
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS2[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS2[index_end_loop];
-                    if can_move2(&cells, piece_start, index_mid, index_end) {
+                    if can_move2(cells, piece_start, index_mid, index_end) {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
@@ -158,7 +158,7 @@ fn available_piece_actions(
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS1[index_end_loop];
-                    if can_move1(&cells, piece_start, index_end) {
+                    if can_move1(cells, piece_start, index_end) {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
@@ -172,7 +172,7 @@ fn available_piece_actions(
             }
 
             // unstack
-            if can_unstack(&cells, piece_start, index_mid) {
+            if can_unstack(cells, piece_start, index_mid) {
                 // unstack only
                 player_actions[index_actions] =
                     concatenate_action(index_start, index_start, index_mid);
@@ -227,15 +227,15 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
         {
             let index_mid: usize = NEIGHBOURS1[index_mid_loop];
             // stack, [1/2-range move] optional
-            if can_stack(&cells, piece_start, index_mid) {
+            if can_stack(cells, piece_start, index_mid) {
                 // stack, 2-range move
                 for index_end_loop in
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS2[7 * index_mid] + 1)
                 {
                     let index_end = NEIGHBOURS2[index_end_loop];
-                    if can_move2(&cells, piece_start, index_mid, index_end)
+                    if can_move2(cells, piece_start, index_mid, index_end)
                         || (index_start == ((index_mid + index_end) / 2)
-                            && can_move1(&cells, piece_start, index_end))
+                            && can_move1(cells, piece_start, index_end))
                     {
                         piece_action_count += 1;
                     }
@@ -246,7 +246,7 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end = NEIGHBOURS1[index_end_loop];
-                    if can_move1(&cells, piece_start, index_end) || index_start == index_end {
+                    if can_move1(cells, piece_start, index_end) || index_start == index_end {
                         piece_action_count += 1;
                     }
                 }
@@ -255,7 +255,7 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
                 piece_action_count += 1;
             }
             // 1-range move
-            else if can_move1(&cells, piece_start, index_mid) {
+            else if can_move1(cells, piece_start, index_mid) {
                 piece_action_count += 1;
             }
         }
@@ -265,18 +265,14 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
             (7 * index_start + 1)..(7 * index_start + NEIGHBOURS2[7 * index_start] + 1)
         {
             let index_mid: usize = NEIGHBOURS2[index_mid_loop];
-            if can_move2(&cells, piece_start, index_start, index_mid) {
+            if can_move2(cells, piece_start, index_start, index_mid) {
                 // 2-range move, stack or unstack
                 for index_end_loop in
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS1[index_end_loop];
-                    // 2-range move, unstack
-                    if can_unstack(&cells, piece_start, index_end) {
-                        piece_action_count += 1;
-                    }
-                    // 2-range move, stack
-                    else if can_stack(&cells, piece_start, index_end) {
+                    // 2-range move, unstack or 2-range move, stack
+                    if can_unstack(cells, piece_start, index_end) || can_stack(cells, piece_start, index_end) {
                         piece_action_count += 1;
                     }
                 }
@@ -290,18 +286,14 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
         {
             let index_mid: usize = NEIGHBOURS1[index_mid_loop];
             // 1-range move, [stack or unstack] optional
-            if can_move1(&cells, piece_start, index_mid) {
+            if can_move1(cells, piece_start, index_mid) {
                 // 1-range move, stack or unstack
                 for index_end_loop in
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS1[index_end_loop];
-                    // 1-range move, unstack
-                    if can_unstack(&cells, piece_start, index_end) {
-                        piece_action_count += 1;
-                    }
-                    // 1-range move, stack
-                    else if can_stack(&cells, piece_start, index_end) {
+                    // 1-range move, unstack or 1-range move, stack
+                    if can_unstack(cells, piece_start, index_end) || can_stack(cells, piece_start, index_end) {
                         piece_action_count += 1;
                     }
                 }
@@ -312,13 +304,13 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
                 piece_action_count += 1;
             }
             // stack, [1/2-range move] optional
-            else if can_stack(&cells, piece_start, index_mid) {
+            else if can_stack(cells, piece_start, index_mid) {
                 // stack, 2-range move
                 for index_end_loop in
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS2[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS2[index_end_loop];
-                    if can_move2(&cells, piece_start, index_mid, index_end) {
+                    if can_move2(cells, piece_start, index_mid, index_end) {
                         piece_action_count += 1;
                     }
                 }
@@ -328,7 +320,7 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS1[index_end_loop];
-                    if can_move1(&cells, piece_start, index_end) {
+                    if can_move1(cells, piece_start, index_end) {
                         piece_action_count += 1;
                     }
                 }
@@ -338,7 +330,7 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
             }
 
             // unstack
-            if can_unstack(&cells, piece_start, index_mid) {
+            if can_unstack(cells, piece_start, index_mid) {
                 // unstack only
                 piece_action_count += 1;
             }
@@ -374,8 +366,7 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64
 }
 
 pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
-    let mut results: Vec<(String, u64, u64)> = Vec::new();
-    results.reserve(256);
+    let mut results: Vec<(String, u64, u64)> = Vec::with_capacity(256);
 
     let available_actions: [u64; MAX_PLAYER_ACTIONS] = available_player_actions(current_player, cells);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
