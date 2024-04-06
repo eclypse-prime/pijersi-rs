@@ -84,14 +84,8 @@ fn available_piece_actions(
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS1[index_end_loop];
-                    // 2-range move, unstack
-                    if can_unstack(cells, piece_start, index_end) {
-                        player_actions[index_actions] =
-                            concatenate_half_action(half_action, index_end);
-                        index_actions += 1;
-                    }
-                    // 2-range move, stack
-                    else if can_stack(cells, piece_start, index_end) {
+                    // 2-range move, unstack or 2-range move, stack
+                    if can_unstack(cells, piece_start, index_end) || can_stack(cells, piece_start, index_end) {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
@@ -116,14 +110,8 @@ fn available_piece_actions(
                     (7 * index_mid + 1)..(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                 {
                     let index_end: usize = NEIGHBOURS1[index_end_loop];
-                    // 1-range move, unstack
-                    if can_unstack(cells, piece_start, index_end) {
-                        player_actions[index_actions] =
-                            concatenate_half_action(half_action, index_end);
-                        index_actions += 1;
-                    }
-                    // 1-range move, stack
-                    else if can_stack(cells, piece_start, index_end) {
+                    // 1-range move, unstack or 1-range move, stack
+                    if can_unstack(cells, piece_start, index_end) || can_stack(cells, piece_start, index_end) {
                         player_actions[index_actions] =
                             concatenate_half_action(half_action, index_end);
                         index_actions += 1;
@@ -354,8 +342,7 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64
 
     let mut new_cells: [u8; 45] = [0u8; 45];
 
-    for k in 0..n_actions {
-        let action: u64 = available_actions[k];
+    for &action in available_actions.iter().take(n_actions) {
         if !is_action_win(cells, action) {
             copy_cells(cells, &mut new_cells);
             play_action(&mut new_cells, action);
@@ -373,8 +360,7 @@ pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(Str
     
     let mut new_cells: [u8; 45] = [0u8; 45];
 
-    for k in 0..n_actions {
-        let action: u64 = available_actions[k];
+    for &action in available_actions.iter().take(n_actions) {
         if !is_action_win(cells, action) {
             copy_cells(cells, &mut new_cells);
             play_action(&mut new_cells, action);
