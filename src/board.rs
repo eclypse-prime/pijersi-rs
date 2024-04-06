@@ -3,19 +3,19 @@ pub struct Board {
     current_player: u8,
 }
 
-enum PieceColour {
+pub enum PieceColour {
     White,
     Black,
 }
 
-enum PieceType {
+pub enum PieceType {
     Scissors,
     Paper,
     Rock,
     Wise,
 }
 
-fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> u8 {
+pub fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> u8 {
     let colour_uint: u8 = match piece_colour {
         PieceColour::White => 0b0000,
         PieceColour::Black => 0b0010,
@@ -29,7 +29,7 @@ fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> u8 {
     return 0b0001 | colour_uint | type_uint;
 }
 
-fn init_piece(
+pub fn init_piece(
     piece_colour: PieceColour,
     bottom_type: Option<PieceType>,
     top_type: PieceType,
