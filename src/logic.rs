@@ -6,7 +6,7 @@ pub mod translate;
 const INDEX_WIDTH: usize = 8;
 const INDEX_NULL: usize = 0xFFusize;
 const INDEX_MASK: u64 = 0xFFu64;
-const NULL_ACTION: u64 = 0x00FFFFFFu64;
+const ACTION_NULL: u64 = 0x00FFFFFFu64;
 
 const HALF_PIECE_WIDTH: usize = 4;
 
