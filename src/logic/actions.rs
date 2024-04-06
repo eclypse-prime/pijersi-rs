@@ -33,7 +33,7 @@ pub fn do_unstack(index_start: usize, index_end: usize, cells: &mut [u8; 45]) {
     cells[index_end] = piece_start & TOP_MASK;
 }
 
-pub fn play(action: u64, cells: &mut [u8; 45]) {
+pub fn play_action(action: u64, cells: &mut [u8; 45]) {
     let index_start: usize = (action & INDEX_MASK) as usize;
     let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
     let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
