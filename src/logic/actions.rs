@@ -1,4 +1,6 @@
-use super::{CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL, INDEX_WIDTH, TOP_MASK};
+use super::{
+    CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL, INDEX_WIDTH, TOP_MASK,
+};
 
 pub fn do_move(index_start: usize, index_end: usize, cells: &mut [u8; 45]) {
     if index_start != index_end {
@@ -61,7 +63,9 @@ pub fn play_action(action: u64, cells: &mut [u8; 45]) {
                 do_move(index_mid, index_end, cells);
             }
             // The piece at the end coordinates is an ally : move and stack
-            else if piece_end != CELL_EMPTY && (piece_end & COLOUR_MASK) == (piece_start & COLOUR_MASK) {
+            else if piece_end != CELL_EMPTY
+                && (piece_end & COLOUR_MASK) == (piece_start & COLOUR_MASK)
+            {
                 do_move(index_start, index_mid, cells);
                 do_stack(index_mid, index_end, cells);
             }

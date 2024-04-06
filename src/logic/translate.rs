@@ -53,12 +53,17 @@ pub fn string_to_action(action_string: &str, cells: &[u8; 45]) -> u64 {
     );
     let mut index_mid: usize = action_captures.get(2).map_or_else(
         || INDEX_NULL,
-        |cell_match| string_to_index(cell_match.as_str()));
+        |cell_match| string_to_index(cell_match.as_str()),
+    );
     let index_end: usize = action_captures.get(3).map_or_else(
         || INDEX_NULL,
-        |cell_match| string_to_index(cell_match.as_str()));
-    
-    if cells[index_end] != CELL_EMPTY && (cells[index_start] & COLOUR_MASK == cells[index_end] & COLOUR_MASK) && index_mid == INDEX_NULL {
+        |cell_match| string_to_index(cell_match.as_str()),
+    );
+
+    if cells[index_end] != CELL_EMPTY
+        && (cells[index_start] & COLOUR_MASK == cells[index_end] & COLOUR_MASK)
+        && index_mid == INDEX_NULL
+    {
         index_mid = index_start;
     }
     if cells[index_mid] == cells[index_end] {

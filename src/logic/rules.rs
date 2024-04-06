@@ -1,4 +1,7 @@
-use super::{COLOUR_MASK, CELL_EMPTY, STACK_TRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE};
+use super::{
+    CELL_EMPTY, COLOUR_MASK, STACK_TRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS,
+    TYPE_WISE,
+};
 
 pub fn can_take(attacker: u8, target: u8) -> bool {
     let attacker_type: u8 = attacker & TYPE_MASK;
@@ -35,16 +38,16 @@ pub fn can_move2(cells: &[u8; 45], piece_start: u8, index_start: usize, index_en
     true
 }
 
-pub fn can_stack(cells: &[u8; 45], piece_start: u8, index_end: usize) -> bool
-{
+pub fn can_stack(cells: &[u8; 45], piece_start: u8, index_end: usize) -> bool {
     // If the end cell is not empty
     // If the target piece and the moving piece are the same colour
     // If the end piece is not a stack
-    if (cells[index_end] != CELL_EMPTY) && ((cells[index_end] & COLOUR_MASK) == (piece_start & COLOUR_MASK)) && (cells[index_end] < STACK_TRESHOLD)
+    if (cells[index_end] != CELL_EMPTY)
+        && ((cells[index_end] & COLOUR_MASK) == (piece_start & COLOUR_MASK))
+        && (cells[index_end] < STACK_TRESHOLD)
     {
         // If the upper piece is Wise and the target piece is not Wise
-        if (piece_start & TYPE_MASK) == TYPE_WISE && (cells[index_end] & TYPE_MASK) != TYPE_WISE
-        {
+        if (piece_start & TYPE_MASK) == TYPE_WISE && (cells[index_end] & TYPE_MASK) != TYPE_WISE {
             return false;
         }
         return true;
@@ -54,15 +57,12 @@ pub fn can_stack(cells: &[u8; 45], piece_start: u8, index_end: usize) -> bool
 }
 
 pub fn can_unstack(cells: &[u8; 45], piece_start: u8, index_end: usize) -> bool {
-    if cells[index_end] != CELL_EMPTY
-    {
+    if cells[index_end] != CELL_EMPTY {
         // If the cells are the same colour
-        if (cells[index_end] & COLOUR_MASK) == (piece_start & COLOUR_MASK)
-        {
+        if (cells[index_end] & COLOUR_MASK) == (piece_start & COLOUR_MASK) {
             return false;
         }
-        if !can_take(piece_start, cells[index_end])
-        {
+        if !can_take(piece_start, cells[index_end]) {
             return false;
         }
     }

@@ -196,3 +196,5 @@ pub fn available_player_actions(current_player: u8, cells: &[u8; 45]) -> [u64; M
     }
     player_actions
 }
+
+fn count_piece_actions(index_start: usize, &cells: &[u8; 45]) -> () {}
