@@ -83,12 +83,8 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
 
     let moving_piece: u8 = cells[index_start];
 
-    if (moving_piece & TYPE_MASK) != TYPE_WISE {
-        if ((moving_piece & COLOUR_MASK) == COLOUR_WHITE && index_end <= 5)
-            || ((moving_piece & COLOUR_MASK) == COLOUR_BLACK && index_end >= 39)
-        {
-            return true;
-        }
+    if (moving_piece & TYPE_MASK) != TYPE_WISE && (((moving_piece & COLOUR_MASK) == COLOUR_WHITE && index_end <= 5) || ((moving_piece & COLOUR_MASK) == COLOUR_BLACK && index_end >= 39)) {
+        return true;
     }
     false
 }

@@ -17,7 +17,7 @@ fn available_piece_actions(
     cells: &[u8; 45],
     index_start: usize,
     player_actions: &mut [u64; MAX_PLAYER_ACTIONS],
-) -> () {
+) {
     let mut index_actions: usize = player_actions[MAX_PLAYER_ACTIONS - 1] as usize;
 
     let piece_start: u8 = cells[index_start];

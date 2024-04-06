@@ -24,7 +24,7 @@ pub fn index_to_coords(index: usize) -> (usize, usize) {
 }
 
 pub fn string_to_index(cell_string: &str) -> usize {
-    let char_i: char = cell_string.chars().nth(0).unwrap();
+    let char_i: char = cell_string.chars().next().unwrap();
     let char_j: char = cell_string.chars().nth(1).unwrap();
     let i: usize = match char_i {
         'a' => 6,
