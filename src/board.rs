@@ -26,7 +26,7 @@ pub fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> u8 {
         PieceType::Rock => 0b1000,
         PieceType::Wise => 0b1100,
     };
-    return 0b0001 | colour_uint | type_uint;
+    0b0001 | colour_uint | type_uint
 }
 
 pub fn init_piece(
@@ -39,7 +39,7 @@ pub fn init_piece(
         None => 0u8,
         Some(bottom_type) => piece_to_uint(&piece_colour, &bottom_type),
     };
-    return top_uint | bottom_uint << 4;
+    top_uint | bottom_uint << 4
 }
 
 impl Board {

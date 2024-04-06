@@ -18,7 +18,7 @@ pub fn can_move1(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool {
             return false;
         }
     }
-    return true;
+    true
 }
 
 pub fn can_move2(cells: [u8; 45], moving_piece: u8, index_start: usize, index_end: usize) -> bool {
@@ -32,7 +32,7 @@ pub fn can_move2(cells: [u8; 45], moving_piece: u8, index_start: usize, index_en
             return false;
         }
     }
-    return true;
+    true
 }
 
 pub fn can_stack(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool
@@ -50,7 +50,7 @@ pub fn can_stack(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool
         return true;
     }
 
-    return false;
+    false
 }
 
 pub fn can_unstack(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool {
@@ -66,5 +66,5 @@ pub fn can_unstack(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool 
             return false;
         }
     }
-    return true;
+    true
 }
