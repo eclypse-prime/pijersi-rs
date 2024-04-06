@@ -18,9 +18,11 @@ const CELL_EMPTY: u8 = 0x00u8;
 const STACK_TRESHOLD: u8 = 16u8;
 
 const COLOUR_WHITE: u8 = 0b0000u8;
-const COLOUR_BLACK: u8  = 0b0010u8;
+const COLOUR_BLACK: u8 = 0b0010u8;
 
-const TYPE_SCISSORS: u8  = 0b0000u8;
-const TYPE_PAPER: u8  = 0b0100u8;
-const TYPE_ROCK: u8  = 0b1000u8;
-const TYPE_WISE: u8  = 0b1100u8;
+const TYPE_SCISSORS: u8 = 0b0000u8;
+const TYPE_PAPER: u8 = 0b0100u8;
+const TYPE_ROCK: u8 = 0b1000u8;
+const TYPE_WISE: u8 = 0b1100u8;
+
+const MAX_PLAYER_ACTIONS: usize = 512;
