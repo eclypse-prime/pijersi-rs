@@ -1,3 +1,5 @@
+use crate::logic::actions::play_action;
+
 pub struct Board {
     pub cells: [u8; 45],
     pub current_player: u8,
@@ -125,5 +127,10 @@ impl Board {
                 }
             }
         }
+    }
+
+    pub fn play(&mut self, action: u64) {
+        play_action(&mut self.cells, action);
+        self.current_player = 1 - self.current_player;
     }
 }
