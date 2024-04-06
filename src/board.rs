@@ -1,6 +1,6 @@
 pub struct Board {
-    cells: [u8; 45],
-    current_player: u8,
+    pub cells: [u8; 45],
+    pub current_player: u8,
 }
 
 pub enum PieceColour {
