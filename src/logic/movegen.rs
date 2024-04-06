@@ -197,6 +197,8 @@ fn available_piece_actions(
 }
 
 /// Returns the number of possible actions for a player.
+/// 
+/// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the moves.
 fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
     let mut player_action_count: u64 = 0u64;
 
@@ -213,7 +215,9 @@ fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
 }
 
 /// Returns the number of possible actions for a specific piece.
-pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
+/// 
+/// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the moves.
+fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
     let mut piece_action_count: u64 = 0u64;
 
     let piece_start: u8 = cells[index_start];
@@ -339,10 +343,14 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
 }
 
 /// Perft debug function to measure the number of leaf nodes (possible moves) at a given depth.
+/// 
+/// Recursively counts the number of leaf nodes at the chosen depth.
+/// 
+/// At depth 0, returns 1.
 pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64
 {
     if depth == 0 {
-        return 0u64;
+        return 1u64;
     } else if depth == 1 {
         return count_player_actions(cells, current_player);
     }
@@ -365,7 +373,12 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64
 }
 
 /// Split Perft debug function to measure the number of leaf nodes (possible moves) at a given depth.
-/// Separates the node count between all possible moves at depth 1.
+/// 
+/// Recursively counts the number of leaf nodes at the chosen depth.
+/// 
+/// Separates the node count between all possible depth 1 moves and returns a vector of (action_string: String, action: u64, count: u64).
+/// 
+/// At depth 0, returns an empty vector.
 pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
     let mut results: Vec<(String, u64, u64)> = Vec::with_capacity(256);
 
