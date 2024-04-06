@@ -1,8 +1,8 @@
 pub mod actions;
 pub mod rules;
 
-const MOVE_WIDTH: usize = 8;
-const MOVE_MASK: u64 = 0xFFu64;
+const INDEX_WIDTH: usize = 8;
+const INDEX_MASK: u64 = 0xFFu64;
 const NULL_MOVE: u64 = 0x00FFFFFFu64;
 
 const HALF_PIECE_WIDTH: usize = 4;
