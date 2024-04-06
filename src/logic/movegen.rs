@@ -5,14 +5,38 @@ use super::rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win};
 use super::translate::action_to_string;
 use super::{COLOUR_MASK, INDEX_NULL, INDEX_WIDTH, MAX_PLAYER_ACTIONS, STACK_THRESHOLD};
 
+/// Concatenate three indices into a u64 action.
+/// The first index is stored in the 8 least significant bits.
 pub fn concatenate_action(index_start: usize, index_mid: usize, index_end: usize) -> u64 {
     (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as u64
 }
 
+/// Concatenate a half action and the last index into a u64 action.
+/// The first index is stored in the 8 least significant bits.
 pub fn concatenate_half_action(half_action: u64, index_end: usize) -> u64 {
     half_action | (index_end << (2 * INDEX_WIDTH)) as u64
 }
 
+/// Returns the possible moves for a player.
+/// The result is a size MAX_PLAYER_ACTIONS array of u64 where the last element is the number of actions.
+pub fn available_player_actions(current_player: u8, cells: &[u8; 45]) -> [u64; MAX_PLAYER_ACTIONS] {
+    let mut player_actions: [u64; MAX_PLAYER_ACTIONS] = [0u64; MAX_PLAYER_ACTIONS];
+
+    // Calculate possible player_actions
+    for index in 0..45 {
+        if cells[index] != 0 {
+            // Choose pieces of the current player's colour
+            if (cells[index] & COLOUR_MASK) == (current_player << 1) {
+                available_piece_actions(cells, index, &mut player_actions);
+            }
+        }
+    }
+    player_actions
+}
+
+/// Calculates the possible moves for a player.
+/// The result is stored in a size MAX_PLAYER_ACTIONS array of u64 where the last element is the number of actions.
+/// This array is passed in parameter and modified by this function.
 fn available_piece_actions(
     cells: &[u8; 45],
     index_start: usize,
@@ -172,25 +196,11 @@ fn available_piece_actions(
     player_actions[MAX_PLAYER_ACTIONS - 1] = index_actions as u64;
 }
 
-pub fn available_player_actions(current_player: u8, cells: &[u8; 45]) -> [u64; MAX_PLAYER_ACTIONS] {
-    let mut player_actions: [u64; MAX_PLAYER_ACTIONS] = [0u64; MAX_PLAYER_ACTIONS];
-
-    // Calculate possible player_actions
-    for index in 0..45 {
-        if cells[index] != 0 {
-            // Choose pieces of the current player's colour
-            if (cells[index] & COLOUR_MASK) == (current_player << 1) {
-                available_piece_actions(cells, index, &mut player_actions);
-            }
-        }
-    }
-    player_actions
-}
-
+/// Returns the number of possible actions for a player.
 fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
     let mut player_action_count: u64 = 0u64;
 
-    // Calculate possible player_actions
+    // Calculate possible actions
     for index in 0..45 {
         if cells[index] != 0 {
             // Choose pieces of the current player's colour
@@ -202,6 +212,7 @@ fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
     player_action_count
 }
 
+/// Returns the number of possible actions for a specific piece.
 pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
     let mut piece_action_count: u64 = 0u64;
 
@@ -327,6 +338,7 @@ pub fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
     piece_action_count
 }
 
+/// Perft debug function to measure the number of leaf nodes (possible moves) at a given depth.
 pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64
 {
     if depth == 0 {
@@ -352,8 +364,14 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64
     count
 }
 
+/// Split Perft debug function to measure the number of leaf nodes (possible moves) at a given depth.
+/// Separates the node count between all possible moves at depth 1.
 pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
     let mut results: Vec<(String, u64, u64)> = Vec::with_capacity(256);
+
+    if depth == 0 {
+        return results;
+    }
 
     let available_actions: [u64; MAX_PLAYER_ACTIONS] = available_player_actions(current_player, cells);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;

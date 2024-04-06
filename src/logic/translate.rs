@@ -4,6 +4,7 @@ use super::{movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, INDEX_MASK, IN
 
 const ROW_LETTERS: [char; 7] = ['g','f','e','d','c','b','a'];
 
+/// Converts a (i, j) coordinate set to an index.
 pub fn coords_to_index(i: usize, j: usize) -> usize {
     if i % 2 == 0 {
         13 * i / 2 + j
@@ -12,6 +13,7 @@ pub fn coords_to_index(i: usize, j: usize) -> usize {
     }
 }
 
+/// Converts an index to a (i, j) coordinate set.
 pub fn index_to_coords(index: usize) -> (usize, usize) {
     let mut i: usize = 2 * (index / 13);
     let mut j: usize = index % 13;
@@ -23,6 +25,7 @@ pub fn index_to_coords(index: usize) -> (usize, usize) {
     (i, j)
 }
 
+/// Converts a "a1" style string coordinate into an index.
 pub fn string_to_index(cell_string: &str) -> usize {
     let char_i: char = cell_string.chars().next().unwrap();
     let char_j: char = cell_string.chars().nth(1).unwrap();
@@ -53,12 +56,14 @@ pub fn string_to_index(cell_string: &str) -> usize {
     coords_to_index(i, j)
 }
 
+/// Converts a native index into a "a1" style string.
 pub fn index_to_string(index: usize) -> String {
     let (i, j): (usize, usize) = index_to_coords(index);
 
     ROW_LETTERS[i].to_string() + &(j + 1).to_string()
 }
 
+/// Converts a string (a1b1c1 style) move to the native triple-index format.
 pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> u64 {
     let action_pattern = Regex::new(r"(\w\d)(\w\d)?(\w\d)").unwrap();
 
@@ -92,6 +97,7 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> u64 {
     concatenate_action(index_start, index_mid, index_end)
 }
 
+/// Converts a native triple-index move into the string (a1b1c1 style) format.
 pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
     let index_start: usize = (action & INDEX_MASK) as usize;
     let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;

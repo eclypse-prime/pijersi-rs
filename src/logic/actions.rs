@@ -2,6 +2,7 @@ use super::{
     CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL, INDEX_WIDTH, TOP_MASK,
 };
 
+/// Applies a move between chosen coordinates.
 pub fn do_move(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
     if index_start != index_end {
         // Move the piece to the target cell
@@ -12,6 +13,7 @@ pub fn do_move(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
     }
 }
 
+/// Applies a stack between chosen coordinates.
 pub fn do_stack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
     let piece_start: u8 = cells[index_start];
     let piece_end: u8 = cells[index_end];
@@ -23,6 +25,7 @@ pub fn do_stack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
     cells[index_end] = (piece_start & TOP_MASK) + (piece_end << HALF_PIECE_WIDTH);
 }
 
+/// Applies an unstack between chosen coordinates.
 pub fn do_unstack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
     let piece_start: u8 = cells[index_start];
 
@@ -35,6 +38,7 @@ pub fn do_unstack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
     cells[index_end] = piece_start & TOP_MASK;
 }
 
+/// Plays the selected action.
 pub fn play_action(cells: &mut [u8; 45], action: u64) {
     let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
     let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
@@ -78,6 +82,7 @@ pub fn play_action(cells: &mut [u8; 45], action: u64) {
     }
 }
 
+/// Copy the data from the origin cells to the target cells.
 pub fn copy_cells(origin: &[u8; 45], target: &mut [u8; 45]) {
     target.copy_from_slice(origin);
 }
