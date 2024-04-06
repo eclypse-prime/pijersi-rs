@@ -1,4 +1,4 @@
-use super::{COLOUR_MASK, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE};
+use super::{COLOUR_MASK, CELL_EMPTY, STACK_TRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE};
 
 pub fn can_take(attacker: u8, target: u8) -> bool {
     let attacker_type: u8 = attacker & TYPE_MASK;
@@ -9,7 +9,7 @@ pub fn can_take(attacker: u8, target: u8) -> bool {
 }
 
 pub fn can_move1(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool {
-    if cells[index_end] != 0 {
+    if cells[index_end] != CELL_EMPTY {
         // If the end piece and the moving piece are the same colour
         if (cells[index_end] & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
             return false;
@@ -26,7 +26,7 @@ pub fn can_move2(cells: [u8; 45], moving_piece: u8, index_start: usize, index_en
     if cells[(index_end + index_start) / 2] != 0 {
         return false;
     }
-    if cells[index_end] != 0 {
+    if cells[index_end] != CELL_EMPTY {
         // If the end piece and the moving piece are the same colour
         if (cells[index_end] & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
             return false;
@@ -40,7 +40,7 @@ pub fn can_stack(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool
     // If the end cell is not empty
     // If the target piece and the moving piece are the same colour
     // If the end piece is not a stack
-    if (cells[index_end] != 0) && ((cells[index_end] & COLOUR_MASK) == (moving_piece & COLOUR_MASK)) && (cells[index_end] < 16)
+    if (cells[index_end] != CELL_EMPTY) && ((cells[index_end] & COLOUR_MASK) == (moving_piece & COLOUR_MASK)) && (cells[index_end] < STACK_TRESHOLD)
     {
         // If the upper piece is Wise and the target piece is not Wise
         if (moving_piece & TYPE_MASK) == TYPE_WISE && (cells[index_end] & TYPE_MASK) != TYPE_WISE
@@ -54,7 +54,7 @@ pub fn can_stack(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool
 }
 
 pub fn can_unstack(cells: [u8; 45], moving_piece: u8, index_end: usize) -> bool {
-    if cells[index_end] != 0
+    if cells[index_end] != CELL_EMPTY
     {
         // If the cells are the same colour
         if (cells[index_end] & COLOUR_MASK) == (moving_piece & COLOUR_MASK)
