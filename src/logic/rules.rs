@@ -18,7 +18,7 @@ pub fn can_take(attacker: u8, target: u8) -> bool {
 pub fn can_move1(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
 
-    if cells[index_end] != CELL_EMPTY {
+    if target_piece != CELL_EMPTY {
         // If the end piece and the moving piece are the same colour
         if (target_piece & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
             return false;
@@ -73,12 +73,14 @@ pub fn can_stack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
 
 /// Returns whether the chosen unstack action is possible.
 pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
-    if cells[index_end] != CELL_EMPTY {
+    let target_piece: u8 = cells[index_end];
+    
+    if target_piece != CELL_EMPTY {
         // If the cells are the same colour
-        if (cells[index_end] & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
+        if (target_piece & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
             return false;
         }
-        if !can_take(moving_piece, cells[index_end]) {
+        if !can_take(moving_piece, target_piece) {
             return false;
         }
     }
