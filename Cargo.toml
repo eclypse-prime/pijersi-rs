@@ -1,5 +1,5 @@
 [package]
-name = "pijersi-engine-rust"
+name = "pijersi-rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,3 +10,6 @@ regex = "*"
 
 [profile.release]
 lto = "fat"
+
+[profile.test]
+opt-level = 3
