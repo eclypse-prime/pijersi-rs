@@ -1,5 +1,5 @@
 use pijersi_rs::board::Board;
-use pijersi_rs::logic::movegen::perft;
+use pijersi_rs::logic::perft::perft;
 
 #[test]
 fn test_perft() {

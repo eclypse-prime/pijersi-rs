@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use pijersi_rs::board::Board;
-use pijersi_rs::logic::movegen::perft;
+use pijersi_rs::logic::perft::perft;
 
 fn main() {
     let mut board: Board = Board::new();

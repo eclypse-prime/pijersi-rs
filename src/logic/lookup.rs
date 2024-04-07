@@ -1,3 +1,7 @@
+//! This sub-module contains the lookup tables for the game logic code.
+//! 
+//! These lookup tables are used to speed up the move generator. For each cell index, the NEIGHBOURS1 and NEIGHBOURS2 tables contain the pre-calculated indices of its neighbouring cells in order to avoid calculating them every time.
+
 /// An array associating a cell index to the indices of its 1-range neighbours.
 /// 
 /// The array is composed of 45 segments of length 7.
