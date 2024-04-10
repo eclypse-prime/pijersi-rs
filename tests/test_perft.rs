@@ -1,5 +1,15 @@
 use pijersi_rs::board::Board;
+use pijersi_rs::logic::perft::perft_iter;
 use pijersi_rs::logic::perft::perft;
+
+#[test]
+fn test_perft_iter() {
+    let mut board = Board::new();
+    board.init();
+    assert_eq!(perft_iter(&board.cells, board.current_player, 1), 186);
+    assert_eq!(perft_iter(&board.cells, board.current_player, 2), 34054);
+    assert_eq!(perft_iter(&board.cells, board.current_player, 3), 6410472);
+}
 
 #[test]
 fn test_perft() {

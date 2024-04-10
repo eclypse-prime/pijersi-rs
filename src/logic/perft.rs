@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 use super::{
     actions::{copy_cells, play_action},
     lookup::{NEIGHBOURS1, NEIGHBOURS2},
@@ -38,16 +40,16 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
         // 1-range first action
         for &index_mid in NEIGHBOURS1
             .iter()
-            .take(7 * index_start + NEIGHBOURS1[7 * index_start] + 1)
             .skip(7 * index_start + 1)
+            .take(NEIGHBOURS1[7 * index_start])
         {
             // stack, [1/2-range move] optional
             if can_stack(cells, piece_start, index_mid) {
                 // stack, 2-range move
                 for &index_end in NEIGHBOURS2
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS2[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS2[7 * index_mid])
                 {
                     if can_move2(cells, piece_start, index_mid, index_end)
                         || (index_start == ((index_mid + index_end) / 2)
@@ -60,8 +62,8 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
                 // stack, 0/1-range move
                 for &index_end in NEIGHBOURS1
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS1[7 * index_mid])
                 {
                     if can_move1(cells, piece_start, index_end) || index_start == index_end {
                         piece_action_count += 1;
@@ -80,15 +82,15 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
         // 2 range first action
         for &index_mid in NEIGHBOURS2
             .iter()
-            .take(7 * index_start + NEIGHBOURS2[7 * index_start] + 1)
             .skip(7 * index_start + 1)
+            .take(NEIGHBOURS2[7 * index_start])
         {
             if can_move2(cells, piece_start, index_start, index_mid) {
                 // 2-range move, stack or unstack
                 for &index_end in NEIGHBOURS1
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS1[7 * index_mid])
                 {
                     // 2-range move, unstack or 2-range move, stack
                     if can_unstack(cells, piece_start, index_end)
@@ -104,16 +106,16 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
         // 1-range first action
         for &index_mid in NEIGHBOURS1
             .iter()
-            .take(7 * index_start + NEIGHBOURS1[7 * index_start] + 1)
             .skip(7 * index_start + 1)
+            .take(NEIGHBOURS1[7 * index_start])
         {
             // 1-range move, [stack or unstack] optional
             if can_move1(cells, piece_start, index_mid) {
                 // 1-range move, stack or unstack
                 for &index_end in NEIGHBOURS1
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS1[7 * index_mid])
                 {
                     // 1-range move, unstack or 1-range move, stack
                     if can_unstack(cells, piece_start, index_end)
@@ -133,8 +135,8 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
                 // stack, 2-range move
                 for &index_end in NEIGHBOURS2
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS2[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS2[7 * index_mid])
                 {
                     if can_move2(cells, piece_start, index_mid, index_end) {
                         piece_action_count += 1;
@@ -144,8 +146,8 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
                 // stack, 1-range move
                 for &index_end in NEIGHBOURS1
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS1[7 * index_mid])
                 {
                     if can_move1(cells, piece_start, index_end) {
                         piece_action_count += 1;
@@ -166,33 +168,61 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
     piece_action_count
 }
 
-/// Perft debug function to measure the number of leaf nodes (possible moves) at a given depth.
+/// Debug function to measure the number of leaf nodes (possible moves) at a given depth.
 ///
 /// Recursively counts the number of leaf nodes at the chosen depth.
 ///
 /// At depth 0, returns 1.
 pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
-    if depth == 0 {
-        return 1u64;
-    } else if depth == 1 {
-        return count_player_actions(cells, current_player);
-    }
+    match depth {
+        0 => 1u64,
+        1 | 2 => perft_iter(cells, current_player, depth),
+        _ => {
+            let available_actions: [u64; 512] = available_player_actions(current_player, cells);
+            let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
 
-    let mut count: u64 = 0u64;
-
-    let available_actions: [u64; 512] = available_player_actions(current_player, cells);
-    let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
-
-    let mut new_cells: [u8; 45] = [0u8; 45];
-
-    for &action in available_actions.iter().take(n_actions) {
-        if !is_action_win(cells, action) {
-            copy_cells(cells, &mut new_cells);
-            play_action(&mut new_cells, action);
-            count += perft(&new_cells, 1 - current_player, depth - 1);
+            available_actions
+                .par_iter()
+                .take(n_actions)
+                .filter(|&&action| !is_action_win(cells, action))
+                .map(|&action| {
+                    let mut new_cells: [u8; 45] = [0u8; 45];
+                    copy_cells(cells, &mut new_cells);
+                    play_action(&mut new_cells, action);
+                    perft_iter(&new_cells, 1 - current_player, depth - 1)
+                })
+                .reduce(|| 0, |sum, value| sum + value)
         }
     }
-    count
+}
+
+/// Part of the perft debug function to measure the number of leaf nodes (possible moves) at a given depth. Is called by perft.
+///
+/// Recursively counts the number of leaf nodes at the chosen depth.
+///
+/// At depth 0, returns 1.
+pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
+    match depth {
+        0 => 1u64,
+        1 => count_player_actions(cells, current_player),
+        _ => {
+            let available_actions: [u64; 512] = available_player_actions(current_player, cells);
+            let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+
+            let mut new_cells: [u8; 45] = [0u8; 45];
+
+            available_actions
+                .iter()
+                .take(n_actions)
+                .filter(|&&action| !is_action_win(cells, action))
+                .map(|&action| {
+                    copy_cells(cells, &mut new_cells);
+                    play_action(&mut new_cells, action);
+                    perft_iter(&new_cells, 1 - current_player, depth - 1)
+                })
+                .reduce(|sum, value| sum + value).unwrap()
+        }
+    }
 }
 
 /// Split Perft debug function to measure the number of leaf nodes (possible moves) at a given depth.
@@ -222,7 +252,7 @@ pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(Str
             results.push((
                 action_to_string(cells, action),
                 action,
-                perft(&new_cells, 1 - current_player, depth - 1),
+                perft_iter(&new_cells, 1 - current_player, depth - 1),
             ));
         }
     }

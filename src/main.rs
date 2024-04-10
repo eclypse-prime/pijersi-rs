@@ -8,8 +8,8 @@ fn main() {
     board.init();
 
     let start = Instant::now();
-    for _ in 0..5 {
-        let results = perft(&board.cells, board.current_player, 4);
+    for _ in 0..10 {
+        let results = perft(&board.cells, board.current_player, 5);
         println!("result {results}");
     }
     let elapsed = start.elapsed();
