@@ -191,7 +191,7 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
                 })
-                .reduce(|| 0, |sum, value| sum + value)
+                .sum()
         }
     }
 }
@@ -220,7 +220,7 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
                 })
-                .reduce(|sum, value| sum + value).unwrap()
+                .sum()
         }
     }
 }

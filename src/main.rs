@@ -9,7 +9,7 @@ fn main() {
 
     let start = Instant::now();
     for _ in 0..10 {
-        let results = perft(&board.cells, board.current_player, 5);
+        let results = perft(&board.cells, board.current_player, 4);
         println!("result {results}");
     }
     let elapsed = start.elapsed();
