@@ -50,8 +50,8 @@ fn available_piece_actions(
         // 1-range first action
         for &index_mid in NEIGHBOURS1
             .iter()
-            .take(7 * index_start + NEIGHBOURS1[7 * index_start] + 1)
             .skip(7 * index_start + 1)
+            .take(NEIGHBOURS1[7 * index_start])
         {
             let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
             // stack, [1/2-range move] optional
@@ -59,8 +59,8 @@ fn available_piece_actions(
                 // stack, 2-range move
                 for &index_end in NEIGHBOURS2
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS2[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS2[7 * index_mid])
                 {
                     if can_move2(cells, piece_start, index_mid, index_end)
                         || (index_start == ((index_mid + index_end) / 2)
@@ -75,8 +75,8 @@ fn available_piece_actions(
                 // stack, 0/1-range move
                 for &index_end in NEIGHBOURS1
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS1[7 * index_mid])
                 {
                     if can_move1(cells, piece_start, index_end) || index_start == index_end {
                         player_actions[index_actions] =
@@ -101,16 +101,16 @@ fn available_piece_actions(
         // 2 range first action
         for &index_mid in NEIGHBOURS2
             .iter()
-            .take(7 * index_start + NEIGHBOURS2[7 * index_start] + 1)
             .skip(7 * index_start + 1)
+            .take(NEIGHBOURS2[7 * index_start])
         {
             let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
             if can_move2(cells, piece_start, index_start, index_mid) {
                 // 2-range move, stack or unstack
                 for &index_end in NEIGHBOURS1
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS1[7 * index_mid])
                 {
                     // 2-range move, unstack or 2-range move, stack
                     if can_unstack(cells, piece_start, index_end)
@@ -130,8 +130,8 @@ fn available_piece_actions(
         // 1-range first action
         for &index_mid in NEIGHBOURS1
             .iter()
-            .take(7 * index_start + NEIGHBOURS1[7 * index_start] + 1)
             .skip(7 * index_start + 1)
+            .take(NEIGHBOURS1[7 * index_start])
         {
             let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
             // 1-range move, [stack or unstack] optional
@@ -139,8 +139,8 @@ fn available_piece_actions(
                 // 1-range move, stack or unstack
                 for &index_end in NEIGHBOURS1
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS1[7 * index_mid])
                 {
                     // 1-range move, unstack or 1-range move, stack
                     if can_unstack(cells, piece_start, index_end)
@@ -166,8 +166,8 @@ fn available_piece_actions(
                 // stack, 2-range move
                 for &index_end in NEIGHBOURS2
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS2[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS2[7 * index_mid])
                 {
                     if can_move2(cells, piece_start, index_mid, index_end) {
                         player_actions[index_actions] =
@@ -179,8 +179,8 @@ fn available_piece_actions(
                 // stack, 1-range move
                 for &index_end in NEIGHBOURS1
                     .iter()
-                    .take(7 * index_mid + NEIGHBOURS1[7 * index_mid] + 1)
                     .skip(7 * index_mid + 1)
+                    .take(NEIGHBOURS1[7 * index_mid])
                 {
                     if can_move1(cells, piece_start, index_end) {
                         player_actions[index_actions] =
