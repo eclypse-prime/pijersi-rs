@@ -1,4 +1,4 @@
-# pijersi-engine
+# pijersi-rs
 
 This project is a Rust implementation of a Pijersi game engine. It can be used standalone (using the [UGI protocol](https://github.com/arthur-liu-lsh/pijersi-engine/blob/main/ugi.md)) and will also provide bindings for use in C#/Unity and Python projects. (to do)
 
