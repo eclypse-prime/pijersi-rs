@@ -27,8 +27,9 @@ pub fn index_to_coords(index: usize) -> (usize, usize) {
 
 /// Converts a "a1" style string coordinate into an index.
 pub fn string_to_index(cell_string: &str) -> usize {
-    let char_i: char = cell_string.chars().next().unwrap();
-    let char_j: char = cell_string.chars().nth(1).unwrap();
+    let mut iterator = cell_string.chars();
+    let char_i: char = iterator.next().unwrap();
+    let char_j: char = iterator.next().unwrap();
     let i: usize = match char_i {
         'a' => 6,
         'b' => 5,
