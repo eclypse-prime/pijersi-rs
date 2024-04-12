@@ -1,7 +1,5 @@
-use super::actions::{copy_cells, play_action};
 use super::lookup::{NEIGHBOURS1, NEIGHBOURS2};
-use super::rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win};
-use super::translate::action_to_string;
+use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 use super::{COLOUR_MASK, INDEX_NULL, INDEX_WIDTH, MAX_PLAYER_ACTIONS, STACK_THRESHOLD};
 
 /// Concatenate three indices into a u64 action.

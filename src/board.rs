@@ -11,6 +11,12 @@ pub struct Board {
     pub current_player: u8,
 }
 
+impl Default for Board {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Board {
     /// Board constructor: the cells are empty on initialization, the current player is white.
     pub fn new() -> Self {
