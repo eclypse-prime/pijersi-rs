@@ -30,6 +30,7 @@ fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
 /// Returns the number of possible actions for a specific piece.
 ///
 /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the moves.
+#[inline]
 fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
     let mut piece_action_count: u64 = 0u64;
 

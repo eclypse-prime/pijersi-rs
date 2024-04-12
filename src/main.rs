@@ -13,6 +13,6 @@ fn main() {
         println!("result {results}");
     }
     let elapsed = start.elapsed();
-    println!("Rust time {:.2?}", elapsed);
+    println!("Rust time {:.3?}", elapsed);
 
 }

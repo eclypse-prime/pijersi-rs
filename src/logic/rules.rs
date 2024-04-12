@@ -6,6 +6,7 @@ use super::{CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, IND
 /// 
 /// The capture rules are the sames as rock-paper-scissors.
 /// The wise piece can neither capture or be captured.
+#[inline]
 pub fn can_take(attacker: u8, target: u8) -> bool {
     let attacker_type: u8 = attacker & TYPE_MASK;
     let target_type: u8 = target & TYPE_MASK;
@@ -15,6 +16,7 @@ pub fn can_take(attacker: u8, target: u8) -> bool {
 }
 
 /// Returns whether the chosen 1-range move is possible.
+#[inline]
 pub fn can_move1(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
 
@@ -31,6 +33,7 @@ pub fn can_move1(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
 }
 
 /// Returns whether the chosen 2-range move is possible.
+#[inline]
 pub fn can_move2(cells: &[u8; 45], moving_piece: u8, index_start: usize, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
 
@@ -51,6 +54,7 @@ pub fn can_move2(cells: &[u8; 45], moving_piece: u8, index_start: usize, index_e
 }
 
 /// Returns whether the chosen stack action is possible.
+#[inline]
 pub fn can_stack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
 
@@ -72,6 +76,7 @@ pub fn can_stack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
 }
 
 /// Returns whether the chosen unstack action is possible.
+#[inline]
 pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
     
@@ -90,6 +95,7 @@ pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool
 /// Returns true if the chosen action leads to a win.
 /// 
 /// To win, one allied piece (except wise) must reach the last row in the opposite side.
+#[inline]
 pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
     let index_start: usize = (action & INDEX_MASK) as usize;
     let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;

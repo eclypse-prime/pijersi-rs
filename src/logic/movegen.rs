@@ -6,12 +6,14 @@ use super::{COLOUR_MASK, INDEX_NULL, INDEX_WIDTH, MAX_PLAYER_ACTIONS, STACK_THRE
 
 /// Concatenate three indices into a u64 action.
 /// The first index is stored in the 8 least significant bits.
+#[inline]
 pub fn concatenate_action(index_start: usize, index_mid: usize, index_end: usize) -> u64 {
     (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as u64
 }
 
 /// Concatenate a half action and the last index into a u64 action.
 /// The first index is stored in the 8 least significant bits.
+#[inline]
 pub fn concatenate_half_action(half_action: u64, index_end: usize) -> u64 {
     half_action | (index_end << (2 * INDEX_WIDTH)) as u64
 }
@@ -36,6 +38,7 @@ pub fn available_player_actions(current_player: u8, cells: &[u8; 45]) -> [u64; M
 /// Calculates the possible moves for a player.
 /// The result is stored in a size MAX_PLAYER_ACTIONS array of u64 where the last element is the number of actions.
 /// This array is passed in parameter and modified by this function.
+#[inline]
 fn available_piece_actions(
     cells: &[u8; 45],
     index_start: usize,
