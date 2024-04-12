@@ -1,6 +1,11 @@
+use std::cmp::max;
+
+use crate::logic::actions::play_action;
 use crate::logic::lookup::PIECE_TO_INDEX;
+use crate::logic::movegen::available_player_actions;
+use crate::logic::rules::is_action_win;
 use crate::logic::{
-    COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_WIDTH, TOP_MASK, TYPE_MASK, TYPE_WISE,
+    COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, TOP_MASK, TYPE_MASK, TYPE_WISE
 };
 use crate::search::lookup::PIECE_SCORES;
 
@@ -11,11 +16,123 @@ pub fn evaluate_piece(piece: u8, index: usize) -> i64 {
     PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * 45 + index]
 }
 
+pub fn evaluate_position(cells: &[u8; 45]) -> i64 {
+    cells
+        .iter()
+        .enumerate()
+        .map(|(index, &piece)| evaluate_piece(piece, index))
+        .sum()
+}
+
+pub fn evaluate_position_with_details(cells: &[u8; 45]) -> (i64, [i64; 45]) {
+    let mut piece_scores: [i64; 45] = [0i64; 45];
+    for (k, &cell) in cells.iter().enumerate() {
+        piece_scores[k] = evaluate_piece(cell, k);
+    }
+    (piece_scores.iter().sum(), piece_scores)
+}
+
+
+pub fn evaluate_action(
+    cells: &[u8; 45],
+    current_player: u8,
+    action: u64,
+    depth: u64,
+    alpha: i64,
+    beta: i64,
+) -> i64 {
+    if is_action_win(cells, action) {
+        return -MAX_SCORE;
+    }
+
+    let mut alpha = alpha;
+
+    let mut new_cells: [u8; 45] = cells.clone();
+    play_action(&mut new_cells, action);
+
+    if depth <= 0 {
+        return if current_player == 0 {
+            evaluate_position(&new_cells)
+        } else {
+            -evaluate_position(&new_cells)
+        };
+    }
+
+    let available_actions: [u64; 512] = available_player_actions(current_player, cells);
+    let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+
+    let mut score = i64::MIN;
+
+    if n_actions == 0 {
+        return score;
+    }
+
+    if depth == 1 {
+        let (previous_score, previous_piece_scores) = evaluate_position_with_details(&new_cells);
+        for &action in available_actions.iter().take(n_actions) {
+            score = max(
+                score,
+                -evaluate_action_terminal(
+                    &new_cells,
+                    1 - current_player,
+                    action,
+                    previous_score,
+                    &previous_piece_scores,
+                ),
+            );
+            alpha = max(alpha, score);
+            if alpha > beta {
+                break;
+            }
+        }
+    } else {
+        for (k, &action) in available_actions.iter().take(n_actions).enumerate() {
+            let eval = if k == 0 {
+                -evaluate_action(
+                    &new_cells,
+                    1 - current_player,
+                    action,
+                    depth - 1,
+                    -beta,
+                    -alpha,
+                )
+            } else {
+                let null_window_eval = -evaluate_action(
+                    &new_cells,
+                    1 - current_player,
+                    action,
+                    depth,
+                    -alpha - 1,
+                    -alpha,
+                );
+                if alpha < null_window_eval && null_window_eval < beta {
+                    -evaluate_action(
+                        &new_cells,
+                        1 - current_player,
+                        action,
+                        depth - 1,
+                        -beta,
+                        -alpha,
+                    )
+                } else {
+                    null_window_eval
+                }
+            };
+            score = max(score, eval);
+            alpha = max(alpha, score);
+            if alpha > beta {
+                break;
+            }
+        }
+    }
+    score
+}
+
 #[inline]
 pub fn evaluate_action_terminal(
     cells: &[u8; 45],
-    action: u64,
     current_player: u8,
+    action: u64,
     previous_score: i64,
     previous_piece_scores: &[i64; 45],
 ) -> i64 {
