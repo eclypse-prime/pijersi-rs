@@ -1,7 +1,7 @@
 //! This module contains the necessary code to implement the game logic.
-//! 
+//!
 //! It contains the following sub-modules:
-//! 
+//!
 //! - actions: Implements the actions a player can choose (move, stack, unstack...).
 //! - lookup: Implements the lookup tables used for faster computations in the move generator.
 //! - movegen: Implements the move generator: returns the list of all available moves for a player at a given time.

@@ -1,8 +1,8 @@
 use crate::logic::actions::play_action;
-use crate::piece::{PieceColour, PieceType, init_piece};
+use crate::piece::{init_piece, PieceColour, PieceType};
 
 /// This struct represents a Pijersi board.
-/// 
+///
 /// It contains all the necessary information to represent a Pijersi game at one point:
 ///     - Current cells
 ///     - Current player
@@ -27,7 +27,7 @@ impl Board {
     }
 
     /// Initializes the the board to the starting configuration.
-    /// 
+    ///
     /// Sets the pieces to their original position and the current player to white.
     pub fn init(&mut self) {
         self.cells[0] = init_piece(PieceColour::Black, None, PieceType::Scissors);

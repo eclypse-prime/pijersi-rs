@@ -1,6 +1,6 @@
 use pijersi_rs::board::Board;
-use pijersi_rs::logic::perft::perft_iter;
 use pijersi_rs::logic::perft::perft;
+use pijersi_rs::logic::perft::perft_iter;
 
 #[test]
 fn test_perft_iter() {

@@ -1,10 +1,8 @@
-
-
 /// A piece is separated in two parts: top (4 least significant bits) and bottom (4 most significant bits).
-/// 
+///
 /// The bottom part can be empty.
-/// 
-/// 
+///
+///
 
 pub enum PieceColour {
     White,

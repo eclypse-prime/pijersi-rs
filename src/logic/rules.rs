@@ -1,9 +1,10 @@
-use super::{CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH,
-    STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE,
+use super::{
+    CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH, STACK_THRESHOLD,
+    TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE,
 };
 
 /// Returns whether an attacker piece can capture a target piece.
-/// 
+///
 /// The capture rules are the sames as rock-paper-scissors.
 /// The wise piece can neither capture or be captured.
 #[inline]
@@ -79,7 +80,7 @@ pub fn can_stack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
 #[inline]
 pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
-    
+
     if target_piece != CELL_EMPTY {
         // If the cells are the same colour
         if (target_piece & COLOUR_MASK) == (moving_piece & COLOUR_MASK) {
@@ -93,7 +94,7 @@ pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool
 }
 
 /// Returns true if the chosen action leads to a win.
-/// 
+///
 /// To win, one allied piece (except wise) must reach the last row in the opposite side.
 #[inline]
 pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
@@ -102,7 +103,10 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
 
     let moving_piece: u8 = cells[index_start];
 
-    if (moving_piece & TYPE_MASK) != TYPE_WISE && (((moving_piece & COLOUR_MASK) == COLOUR_WHITE && index_end <= 5) || ((moving_piece & COLOUR_MASK) == COLOUR_BLACK && index_end >= 39)) {
+    if (moving_piece & TYPE_MASK) != TYPE_WISE
+        && (((moving_piece & COLOUR_MASK) == COLOUR_WHITE && index_end <= 5)
+            || ((moving_piece & COLOUR_MASK) == COLOUR_BLACK && index_end >= 39))
+    {
         return true;
     }
     false

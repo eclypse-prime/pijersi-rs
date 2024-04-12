@@ -14,5 +14,4 @@ fn main() {
     }
     let elapsed = start.elapsed();
     println!("Rust time {:.3?}", elapsed);
-
 }

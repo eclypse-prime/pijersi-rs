@@ -1,8 +1,11 @@
 use regex::Regex;
 
-use super::{movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, INDEX_MASK, INDEX_NULL, INDEX_WIDTH, STACK_THRESHOLD};
+use super::{
+    movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, INDEX_MASK, INDEX_NULL, INDEX_WIDTH,
+    STACK_THRESHOLD,
+};
 
-const ROW_LETTERS: [char; 7] = ['g','f','e','d','c','b','a'];
+const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
 /// Converts a (i, j) coordinate set to an index.
 pub fn coords_to_index(i: usize, j: usize) -> usize {
@@ -17,7 +20,7 @@ pub fn coords_to_index(i: usize, j: usize) -> usize {
 pub fn index_to_coords(index: usize) -> (usize, usize) {
     let mut i: usize = 2 * (index / 13);
     let mut j: usize = index % 13;
-    
+
     if j > 5 {
         j -= 6;
         i += 1;
@@ -110,19 +113,19 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
 
     let action_string_start: String = index_to_string(index_start);
     let action_string_end: String = index_to_string(index_end);
-    
+
     let action_string_mid: String = if index_mid == INDEX_NULL {
         if cells[index_start] >= STACK_THRESHOLD {
             index_to_string(index_end)
-        }
-        else {
+        } else {
             "".to_string()
         }
-    }
-    else if index_mid != INDEX_NULL  && index_start == index_mid && cells[index_start] < STACK_THRESHOLD {
+    } else if index_mid != INDEX_NULL
+        && index_start == index_mid
+        && cells[index_start] < STACK_THRESHOLD
+    {
         "".to_string()
-    }
-    else {
+    } else {
         index_to_string(index_mid)
     };
 
