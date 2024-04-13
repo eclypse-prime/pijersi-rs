@@ -3,10 +3,8 @@ use std::cmp::max;
 use crate::logic::actions::play_action;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
-use crate::logic::rules::is_action_win;
 use crate::logic::{
-    COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, TOP_MASK,
-    TYPE_MASK, TYPE_WISE,
+    COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, TOP_MASK, TYPE_MASK, TYPE_WISE
 };
 use crate::search::lookup::PIECE_SCORES;
 
@@ -41,7 +39,13 @@ pub fn evaluate_action(
     alpha: i64,
     beta: i64,
 ) -> i64 {
-    if is_action_win(cells, action) {
+
+    let index_start: usize = (action & INDEX_MASK) as usize;
+    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+
+    if (cells[index_start] & TYPE_MASK) != TYPE_WISE
+    && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))
+    {
         return -MAX_SCORE;
     }
 
@@ -58,7 +62,7 @@ pub fn evaluate_action(
         };
     }
 
-    let available_actions: [u64; 512] = available_player_actions(current_player, cells);
+    let available_actions: [u64; 512] = available_player_actions(current_player, &new_cells);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
 
     let mut score = i64::MIN;
@@ -187,7 +191,7 @@ pub fn evaluate_action_terminal(
             mid_piece = start_piece;
             end_piece = (mid_piece & TOP_MASK) + (end_piece << HALF_PIECE_WIDTH);
             if index_start == index_end {
-                end_piece = mid_piece & 15;
+                end_piece = mid_piece & TOP_MASK;
             }
             mid_piece >>= HALF_PIECE_WIDTH;
 
