@@ -1,24 +1,23 @@
 use std::cmp::max;
 
-use super::super::logic::{movegen::available_player_actions, ACTION_NULL, MAX_PLAYER_ACTIONS};
+use super::super::logic::{movegen::available_player_actions, MAX_PLAYER_ACTIONS};
 
 use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_with_details};
 
 pub const BASE_BETA: i64 = 262144;
 
-pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
+pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> Option<u64> {
+    if depth == 0 {
+        return None;
+    }
+
     // Get an array of all the available moves for the current player, the last element of the array is the number of available moves
     let available_actions: [u64; 512] = available_player_actions(current_player, cells);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
 
     if n_actions == 0 {
-        return ACTION_NULL;
+        return None;
     }
-
-    if depth == 0 {
-        return ACTION_NULL;
-    }
-
     // Cutoffs will happen on winning moves
     let mut alpha = -BASE_BETA;
     let beta = BASE_BETA;
@@ -26,10 +25,10 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
     // This will stop iteration if there is a cutoff
     let mut cut = false;
 
-    let mut best_action: u64 = ACTION_NULL;
+    let mut best_action: Option<u64> = None;
     let mut best_score: i64 = i64::MIN;
 
-    // On depth 0, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
+    // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
     if depth == 1 {
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
         for &action in available_actions.iter().take(n_actions) {
@@ -42,7 +41,7 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
             );
             if eval > best_score {
                 best_score = eval;
-                best_action = action;
+                best_action = Some(action);
             }
             alpha = max(alpha, best_score);
             if alpha > beta {
@@ -78,9 +77,9 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
                 }
             };
 
-            if eval > best_score {
+            if eval >= best_score {
                 best_score = eval;
-                best_action = action;
+                best_action = Some(action);
             }
 
             if eval > alpha {

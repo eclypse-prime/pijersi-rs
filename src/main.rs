@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use pijersi_rs::board::Board;
 use pijersi_rs::logic::actions::play_action;
 use pijersi_rs::logic::rules::is_action_win;
@@ -11,7 +9,10 @@ fn main() {
     board.init();
 
     loop {
-        let action = search(&board.cells, board.current_player, 4);
+        let action = match search(&board.cells, board.current_player, 4) {
+            Some(x) => x,
+            None => {return;}
+        };
         println!("{}", action_to_string(&board.cells, action));
         if is_action_win(&board.cells, action) {
             play_action(&mut board.cells, action);
