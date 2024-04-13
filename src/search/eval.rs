@@ -47,10 +47,10 @@ pub fn evaluate_action(
 
     let mut alpha = alpha;
 
-    let mut new_cells: [u8; 45] = cells.clone();
+    let mut new_cells: [u8; 45] = *cells;
     play_action(&mut new_cells, action);
 
-    if depth <= 0 {
+    if depth == 0 {
         return if current_player == 0 {
             evaluate_position(&new_cells)
         } else {
@@ -140,13 +140,13 @@ pub fn evaluate_action_terminal(
     let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
     let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
 
-    let mut current_score = previous_score;
-
     if (cells[index_start] & TYPE_MASK) != TYPE_WISE
-        && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))
+    && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))
     {
         return -MAX_SCORE;
     }
+
+    let mut current_score = previous_score;
 
     if index_mid > 44 {
         // Starting cell
@@ -185,7 +185,6 @@ pub fn evaluate_action_terminal(
         // The piece at the end coordinates is an ally : action and stack
         else if end_piece != 0 && (end_piece & COLOUR_MASK) == (start_piece & COLOUR_MASK) {
             mid_piece = start_piece;
-            start_piece = 0;
             end_piece = (mid_piece & TOP_MASK) + (end_piece << HALF_PIECE_WIDTH);
             if index_start == index_end {
                 end_piece = mid_piece & 15;
@@ -210,7 +209,6 @@ pub fn evaluate_action_terminal(
         // The end coordinates contain an enemy or no piece : action and unstack
         else {
             mid_piece = start_piece;
-            start_piece = 0;
             end_piece = mid_piece & TOP_MASK;
             mid_piece >>= HALF_PIECE_WIDTH;
 
