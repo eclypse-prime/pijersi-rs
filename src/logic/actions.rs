@@ -83,6 +83,7 @@ pub fn play_action(cells: &mut [u8; 45], action: u64) {
 }
 
 /// Copy the data from the origin cells to the target cells.
+#[inline]
 pub fn copy_cells(origin: &[u8; 45], target: &mut [u8; 45]) {
-    target.copy_from_slice(origin);
+    *target = *origin;
 }
