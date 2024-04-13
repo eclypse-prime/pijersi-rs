@@ -69,7 +69,7 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
             // If fail high, do the search with the full window
             let eval = if alpha < eval_null_window && eval_null_window < beta
             {
-                -evaluate_action(cells, 1 - current_player, action, depth - 1, -alpha - 1, -alpha)
+                -evaluate_action(cells, 1 - current_player, action, depth - 1, -beta, -alpha)
             }
             else {
                 eval_null_window
