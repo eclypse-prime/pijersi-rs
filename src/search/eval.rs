@@ -97,7 +97,7 @@ pub fn evaluate_action(
                     -alpha,
                 )
             } else {
-                let null_window_eval = -evaluate_action(
+                let eval_null_window = -evaluate_action(
                     &new_cells,
                     1 - current_player,
                     action,
@@ -105,7 +105,7 @@ pub fn evaluate_action(
                     -alpha - 1,
                     -alpha,
                 );
-                if alpha < null_window_eval && null_window_eval < beta {
+                if alpha < eval_null_window && eval_null_window < beta {
                     -evaluate_action(
                         &new_cells,
                         1 - current_player,
@@ -115,7 +115,7 @@ pub fn evaluate_action(
                         -alpha,
                     )
                 } else {
-                    null_window_eval
+                    eval_null_window
                 }
             };
             score = max(score, eval);

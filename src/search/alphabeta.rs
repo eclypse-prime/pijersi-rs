@@ -56,23 +56,24 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
     else
     {
         // Evaluate possible moves
-        for &action in available_actions.iter().take(n_actions) {
-            match cut {
-                true => continue,
-                false => (),
+        for (k, &action) in available_actions.iter().take(n_actions).enumerate() {
+            if cut {
+                continue;
             }
 
-            // Search with a null window
-            let eval_null_window = -evaluate_action(cells, 1 - current_player, action, depth - 1, -alpha - 1, -alpha);
-
-            
-            // If fail high, do the search with the full window
-            let eval = if alpha < eval_null_window && eval_null_window < beta
-            {
+            let eval = if k == 0 {
                 -evaluate_action(cells, 1 - current_player, action, depth - 1, -beta, -alpha)
-            }
-            else {
-                eval_null_window
+            } else {
+                // Search with a null window
+                let eval_null_window = -evaluate_action(cells, 1 - current_player, action, depth - 1, -alpha - 1, -alpha);
+                // If fail high, do the search with the full window
+                if alpha < eval_null_window && eval_null_window < beta
+                {
+                    -evaluate_action(cells, 1 - current_player, action, depth - 1, -beta, -alpha)
+                }
+                else {
+                    eval_null_window
+                }
             };
 
             if eval > best_score {
