@@ -1,7 +1,7 @@
 use rayon::prelude::*;
 
 use super::{
-    actions::{copy_cells, play_action},
+    actions::play_action,
     lookup::{NEIGHBOURS1, NEIGHBOURS2},
     movegen::available_player_actions,
     rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
@@ -187,8 +187,7 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
                 .take(n_actions)
                 .filter(|&&action| !is_action_win(cells, action))
                 .map(|&action| {
-                    let mut new_cells: [u8; 45] = [0u8; 45];
-                    copy_cells(cells, &mut new_cells);
+                    let mut new_cells: [u8; 45] = *cells;
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
                 })
@@ -217,7 +216,7 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
                 .take(n_actions)
                 .filter(|&&action| !is_action_win(cells, action))
                 .map(|&action| {
-                    copy_cells(cells, &mut new_cells);
+                    new_cells = *cells;
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
                 })
@@ -234,29 +233,27 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 ///
 /// At depth 0, returns an empty vector.
 pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
-    let mut results: Vec<(String, u64, u64)> = Vec::with_capacity(256);
+    match depth {
+        0 => vec![],
+        _ => {
+            let available_actions: [u64; MAX_PLAYER_ACTIONS] =
+                available_player_actions(current_player, cells);
+            let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
 
-    if depth == 0 {
-        return results;
-    }
-
-    let available_actions: [u64; MAX_PLAYER_ACTIONS] =
-        available_player_actions(current_player, cells);
-    let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
-
-    let mut new_cells: [u8; 45] = [0u8; 45];
-
-    for &action in available_actions.iter().take(n_actions) {
-        if !is_action_win(cells, action) {
-            copy_cells(cells, &mut new_cells);
-            play_action(&mut new_cells, action);
-            results.push((
-                action_to_string(cells, action),
-                action,
-                perft_iter(&new_cells, 1 - current_player, depth - 1),
-            ));
+            available_actions
+                .par_iter()
+                .take(n_actions)
+                .filter(|&&action| !is_action_win(cells, action))
+                .map(|&action| {
+                    let mut new_cells = *cells;
+                    play_action(&mut new_cells, action);
+                    (
+                        action_to_string(cells, action),
+                        action,
+                        perft_iter(&new_cells, 1 - current_player, depth - 1),
+                    )
+                })
+                .collect()
         }
     }
-
-    results
 }
