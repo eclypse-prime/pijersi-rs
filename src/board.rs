@@ -66,25 +66,24 @@ impl Board {
             let piece: u8 = self.cells[i];
             let top_piece: u8 = piece & 0b1111;
             let bottom_piece: u8 = piece >> 4;
-            let char1: char = if top_piece == 0 {
-                '.'
-            } else {
-                match top_piece {
-                    0b0001 => 'S',
-                    0b0101 => 'P',
-                    0b1001 => 'R',
-                    0b1101 => 'W',
-                    0b0011 => 's',
-                    0b0111 => 'p',
-                    0b1011 => 'r',
-                    0b1111 => 'w',
-                    _ => '?',
-                }
+            let char1: char = match top_piece {
+                0b0000 => '.',
+                0b0001 => 'S',
+                0b0101 => 'P',
+                0b1001 => 'R',
+                0b1101 => 'W',
+                0b0011 => 's',
+                0b0111 => 'p',
+                0b1011 => 'r',
+                0b1111 => 'w',
+                _ => '?',
             };
-            let char2: char = if bottom_piece == 0 {
-                '-'
-            } else {
+            let char2: char = if top_piece == 0 {
+                ' '
+            }
+            else {
                 match bottom_piece {
+                    0b0000 => '-',
                     0b0001 => 'S',
                     0b0101 => 'P',
                     0b1001 => 'R',
