@@ -101,7 +101,7 @@ pub fn evaluate_action(
                     &new_cells,
                     1 - current_player,
                     action,
-                    depth,
+                    depth - 1,
                     -alpha - 1,
                     -alpha,
                 );
