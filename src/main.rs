@@ -11,8 +11,7 @@ fn main() {
     board.init();
 
     loop {
-        let action =
-            search(&board.cells, board.current_player, 4);
+        let action = search(&board.cells, board.current_player, 4);
         println!("{}", action_to_string(&board.cells, action));
         if is_action_win(&board.cells, action) {
             play_action(&mut board.cells, action);

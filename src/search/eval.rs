@@ -5,7 +5,8 @@ use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
 use crate::logic::rules::is_action_win;
 use crate::logic::{
-    COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, TOP_MASK, TYPE_MASK, TYPE_WISE
+    COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, TOP_MASK,
+    TYPE_MASK, TYPE_WISE,
 };
 use crate::search::lookup::PIECE_SCORES;
 
@@ -31,7 +32,6 @@ pub fn evaluate_position_with_details(cells: &[u8; 45]) -> (i64, [i64; 45]) {
     }
     (piece_scores.iter().sum(), piece_scores)
 }
-
 
 pub fn evaluate_action(
     cells: &[u8; 45],

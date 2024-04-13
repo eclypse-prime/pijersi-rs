@@ -80,8 +80,7 @@ impl Board {
             };
             let char2: char = if top_piece == 0 {
                 ' '
-            }
-            else {
+            } else {
                 match bottom_piece {
                     0b0000 => '-',
                     0b0001 => 'S',

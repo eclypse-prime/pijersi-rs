@@ -7,7 +7,6 @@ use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_w
 pub const BASE_BETA: i64 = 262144;
 
 pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
-
     // Get an array of all the available moves for the current player, the last element of the array is the number of available moves
     let available_actions: [u64; 512] = available_player_actions(current_player, cells);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
@@ -31,8 +30,7 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
     let mut best_score: i64 = i64::MIN;
 
     // On depth 0, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
-    if depth == 1
-    {
+    if depth == 1 {
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
         for &action in available_actions.iter().take(n_actions) {
             let eval = -evaluate_action_terminal(
@@ -53,8 +51,7 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
         }
     }
     // On depth > 1, run the classic recursive search, with the lowest depth being parallelized
-    else
-    {
+    else {
         // Evaluate possible moves
         for (k, &action) in available_actions.iter().take(n_actions).enumerate() {
             if cut {
@@ -65,13 +62,18 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
                 -evaluate_action(cells, 1 - current_player, action, depth - 1, -beta, -alpha)
             } else {
                 // Search with a null window
-                let eval_null_window = -evaluate_action(cells, 1 - current_player, action, depth - 1, -alpha - 1, -alpha);
+                let eval_null_window = -evaluate_action(
+                    cells,
+                    1 - current_player,
+                    action,
+                    depth - 1,
+                    -alpha - 1,
+                    -alpha,
+                );
                 // If fail high, do the search with the full window
-                if alpha < eval_null_window && eval_null_window < beta
-                {
+                if alpha < eval_null_window && eval_null_window < beta {
                     -evaluate_action(cells, 1 - current_player, action, depth - 1, -beta, -alpha)
-                }
-                else {
+                } else {
                     eval_null_window
                 }
             };
@@ -81,18 +83,16 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
                 best_action = action;
             }
 
-            if eval > alpha
-            {
+            if eval > alpha {
                 alpha = eval;
             }
 
             // Cutoff
-            if alpha > beta
-            {
+            if alpha > beta {
                 cut = true;
             }
         }
     }
-    
+
     best_action
 }
