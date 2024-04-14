@@ -1,4 +1,7 @@
-use std::cmp::max;
+use std::sync::atomic::Ordering::Relaxed;
+use std::sync::atomic::{AtomicBool, AtomicI64};
+
+use rayon::prelude::*;
 
 use super::super::logic::{movegen::available_player_actions, MAX_PLAYER_ACTIONS};
 
@@ -18,80 +21,94 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> Option<u64> {
     if n_actions == 0 {
         return None;
     }
-    // Cutoffs will happen on winning moves
-    let mut alpha = -BASE_BETA;
-    let beta = BASE_BETA;
 
-    // This will stop iteration if there is a cutoff
-    let mut cut = false;
-
-    let mut best_action: Option<u64> = None;
-    let mut best_score: i64 = i64::MIN;
-
-    // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
-    if depth == 1 {
+    let scores: Vec<i64> = if depth == 1 {
+        // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
-        for &action in available_actions.iter().take(n_actions) {
-            let eval = -evaluate_action_terminal(
-                cells,
-                1 - current_player,
-                action,
-                previous_score,
-                &previous_piece_scores,
-            );
-            if eval > best_score {
-                best_score = eval;
-                best_action = Some(action);
-            }
-            alpha = max(alpha, best_score);
-            if alpha > beta {
-                break;
-            }
-        }
-    }
-    // On depth > 1, run the classic recursive search, with the lowest depth being parallelized
-    else {
-        // Evaluate possible moves
-        for (k, &action) in available_actions.iter().take(n_actions).enumerate() {
-            if cut {
-                continue;
-            }
-
-            let eval = if k == 0 {
-                -evaluate_action(cells, 1 - current_player, action, depth - 1, -beta, -alpha)
-            } else {
-                // Search with a null window
-                let eval_null_window = -evaluate_action(
+        available_actions
+            .iter()
+            .take(n_actions)
+            .map(|&action| {
+                -evaluate_action_terminal(
                     cells,
                     1 - current_player,
                     action,
-                    depth - 1,
-                    -alpha - 1,
-                    -alpha,
-                );
-                // If fail high, do the search with the full window
-                if alpha < eval_null_window && eval_null_window < beta {
-                    -evaluate_action(cells, 1 - current_player, action, depth - 1, -beta, -alpha)
-                } else {
-                    eval_null_window
-                }
-            };
-
-            if eval >= best_score {
-                best_score = eval;
-                best_action = Some(action);
-            }
-
-            if eval > alpha {
-                alpha = eval;
-            }
-
-            // Cutoff
-            if alpha > beta {
-                cut = true;
-            }
-        }
+                    previous_score,
+                    &previous_piece_scores,
+                )
+            })
+            .collect()
     }
+    // On depth > 1, run the classic recursive search, with the lowest depth being parallelized
+    else {
+        // Cutoffs will happen on winning moves
+        let alpha: AtomicI64 = AtomicI64::new(-BASE_BETA);
+        let beta = BASE_BETA;
 
-    best_action
+        // This will stop iteration if there is a cutoff
+        let cut: AtomicBool = AtomicBool::new(false);
+
+        // Evaluate possible moves
+        available_actions
+            .par_iter()
+            .take(n_actions)
+            .enumerate()
+            .map(|(k, &action)| {
+                if cut.load(Relaxed) {
+                    i64::MIN
+                } else {
+                    let eval = if k == 0 {
+                        -evaluate_action(
+                            cells,
+                            1 - current_player,
+                            action,
+                            depth - 1,
+                            -beta,
+                            -alpha.load(Relaxed),
+                        )
+                    } else {
+                        // Search with a null window
+                        let eval_null_window = -evaluate_action(
+                            cells,
+                            1 - current_player,
+                            action,
+                            depth - 1,
+                            -alpha.load(Relaxed) - 1,
+                            -alpha.load(Relaxed),
+                        );
+                        // If fail high, do the search with the full window
+                        if alpha.load(Relaxed) < eval_null_window && eval_null_window < beta {
+                            -evaluate_action(
+                                cells,
+                                1 - current_player,
+                                action,
+                                depth - 1,
+                                -beta,
+                                -alpha.load(Relaxed),
+                            )
+                        } else {
+                            eval_null_window
+                        }
+                    };
+
+                    alpha.fetch_max(eval, Relaxed);
+
+                    // Cutoff
+                    if alpha.load(Relaxed) > beta {
+                        cut.store(true, Relaxed);
+                    }
+                    eval
+                }
+            })
+            .collect()
+    };
+
+    match scores
+        .iter()
+        .enumerate()
+        .max_by_key(|(_index, &score)| score)
+    {
+        None => None,
+        Some((index_best_move, _score)) => Some(available_actions[index_best_move]),
+    }
 }
