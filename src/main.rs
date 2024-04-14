@@ -14,7 +14,9 @@ fn main() {
         let start = Instant::now();
         let action = match search(&board.cells, board.current_player, 5) {
             Some(x) => x,
-            None => {return;}
+            None => {
+                return;
+            }
         };
         println!("{:.3?}", start.elapsed());
         println!("{}", action_to_string(&board.cells, action));

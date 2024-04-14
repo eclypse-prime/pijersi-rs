@@ -106,5 +106,6 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> Option<u64> {
     scores
         .iter()
         .enumerate()
-        .max_by_key(|(_index, &score)| score).map(|(index_best_move, _score)| available_actions[index_best_move])
+        .max_by_key(|(_index, &score)| score)
+        .map(|(index_best_move, _score)| available_actions[index_best_move])
 }
