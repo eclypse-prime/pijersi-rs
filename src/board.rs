@@ -1,5 +1,7 @@
 use crate::logic::actions::play_action;
+use crate::logic::translate::string_to_action;
 use crate::piece::{init_piece, PieceColour, PieceType};
+use crate::search::alphabeta::search_to_depth;
 
 /// This struct represents a Pijersi board.
 ///
@@ -105,7 +107,18 @@ impl Board {
         }
     }
 
-    /// Plays the chosen move.
+    /// Searches and returns the best action at a given depth
+    pub fn search_to_depth(&self, depth: u64) -> Option<u64> {
+        search_to_depth(&self.cells, self.current_player, depth)
+    }
+
+    /// Plays the chosen action provided in string representation.
+    pub fn play_from_string(&mut self, action_string: &str) {
+        let action = string_to_action(&self.cells, action_string);
+        self.play(action);
+    }
+
+    /// Plays the chosen action provided in u64 representation.
     pub fn play(&mut self, action: u64) {
         play_action(&mut self.cells, action);
         self.current_player = 1 - self.current_player;
