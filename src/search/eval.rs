@@ -36,7 +36,7 @@ pub fn evaluate_position_with_details(cells: &[u8; 45]) -> (i64, [i64; 45]) {
 }
 
 /// Evaluates the score of a given action by searching at a given depth.
-/// 
+///
 /// Recursively calculates the best score using the alphabeta search to the chosen depth.
 pub fn evaluate_action(
     cells: &[u8; 45],
@@ -140,7 +140,7 @@ pub fn evaluate_action(
 
 #[inline]
 /// Evaluates the score of a given action at depth 1.
-/// 
+///
 /// Efficient method that only calculates the scores of the cells that would change and compares it to the current score.
 pub fn evaluate_action_terminal(
     cells: &[u8; 45],
