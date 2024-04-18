@@ -9,7 +9,7 @@ use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_w
 
 pub const BASE_BETA: i64 = 262144;
 
-pub fn search(cells: &[u8; 45], current_player: u8, depth: u64) -> Option<u64> {
+pub fn search_to_depth(cells: &[u8; 45], current_player: u8, depth: u64) -> Option<u64> {
     if depth == 0 {
         return None;
     }
