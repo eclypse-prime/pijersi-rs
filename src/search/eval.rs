@@ -12,26 +12,32 @@ use crate::search::lookup::PIECE_SCORES;
 pub const MAX_SCORE: i64 = 524288;
 
 #[inline]
-pub fn evaluate_piece(piece: u8, index: usize) -> i64 {
+/// Returns the score of a single cell given its content and index.
+pub fn evaluate_cell(piece: u8, index: usize) -> i64 {
     PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * 45 + index]
 }
 
+/// Returns the score of a board.
 pub fn evaluate_position(cells: &[u8; 45]) -> i64 {
     cells
         .iter()
         .enumerate()
-        .map(|(index, &piece)| evaluate_piece(piece, index))
+        .map(|(index, &piece)| evaluate_cell(piece, index))
         .sum()
 }
 
+/// Returns the score of a board along with its individual cell scores.
 pub fn evaluate_position_with_details(cells: &[u8; 45]) -> (i64, [i64; 45]) {
     let mut piece_scores: [i64; 45] = [0i64; 45];
     for (k, &cell) in cells.iter().enumerate() {
-        piece_scores[k] = evaluate_piece(cell, k);
+        piece_scores[k] = evaluate_cell(cell, k);
     }
     (piece_scores.iter().sum(), piece_scores)
 }
 
+/// Evaluates the score of a given action by searching at a given depth.
+/// 
+/// Recursively calculates the best score using the alphabeta search to the chosen depth.
 pub fn evaluate_action(
     cells: &[u8; 45],
     current_player: u8,
@@ -133,6 +139,9 @@ pub fn evaluate_action(
 }
 
 #[inline]
+/// Evaluates the score of a given action at depth 1.
+/// 
+/// Efficient method that only calculates the scores of the cells that would change and compares it to the current score.
 pub fn evaluate_action_terminal(
     cells: &[u8; 45],
     current_player: u8,
@@ -158,7 +167,7 @@ pub fn evaluate_action_terminal(
 
         // Ending cell
         current_score -= previous_piece_scores[index_end];
-        current_score += evaluate_piece(cells[index_start], index_end);
+        current_score += evaluate_cell(cells[index_start], index_end);
     } else {
         let mut start_piece: u8 = cells[index_start];
         let mut mid_piece: u8 = cells[index_mid];
@@ -174,17 +183,17 @@ pub fn evaluate_action_terminal(
 
             // Starting cell
             current_score -= previous_piece_scores[index_start];
-            current_score += evaluate_piece(start_piece, index_start);
+            current_score += evaluate_cell(start_piece, index_start);
 
             // Middle cell
             current_score -= previous_piece_scores[index_mid];
-            current_score += evaluate_piece(mid_piece, index_mid);
+            current_score += evaluate_cell(mid_piece, index_mid);
 
             // Ending cell
             if index_start != index_end {
                 current_score -= previous_piece_scores[index_end];
             }
-            current_score += evaluate_piece(end_piece, index_end);
+            current_score += evaluate_cell(end_piece, index_end);
         }
         // The piece at the end coordinates is an ally : action and stack
         else if end_piece != 0 && (end_piece & COLOUR_MASK) == (start_piece & COLOUR_MASK) {
@@ -202,13 +211,13 @@ pub fn evaluate_action_terminal(
 
             // Middle cell
             current_score -= previous_piece_scores[index_mid];
-            current_score += evaluate_piece(mid_piece, index_mid);
+            current_score += evaluate_cell(mid_piece, index_mid);
 
             // Ending cell
             if index_start != index_end {
                 current_score -= previous_piece_scores[index_end];
             }
-            current_score += evaluate_piece(end_piece, index_end);
+            current_score += evaluate_cell(end_piece, index_end);
         }
         // The end coordinates contain an enemy or no piece : action and unstack
         else {
@@ -223,11 +232,11 @@ pub fn evaluate_action_terminal(
 
             // Middle cell
             current_score -= previous_piece_scores[index_mid];
-            current_score += evaluate_piece(mid_piece, index_mid);
+            current_score += evaluate_cell(mid_piece, index_mid);
 
             // Ending cell
             current_score -= previous_piece_scores[index_end];
-            current_score += evaluate_piece(end_piece, index_end);
+            current_score += evaluate_cell(end_piece, index_end);
         }
     }
 
