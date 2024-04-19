@@ -1,8 +1,13 @@
-/// A piece is separated in two parts: top (4 least significant bits) and bottom (4 most significant bits).
-///
-/// The bottom part can be empty.
-///
-///
+//! Implements the code to generate pieces from their colour and type.
+//!  
+//! Pieces are represented by u8 numbers and have the following structure : TTCPTTCP
+//!
+//! It is separated in two parts: top (4 least significant bits) and bottom (4 most significant bits).
+//! The bottom part can be empty.
+//!
+//! TT are 2 bits representing the type of the piece (Scissors, Paper, Rock, Wise)
+//! C is 1 bit representing the color
+//! P is 1 bit set to 1 as long as there is a piece
 
 pub enum PieceColour {
     White,
