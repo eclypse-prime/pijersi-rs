@@ -2,6 +2,12 @@
 name = "pijersi-rs"
 version = "0.1.0"
 edition = "2021"
+authors = ["Eclypse-Prime"]
+description = "A UGI engine for the Pijersi board game."
+readme = "README.md"
+repository = "https://github.com/eclypse-prime/pijersi-rs"
+keywords = ["pijersi", "alphabeta", "game"]
+categories = ["games"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
