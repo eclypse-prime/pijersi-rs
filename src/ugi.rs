@@ -35,12 +35,18 @@ enum GoArgs {
 
 #[derive(Subcommand, Debug)]
 enum PositionArgs {
-    Startpos(MoveArgs),
-    Fen(MoveArgs),
+    Startpos(StartposArgs),
+    Fen(FenArgs),
 }
 
 #[derive(Args, Debug)]
-struct MoveArgs {
+struct StartposArgs {
+    moves: Vec<String>,
+}
+
+#[derive(Args, Debug)]
+struct FenArgs {
+    fen: String,
     moves: Vec<String>,
 }
 
@@ -109,10 +115,50 @@ impl UgiEngine {
             GoArgs::Manual { action } => {}
         }
     }
-    fn position(&self, position_args: PositionArgs) {
+    fn position(&mut self, position_args: PositionArgs) {
         match position_args {
-            PositionArgs::Startpos(move_args) => {}
-            PositionArgs::Fen(move_args) => {}
+            PositionArgs::Startpos(startpos_args) => {
+                let action_list = startpos_args.moves;
+                match action_list.len() {
+                    0 => {
+                        self.board.init();
+                    }
+                    1 => {
+                        println!("invalid argument {}", action_list[0]);
+                    }
+                    _ if action_list[0] != "moves" => {
+                        println!("invalid argument {}", action_list[0]);
+                    }
+                    _ => {
+                        self.board.init();
+                        for action_string in action_list.iter().skip(1) {
+                            // TODO: rollback if err
+                            let _ = self.board.play_from_string(action_string);
+                        }
+                    }
+                }
+            }
+            PositionArgs::Fen(fen_args) => {
+                let action_list: Vec<String> = fen_args.moves;
+                match action_list.len() {
+                    0 => {
+                        // string to state
+                    }
+                    1 => {
+                        println!("invalid argument {}", action_list[0]);
+                    }
+                    _ if action_list[0] != "moves" => {
+                        println!("invalid argument {}", action_list[0]);
+                    }
+                    _ => {
+                        // string to state
+                        for action_string in action_list.iter().skip(1) {
+                            // TODO: rollback if err
+                            let _ = self.board.play_from_string(action_string);
+                        }
+                    }
+                }
+            }
         }
     }
     fn query(&self, query_args: QueryArgs) {
@@ -140,7 +186,8 @@ impl UgiEngine {
                 Commands::Position(position_args) => self.position(position_args),
                 Commands::Query(query_args) => self.query(query_args),
             },
-            Err(e) => println!("invalid command {:?}", command),
+            // TODO: use error message from clap
+            Err(_e) => println!("invalid command {:?}", command),
         }
     }
 }
