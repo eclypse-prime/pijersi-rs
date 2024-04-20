@@ -156,19 +156,23 @@ impl UgiEngine {
                         println!("invalid argument {}", action_list[0]);
                     }
                     _ => {
-                        self.board.set_state(
+                        match self.board.set_state(
                             &fen_args.fen,
                             fen_args.player,
                             fen_args.half_move,
                             fen_args.full_move,
-                        );
-                        for action_string in action_list.iter().skip(1) {
-                            // TODO: rollback if err
-                            let result = self.board.play_from_string(action_string);
-                            match result {
-                                Ok(_v) => (),
-                                Err(e) => println!("info error \"{e}\""),
-                            }
+                        ) {
+                            Ok(_) => {
+                                for action_string in action_list.iter().skip(1) {
+                                    // TODO: rollback if err
+                                    let result = self.board.play_from_string(action_string);
+                                    match result {
+                                        Ok(_v) => (),
+                                        Err(e) => println!("info error \"{e}\""),
+                                    }
+                                }
+                            },
+                            Err(e) => println!("info error \"{e}\""),
                         }
                     }
                 }

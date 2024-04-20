@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use crate::errors::{IllegalActionError, StringParseError};
 use crate::logic::actions::play_action;
 use crate::logic::rules::is_action_legal;
@@ -131,8 +129,8 @@ impl Board {
             Ok(_v) => (),
             Err(e) => {
                 return Err(StringParseError::new(&format!(
-                    "Illegal board notation ({})",
-                    e
+                    "Illegal board notation '{}' ({})",
+                    cells_string, e
                 )));
             }
         }

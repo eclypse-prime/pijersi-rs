@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use crate::errors::{IllegalActionError, StringParseError};
+use crate::errors::StringParseError;
 
 use super::{
     movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL,
@@ -171,7 +171,7 @@ pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), S
     let cell_lines: Vec<&str> = cells_string.split('/').collect();
     if cell_lines.len() != 7 {
         Err(StringParseError::new(&format!(
-            "Invalid number of lines in board notation :{} (expected 7)",
+            "Invalid number of lines in board notation: {} (expected 7)",
             cell_lines.len()
         )))
     } else {
