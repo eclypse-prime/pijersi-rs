@@ -58,7 +58,7 @@ enum QueryArgs {
     Gameover,
     P1turn,
     Result,
-    Islegal { action: String },
+    Islegal { action_string: String },
     Fen,
 }
 
@@ -184,7 +184,7 @@ impl UgiEngine {
             QueryArgs::Gameover => {}
             QueryArgs::P1turn => {}
             QueryArgs::Result => {}
-            QueryArgs::Islegal { action } => {}
+            QueryArgs::Islegal { action_string } => {}
             QueryArgs::Fen => {}
         }
     }
@@ -192,7 +192,6 @@ impl UgiEngine {
     pub fn get_command(&mut self, command: &str) {
         let words: Vec<&str> = command.split_whitespace().collect();
         let parse_results = UgiParser::try_parse_from(words);
-        println!("{parse_results:?}");
 
         match parse_results {
             Ok(v) => match v.command {
@@ -204,8 +203,9 @@ impl UgiEngine {
                 Commands::Position(position_args) => self.position(position_args),
                 Commands::Query(query_args) => self.query(query_args),
             },
-            // TODO: use error message from clap
-            Err(_e) => println!("invalid command {:?}", command),
+            Err(e) => {
+                println!("info error \"{}\"", e.to_string().split('\n').next().unwrap());
+            },
         }
     }
 }
