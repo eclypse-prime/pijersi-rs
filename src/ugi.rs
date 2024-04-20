@@ -47,6 +47,9 @@ struct StartposArgs {
 #[derive(Args, Debug)]
 struct FenArgs {
     fen: String,
+    player: char,
+    half_move: usize,
+    full_move: usize,
     moves: Vec<String>,
 }
 
@@ -133,7 +136,11 @@ impl UgiEngine {
                         self.board.init();
                         for action_string in action_list.iter().skip(1) {
                             // TODO: rollback if err
-                            let _ = self.board.play_from_string(action_string);
+                            let result = self.board.play_from_string(action_string);
+                            match result {
+                                Ok(_v) => (),
+                                Err(e) => println!("info error \"{e}\""),
+                            }
                         }
                     }
                 }
@@ -141,9 +148,7 @@ impl UgiEngine {
             PositionArgs::Fen(fen_args) => {
                 let action_list: Vec<String> = fen_args.moves;
                 match action_list.len() {
-                    0 => {
-                        // string to state
-                    }
+                    0 => {}
                     1 => {
                         println!("invalid argument {}", action_list[0]);
                     }
@@ -151,10 +156,19 @@ impl UgiEngine {
                         println!("invalid argument {}", action_list[0]);
                     }
                     _ => {
-                        // string to state
+                        self.board.set_state(
+                            &fen_args.fen,
+                            fen_args.player,
+                            fen_args.half_move,
+                            fen_args.full_move,
+                        );
                         for action_string in action_list.iter().skip(1) {
                             // TODO: rollback if err
-                            let _ = self.board.play_from_string(action_string);
+                            let result = self.board.play_from_string(action_string);
+                            match result {
+                                Ok(_v) => (),
+                                Err(e) => println!("info error \"{e}\""),
+                            }
                         }
                     }
                 }

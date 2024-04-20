@@ -1,11 +1,43 @@
 use regex::Regex;
 
+use crate::errors::{IllegalActionError, StringParseError};
+
 use super::{
-    movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, INDEX_MASK, INDEX_NULL, INDEX_WIDTH,
-    STACK_THRESHOLD,
+    movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL,
+    INDEX_WIDTH, STACK_THRESHOLD,
 };
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
+
+pub fn char_to_piece(piece_char: char) -> Option<u8> {
+    match piece_char {
+        '-' => Some(0x00),
+        'S' => Some(0x01),
+        'P' => Some(0x05),
+        'R' => Some(0x09),
+        'W' => Some(0x0D),
+        's' => Some(0x03),
+        'p' => Some(0x07),
+        'r' => Some(0x0B),
+        'w' => Some(0x0F),
+        _ => None,
+    }
+}
+
+pub fn piece_to_char(piece: u8) -> Option<char> {
+    match piece {
+        0x00 => Some('-'),
+        0x01 => Some('S'),
+        0x05 => Some('P'),
+        0x09 => Some('R'),
+        0x0D => Some('W'),
+        0x03 => Some('s'),
+        0x07 => Some('p'),
+        0x0B => Some('r'),
+        0x0F => Some('w'),
+        _ => None,
+    }
+}
 
 /// Converts a (i, j) coordinate set to an index.
 pub fn coords_to_index(i: usize, j: usize) -> usize {
@@ -68,11 +100,14 @@ pub fn index_to_string(index: usize) -> String {
 }
 
 /// Converts a string (a1b1c1 style) move to the native triple-index format.
-pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> u64 {
+pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, StringParseError> {
     let action_pattern = Regex::new(r"(\w\d)(\w\d)?(\w\d)").unwrap();
 
     let Some(action_captures) = action_pattern.captures(action_string) else {
-        panic!("Unknown action string '{action_string}'")
+        return Err(StringParseError::new(&format!(
+            "Unknown action string '{}'",
+            action_string
+        )));
     };
 
     let index_start: usize = action_captures.get(1).map_or_else(
@@ -98,7 +133,7 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> u64 {
         index_mid = INDEX_NULL;
     }
 
-    concatenate_action(index_start, index_mid, index_end)
+    Ok(concatenate_action(index_start, index_mid, index_end))
 }
 
 /// Converts a native triple-index move into the string (a1b1c1 style) format.
@@ -130,4 +165,41 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
     };
 
     format!("{action_string_start}{action_string_mid}{action_string_end}")
+}
+
+pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), StringParseError> {
+    let cell_lines: Vec<&str> = cells_string.split('/').collect();
+    if cell_lines.len() != 7 {
+        Err(StringParseError::new(&format!(
+            "Invalid number of lines in board notation :{} (expected 7)",
+            cell_lines.len()
+        )))
+    } else {
+        let mut cursor: usize = 0;
+        let mut new_cells: [u8; 45] = [0; 45];
+        for i in 0..7 {
+            let mut j: usize = 0;
+            while j < cell_lines[i].chars().count() {
+                if char_to_piece(cell_lines[i].chars().nth(j).unwrap()).is_some() {
+                    if cell_lines[i].chars().nth(j + 1).unwrap() != '-' {
+                        new_cells[cursor] =
+                            char_to_piece(cell_lines[i].chars().nth(j + 1).unwrap()).unwrap()
+                                | (char_to_piece(cell_lines[i].chars().nth(j).unwrap()).unwrap()
+                                    << HALF_PIECE_WIDTH);
+                    } else {
+                        new_cells[cursor] =
+                            char_to_piece(cell_lines[i].chars().nth(j).unwrap()).unwrap();
+                    }
+                    j += 2;
+                    cursor += 1;
+                } else {
+                    let jump = cell_lines[i].chars().nth(j).unwrap().to_digit(10).unwrap() as usize;
+                    j += 1;
+                    cursor += jump;
+                }
+            }
+        }
+        *cells = new_cells;
+        Ok(())
+    }
 }

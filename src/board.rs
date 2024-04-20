@@ -1,9 +1,9 @@
 use std::error::Error;
 
-use crate::errors::IllegalActionError;
+use crate::errors::{IllegalActionError, StringParseError};
 use crate::logic::actions::play_action;
 use crate::logic::rules::is_action_legal;
-use crate::logic::translate::string_to_action;
+use crate::logic::translate::{string_to_action, string_to_cells};
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_to_depth;
 
@@ -15,6 +15,8 @@ use crate::search::alphabeta::search_to_depth;
 pub struct Board {
     pub cells: [u8; 45],
     pub current_player: u8,
+    pub half_move: usize,
+    pub full_move: usize,
 }
 
 impl Default for Board {
@@ -29,6 +31,8 @@ impl Board {
         Self {
             cells: [0u8; 45],
             current_player: 0u8,
+            half_move: 0usize,
+            full_move: 0usize,
         }
     }
 
@@ -116,14 +120,55 @@ impl Board {
         search_to_depth(&self.cells, self.current_player, depth)
     }
 
+    pub fn set_state(
+        &mut self,
+        cells_string: &str,
+        player: char,
+        half_move: usize,
+        full_move: usize,
+    ) -> Result<(), StringParseError> {
+        match string_to_cells(&mut self.cells, cells_string) {
+            Ok(_v) => (),
+            Err(e) => {
+                return Err(StringParseError::new(&format!(
+                    "Illegal board notation ({})",
+                    e
+                )));
+            }
+        }
+        match {
+            match player {
+                'w' => Some(0u8),
+                'b' => Some(1u8),
+                _ => None,
+            }
+        } {
+            Some(current_player) => {
+                self.current_player = current_player;
+            }
+            None => {
+                return Err(StringParseError::new(&format!("Unknown player {}", player)));
+            }
+        }
+        self.half_move = half_move;
+        self.full_move = full_move;
+        Ok(())
+    }
+
     /// Plays the chosen action provided in string representation.
     pub fn play_from_string(&mut self, action_string: &str) -> Result<(), IllegalActionError> {
-        let action = string_to_action(&self.cells, action_string);
-        match self.play(action) {
-            Ok(v) => Ok(v),
-            Err(_e) => Err(IllegalActionError::new(&format!(
-                "Illegal action: {}",
-                action_string
+        let action_result = string_to_action(&self.cells, action_string);
+        match action_result {
+            Ok(action) => match self.play(action) {
+                Ok(v) => Ok(v),
+                Err(_e) => Err(IllegalActionError::new(&format!(
+                    "Illegal action: {}",
+                    action_string
+                ))),
+            },
+            Err(e) => Err(IllegalActionError::new(&format!(
+                "Illegal action, could not parse '{}' ({})",
+                action_string, e
             ))),
         }
     }

@@ -1,6 +1,6 @@
 use core::fmt;
-use std::error::Error;
 
+/// An error that can be returned when attempting to play an illegal action.
 #[derive(Debug)]
 pub struct IllegalActionError {
     message: String,
@@ -20,8 +20,22 @@ impl fmt::Display for IllegalActionError {
     }
 }
 
-impl Error for IllegalActionError {
-    fn description(&self) -> &str {
-        &self.message
+/// An error that can be returned when attempting to convert from an illegal FEN string.
+#[derive(Debug)]
+pub struct StringParseError {
+    message: String,
+}
+
+impl StringParseError {
+    pub fn new(msg: &str) -> StringParseError {
+        StringParseError {
+            message: msg.to_owned(),
+        }
+    }
+}
+
+impl fmt::Display for StringParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.message)
     }
 }
