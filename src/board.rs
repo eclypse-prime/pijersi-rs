@@ -1,4 +1,8 @@
+use std::error::Error;
+
+use crate::errors::IllegalActionError;
 use crate::logic::actions::play_action;
+use crate::logic::rules::is_action_legal;
 use crate::logic::translate::string_to_action;
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_to_depth;
@@ -113,14 +117,25 @@ impl Board {
     }
 
     /// Plays the chosen action provided in string representation.
-    pub fn play_from_string(&mut self, action_string: &str) {
+    pub fn play_from_string(&mut self, action_string: &str) -> Result<(), IllegalActionError> {
         let action = string_to_action(&self.cells, action_string);
-        self.play(action);
+        match self.play(action) {
+            Ok(v) => Ok(v),
+            Err(_e) => Err(IllegalActionError::new(&format!(
+                "Illegal action: {}",
+                action_string
+            ))),
+        }
     }
 
     /// Plays the chosen action provided in u64 representation.
-    pub fn play(&mut self, action: u64) {
-        play_action(&mut self.cells, action);
-        self.current_player = 1 - self.current_player;
+    pub fn play(&mut self, action: u64) -> Result<(), IllegalActionError> {
+        if is_action_legal(&self.cells, self.current_player, action) {
+            play_action(&mut self.cells, action);
+            self.current_player = 1 - self.current_player;
+            Ok(())
+        } else {
+            Err(IllegalActionError::new("Illegal action"))
+        }
     }
 }

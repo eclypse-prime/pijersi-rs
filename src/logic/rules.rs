@@ -1,6 +1,7 @@
 use super::{
-    CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH, STACK_THRESHOLD,
-    TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE,
+    movegen::available_player_actions, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE,
+    INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK,
+    TYPE_SCISSORS, TYPE_WISE,
 };
 
 /// Returns whether an attacker piece can capture a target piece.
@@ -110,4 +111,14 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
         return true;
     }
     false
+}
+
+/// Returns true if the given action is legal
+pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> bool {
+    let available_actions: [u64; 512] = available_player_actions(cells, current_player);
+    let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+    available_actions
+        .iter()
+        .take(n_actions)
+        .any(|&available_action| available_action == action)
 }

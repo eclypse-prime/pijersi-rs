@@ -70,7 +70,7 @@ pub fn evaluate_action(
         };
     }
 
-    let available_actions: [u64; 512] = available_player_actions(current_player, &new_cells);
+    let available_actions: [u64; 512] = available_player_actions(&new_cells, current_player);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
 
     let mut score = i64::MIN;

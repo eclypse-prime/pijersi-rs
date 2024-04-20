@@ -1,4 +1,5 @@
 pub mod board;
+pub mod errors;
 pub mod logic;
 pub mod piece;
 pub mod search;

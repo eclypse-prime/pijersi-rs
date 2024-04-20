@@ -16,7 +16,7 @@ pub fn search_to_depth(cells: &[u8; 45], current_player: u8, depth: u64) -> Opti
     }
 
     // Get an array of all the available moves for the current player, the last element of the array is the number of available moves
-    let available_actions: [u64; 512] = available_player_actions(current_player, cells);
+    let available_actions: [u64; 512] = available_player_actions(cells, current_player);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
 
     if n_actions == 0 {

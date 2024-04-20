@@ -18,7 +18,7 @@ pub fn concatenate_half_action(half_action: u64, index_end: usize) -> u64 {
 
 /// Returns the possible moves for a player.
 /// The result is a size MAX_PLAYER_ACTIONS array of u64 where the last element is the number of actions.
-pub fn available_player_actions(current_player: u8, cells: &[u8; 45]) -> [u64; MAX_PLAYER_ACTIONS] {
+pub fn available_player_actions(cells: &[u8; 45], current_player: u8) -> [u64; MAX_PLAYER_ACTIONS] {
     let mut player_actions: [u64; MAX_PLAYER_ACTIONS] = [0u64; MAX_PLAYER_ACTIONS];
 
     // Calculate possible player_actions
