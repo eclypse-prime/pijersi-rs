@@ -54,8 +54,8 @@ struct StartposArgs {
 struct FenArgs {
     fen: String,
     player: char,
-    half_move: usize,
-    full_move: usize,
+    half_moves: u64,
+    full_moves: u64,
     moves: Vec<String>,
 }
 
@@ -140,6 +140,7 @@ impl UgiEngine {
                     }
                     _ => {
                         self.board.init();
+                        // TODO: make function (duplicate code)
                         for action_string in action_list.iter().skip(1) {
                             // TODO: rollback if err
                             let result = self.board.play_from_string(action_string);
@@ -165,10 +166,11 @@ impl UgiEngine {
                         match self.board.set_state(
                             &fen_args.fen,
                             fen_args.player,
-                            fen_args.half_move,
-                            fen_args.full_move,
+                            fen_args.half_moves,
+                            fen_args.full_moves,
                         ) {
                             Ok(_) => {
+                                // TODO: make function (duplicate code)
                                 for action_string in action_list.iter().skip(1) {
                                     // TODO: rollback if err
                                     let result = self.board.play_from_string(action_string);
@@ -187,21 +189,54 @@ impl UgiEngine {
     }
     fn query(&self, query_args: QueryArgs) {
         match query_args {
-            QueryArgs::Gameover => {}
-            QueryArgs::P1turn => {}
-            QueryArgs::Result => {}
+            QueryArgs::Gameover => {
+                if self.board.is_win() || self.board.is_draw() {
+                    println!("response true");
+                } else {
+                    println!("response false");
+                }
+            }
+            QueryArgs::P1turn => {
+                if self.board.current_player == 0 {
+                    println!("response true");
+                } else {
+                    println!("response false");
+                }
+            }
+            QueryArgs::Result => {
+                if self.board.is_win() {
+                    let winner = self.board.get_winner();
+                    match winner {
+                        Some(0) => {
+                            println!("response p1win");
+                        },
+                        Some(1) => {
+                            println!("response p2win");
+                        },
+                        _ => {
+                            println!("response none");
+                        }
+                    };
+                }
+                else if self.board.is_draw() {
+                    println!("response draw");
+                }
+                else {
+                    println!("response none");
+                }
+            }
             QueryArgs::Islegal { action_string } => {
                 let action_result = string_to_action(&self.board.cells, &action_string);
                 match action_result {
                     Ok(action) => {
                         if is_action_legal(&self.board.cells, self.board.current_player, action) {
-                            println!("true");
+                            println!("response true");
                         } else {
-                            println!("false");
+                            println!("response false");
                         }
                     }
                     Err(_) => {
-                        println!("false")
+                        println!("response false");
                     }
                 }
             }

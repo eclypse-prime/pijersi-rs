@@ -1,7 +1,8 @@
 use crate::errors::{IllegalActionError, StringParseError};
 use crate::logic::actions::play_action;
-use crate::logic::rules::is_action_legal;
+use crate::logic::rules::{get_winning_player, is_action_legal, is_position_stalemate, is_position_win};
 use crate::logic::translate::{cells_to_string, string_to_action, string_to_cells};
+use crate::logic::STACK_THRESHOLD;
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_to_depth;
 
@@ -13,8 +14,9 @@ use crate::search::alphabeta::search_to_depth;
 pub struct Board {
     pub cells: [u8; 45],
     pub current_player: u8,
-    pub half_move: usize,
-    pub full_move: usize,
+    half_moves: u64,
+    full_moves: u64,
+    last_piece_count: u64,
 }
 
 impl Default for Board {
@@ -29,8 +31,9 @@ impl Board {
         Self {
             cells: [0u8; 45],
             current_player: 0u8,
-            half_move: 0usize,
-            full_move: 0usize,
+            half_moves: 0u64,
+            full_moves: 0u64,
+            last_piece_count: 0u64,
         }
     }
 
@@ -123,8 +126,8 @@ impl Board {
         format!(
             "{cells_string} {} {} {}",
             if self.current_player == 0 { "w" } else { "b" },
-            self.half_move,
-            self.full_move
+            self.half_moves,
+            self.full_moves
         )
     }
 
@@ -132,8 +135,8 @@ impl Board {
         &mut self,
         cells_string: &str,
         player: char,
-        half_move: usize,
-        full_move: usize,
+        half_moves: u64,
+        full_moves: u64,
     ) -> Result<(), StringParseError> {
         match string_to_cells(&mut self.cells, cells_string) {
             Ok(_v) => (),
@@ -156,8 +159,8 @@ impl Board {
                 return Err(StringParseError::new(&format!("Unknown player {}", player)));
             }
         }
-        self.half_move = half_move;
-        self.full_move = full_move;
+        self.half_moves = half_moves;
+        self.full_moves = full_moves;
         Ok(())
     }
 
@@ -183,10 +186,39 @@ impl Board {
     pub fn play(&mut self, action: u64) -> Result<(), IllegalActionError> {
         if is_action_legal(&self.cells, self.current_player, action) {
             play_action(&mut self.cells, action);
+            if self.current_player == 1 {
+                self.full_moves += 1;
+            }
             self.current_player = 1 - self.current_player;
+            let piece_count = self.count_pieces();
+            if self.last_piece_count != piece_count {
+                self.last_piece_count = piece_count;
+                self.half_moves = 0;
+            } else {
+                self.half_moves += 1;
+            }
             Ok(())
         } else {
             Err(IllegalActionError::new("Illegal action"))
         }
+    }
+
+    pub fn count_pieces(&self) -> u64 {
+        self.cells
+            .iter()
+            .map(|&piece| if piece >= STACK_THRESHOLD { 2 } else { 1 })
+            .sum()
+    }
+
+    pub fn is_win(&self) -> bool {
+        is_position_win(&self.cells) || is_position_stalemate(&self.cells, self.current_player)
+    }
+
+    pub fn is_draw(&self) -> bool {
+        self.half_moves >= 20
+    }
+
+    pub fn get_winner(&self) -> Option<u8> {
+        get_winning_player(&self.cells)
     }
 }
