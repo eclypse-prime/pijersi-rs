@@ -170,7 +170,7 @@ impl UgiEngine {
                                         Err(e) => println!("info error \"{e}\""),
                                     }
                                 }
-                            },
+                            }
                             Err(e) => println!("info error \"{e}\""),
                         }
                     }
@@ -184,15 +184,15 @@ impl UgiEngine {
             QueryArgs::P1turn => {}
             QueryArgs::Result => {}
             QueryArgs::Islegal { action_string } => {}
-            QueryArgs::Fen => {}
+            QueryArgs::Fen => {
+                println!("{}", self.board.get_state())
+            }
         }
     }
 
     pub fn get_command(&mut self, command: &str) {
         let words: Vec<&str> = command.split_whitespace().collect();
         let parse_results = UgiParser::try_parse_from(words);
-
-
 
         match parse_results {
             Ok(v) => match v.command {
@@ -205,8 +205,11 @@ impl UgiEngine {
                 Commands::Query(query_args) => self.query(query_args),
             },
             Err(e) => {
-                println!("info error \"{}\"", e.to_string().split('\n').next().unwrap());
-            },
+                println!(
+                    "info error \"{}\"",
+                    e.to_string().split('\n').next().unwrap()
+                );
+            }
         }
     }
 }

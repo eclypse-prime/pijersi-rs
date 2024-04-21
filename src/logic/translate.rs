@@ -4,14 +4,15 @@ use crate::errors::StringParseError;
 
 use super::{
     movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL,
-    INDEX_WIDTH, STACK_THRESHOLD,
+    INDEX_WIDTH, STACK_THRESHOLD, TOP_MASK,
 };
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
+// TODO: create consts for piece values
 pub fn char_to_piece(piece_char: char) -> Option<u8> {
     match piece_char {
-        '-' => Some(0x00),
+        '-' => Some(CELL_EMPTY),
         'S' => Some(0x01),
         'P' => Some(0x05),
         'R' => Some(0x09),
@@ -24,9 +25,10 @@ pub fn char_to_piece(piece_char: char) -> Option<u8> {
     }
 }
 
+// TODO: create consts for piece values
 pub fn piece_to_char(piece: u8) -> Option<char> {
     match piece {
-        0x00 => Some('-'),
+        CELL_EMPTY => Some('-'),
         0x01 => Some('S'),
         0x05 => Some('P'),
         0x09 => Some('R'),
@@ -177,23 +179,23 @@ pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), S
     } else {
         let mut cursor: usize = 0;
         let mut new_cells: [u8; 45] = [0; 45];
-        for i in 0..7 {
+        for &cell_line in cell_lines.iter() {
             let mut j: usize = 0;
-            while j < cell_lines[i].chars().count() {
-                if char_to_piece(cell_lines[i].chars().nth(j).unwrap()).is_some() {
-                    if cell_lines[i].chars().nth(j + 1).unwrap() != '-' {
-                        new_cells[cursor] =
-                            char_to_piece(cell_lines[i].chars().nth(j + 1).unwrap()).unwrap()
-                                | (char_to_piece(cell_lines[i].chars().nth(j).unwrap()).unwrap()
-                                    << HALF_PIECE_WIDTH);
+            while j < cell_line.chars().count() {
+                if char_to_piece(cell_line.chars().nth(j).unwrap()).is_some() {
+                    if cell_line.chars().nth(j + 1).unwrap() != '-' {
+                        new_cells[cursor] = char_to_piece(cell_line.chars().nth(j + 1).unwrap())
+                            .unwrap()
+                            | (char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap()
+                                << HALF_PIECE_WIDTH);
                     } else {
                         new_cells[cursor] =
-                            char_to_piece(cell_lines[i].chars().nth(j).unwrap()).unwrap();
+                            char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap();
                     }
                     j += 2;
                     cursor += 1;
                 } else {
-                    let jump = cell_lines[i].chars().nth(j).unwrap().to_digit(10).unwrap() as usize;
+                    let jump = cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as usize;
                     j += 1;
                     cursor += jump;
                 }
@@ -202,4 +204,39 @@ pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), S
         *cells = new_cells;
         Ok(())
     }
+}
+
+pub fn cells_to_string(cells: &[u8; 45]) -> String {
+    let mut cells_string = "".to_owned();
+    for i in 0..7usize {
+        let n_columns: usize = if i % 2 == 0 { 6 } else { 7 };
+        let mut counter: usize = 0;
+        for j in 0..n_columns {
+            let piece = cells[coords_to_index(i, j)];
+            if piece == CELL_EMPTY {
+                counter += 1;
+            } else {
+                if counter > 0 {
+                    cells_string += &counter.to_string();
+                    counter = 0;
+                }
+                if piece >= STACK_THRESHOLD {
+                    cells_string += &piece_to_char(piece >> HALF_PIECE_WIDTH)
+                        .unwrap()
+                        .to_string();
+                    cells_string += &piece_to_char(piece & TOP_MASK).unwrap().to_string();
+                } else {
+                    cells_string += &piece_to_char(piece).unwrap().to_string();
+                    cells_string += "-";
+                }
+            }
+        }
+        if counter > 0 {
+            cells_string += &counter.to_string();
+        }
+        if i < 6 {
+            cells_string += "/";
+        }
+    }
+    cells_string
 }

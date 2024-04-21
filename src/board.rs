@@ -1,7 +1,7 @@
 use crate::errors::{IllegalActionError, StringParseError};
 use crate::logic::actions::play_action;
 use crate::logic::rules::is_action_legal;
-use crate::logic::translate::{string_to_action, string_to_cells};
+use crate::logic::translate::{cells_to_string, string_to_action, string_to_cells};
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_to_depth;
 
@@ -116,6 +116,16 @@ impl Board {
     /// Searches and returns the best action at a given depth
     pub fn search_to_depth(&self, depth: u64) -> Option<u64> {
         search_to_depth(&self.cells, self.current_player, depth)
+    }
+
+    pub fn get_state(&self) -> String {
+        let cells_string = cells_to_string(&self.cells);
+        format!(
+            "{cells_string} {} {} {}",
+            if self.current_player == 0 { "w" } else { "b" },
+            self.half_move,
+            self.full_move
+        )
     }
 
     pub fn set_state(
