@@ -172,5 +172,5 @@ pub fn get_winning_player(cells: &[u8; 45]) -> Option<u8> {
             }
         }
     }
-    return None
+    None
 }
