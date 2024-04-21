@@ -1,4 +1,3 @@
-use std::cell;
 
 use super::{
     movegen::available_player_actions, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE,
