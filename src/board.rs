@@ -1,6 +1,8 @@
 use crate::errors::{IllegalActionError, StringParseError};
 use crate::logic::actions::play_action;
-use crate::logic::rules::{get_winning_player, is_action_legal, is_position_stalemate, is_position_win};
+use crate::logic::rules::{
+    get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
+};
 use crate::logic::translate::{cells_to_string, string_to_action, string_to_cells};
 use crate::logic::STACK_THRESHOLD;
 use crate::piece::{init_piece, PieceColour, PieceType};

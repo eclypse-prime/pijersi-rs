@@ -209,19 +209,17 @@ impl UgiEngine {
                     match winner {
                         Some(0) => {
                             println!("response p1win");
-                        },
+                        }
                         Some(1) => {
                             println!("response p2win");
-                        },
+                        }
                         _ => {
                             println!("response none");
                         }
                     };
-                }
-                else if self.board.is_draw() {
+                } else if self.board.is_draw() {
                     println!("response draw");
-                }
-                else {
+                } else {
                     println!("response none");
                 }
             }
