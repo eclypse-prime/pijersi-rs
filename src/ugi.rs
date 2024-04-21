@@ -2,7 +2,14 @@ use std::process::exit;
 
 use clap::{Args, Parser, Subcommand};
 
-use crate::{board::Board, logic::translate::action_to_string, AUTHOR_NAME, ENGINE_NAME};
+use crate::{
+    board::Board,
+    logic::{
+        rules::is_action_legal,
+        translate::{action_to_string, string_to_action},
+    },
+    AUTHOR_NAME, ENGINE_NAME,
+};
 
 #[derive(Parser, Debug)]
 #[command(no_binary_name(true))]
@@ -183,7 +190,21 @@ impl UgiEngine {
             QueryArgs::Gameover => {}
             QueryArgs::P1turn => {}
             QueryArgs::Result => {}
-            QueryArgs::Islegal { action_string } => {}
+            QueryArgs::Islegal { action_string } => {
+                let action_result = string_to_action(&self.board.cells, &action_string);
+                match action_result {
+                    Ok(action) => {
+                        if is_action_legal(&self.board.cells, self.board.current_player, action) {
+                            println!("true");
+                        } else {
+                            println!("false");
+                        }
+                    }
+                    Err(_) => {
+                        println!("false")
+                    }
+                }
+            }
             QueryArgs::Fen => {
                 println!("{}", self.board.get_state())
             }

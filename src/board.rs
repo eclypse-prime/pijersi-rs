@@ -167,7 +167,7 @@ impl Board {
         match action_result {
             Ok(action) => match self.play(action) {
                 Ok(v) => Ok(v),
-                Err(_e) => Err(IllegalActionError::new(&format!(
+                Err(_) => Err(IllegalActionError::new(&format!(
                     "Illegal action: {}",
                     action_string
                 ))),
