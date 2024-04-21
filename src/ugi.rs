@@ -4,7 +4,6 @@ use clap::{Args, Parser, Subcommand};
 
 use crate::{board::Board, logic::translate::action_to_string, AUTHOR_NAME, ENGINE_NAME};
 
-// TODO: make private
 #[derive(Parser, Debug)]
 #[command(no_binary_name(true))]
 struct UgiParser {
@@ -192,6 +191,8 @@ impl UgiEngine {
     pub fn get_command(&mut self, command: &str) {
         let words: Vec<&str> = command.split_whitespace().collect();
         let parse_results = UgiParser::try_parse_from(words);
+
+
 
         match parse_results {
             Ok(v) => match v.command {

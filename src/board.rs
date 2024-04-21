@@ -134,12 +134,10 @@ impl Board {
                 )));
             }
         }
-        match {
-            match player {
-                'w' => Some(0u8),
-                'b' => Some(1u8),
-                _ => None,
-            }
+        match match player {
+            'w' => Some(0u8),
+            'b' => Some(1u8),
+            _ => None,
         } {
             Some(current_player) => {
                 self.current_player = current_player;
