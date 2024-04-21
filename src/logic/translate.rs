@@ -107,8 +107,7 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, St
 
     let Some(action_captures) = action_pattern.captures(action_string) else {
         return Err(StringParseError::new(&format!(
-            "Unknown action string '{}'",
-            action_string
+            "Unknown action string '{action_string}'"
         )));
     };
 
@@ -145,7 +144,7 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
     let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
 
     if index_start == INDEX_NULL {
-        return "".to_string();
+        return String::new();
     }
 
     let action_string_start: String = index_to_string(index_start);
@@ -155,13 +154,13 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
         if cells[index_start] >= STACK_THRESHOLD {
             index_to_string(index_end)
         } else {
-            "".to_string()
+            String::new()
         }
     } else if index_mid != INDEX_NULL
         && index_start == index_mid
         && cells[index_start] < STACK_THRESHOLD
     {
-        "".to_string()
+        String::new()
     } else {
         index_to_string(index_mid)
     };
@@ -179,7 +178,7 @@ pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), S
     } else {
         let mut cursor: usize = 0;
         let mut new_cells: [u8; 45] = [0; 45];
-        for &cell_line in cell_lines.iter() {
+        for &cell_line in &cell_lines {
             let mut j: usize = 0;
             while j < cell_line.chars().count() {
                 if char_to_piece(cell_line.chars().nth(j).unwrap()).is_some() {
@@ -207,7 +206,7 @@ pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), S
 }
 
 pub fn cells_to_string(cells: &[u8; 45]) -> String {
-    let mut cells_string = "".to_owned();
+    let mut cells_string = String::new();
     for i in 0..7usize {
         let n_columns: usize = if i % 2 == 0 { 6 } else { 7 };
         let mut counter: usize = 0;

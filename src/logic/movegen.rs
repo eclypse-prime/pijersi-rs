@@ -17,7 +17,7 @@ pub fn concatenate_half_action(half_action: u64, index_end: usize) -> u64 {
 }
 
 /// Returns the possible moves for a player.
-/// The result is a size MAX_PLAYER_ACTIONS array of u64 where the last element is the number of actions.
+/// The result is a size `MAX_PLAYER_ACTIONS` array of u64 where the last element is the number of actions.
 pub fn available_player_actions(cells: &[u8; 45], current_player: u8) -> [u64; MAX_PLAYER_ACTIONS] {
     let mut player_actions: [u64; MAX_PLAYER_ACTIONS] = [0u64; MAX_PLAYER_ACTIONS];
 
@@ -34,7 +34,7 @@ pub fn available_player_actions(cells: &[u8; 45], current_player: u8) -> [u64; M
 }
 
 /// Calculates the possible moves for a player.
-/// The result is stored in a size MAX_PLAYER_ACTIONS array of u64 where the last element is the number of actions.
+/// The result is stored in a size `MAX_PLAYER_ACTIONS` array of u64 where the last element is the number of actions.
 /// This array is passed in parameter and modified by this function.
 #[inline]
 fn available_piece_actions(
@@ -94,7 +94,7 @@ fn available_piece_actions(
             // 1-range move
             else if can_move1(cells, piece_start, index_mid) {
                 player_actions[index_actions] =
-                    concatenate_action(index_start, 0x000000FF, index_mid);
+                    concatenate_action(index_start, 0x0000_00FF, index_mid);
                 index_actions += 1;
             }
         }

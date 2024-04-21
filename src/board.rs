@@ -144,8 +144,7 @@ impl Board {
             Ok(_v) => (),
             Err(e) => {
                 return Err(StringParseError::new(&format!(
-                    "Illegal board notation '{}' ({})",
-                    cells_string, e
+                    "Illegal board notation '{cells_string}' ({e})"
                 )));
             }
         }
@@ -158,7 +157,7 @@ impl Board {
                 self.current_player = current_player;
             }
             None => {
-                return Err(StringParseError::new(&format!("Unknown player {}", player)));
+                return Err(StringParseError::new(&format!("Unknown player {player}")));
             }
         }
         self.half_moves = half_moves;
@@ -173,13 +172,11 @@ impl Board {
             Ok(action) => match self.play(action) {
                 Ok(v) => Ok(v),
                 Err(_) => Err(IllegalActionError::new(&format!(
-                    "Illegal action: {}",
-                    action_string
+                    "Illegal action: {action_string}"
                 ))),
             },
             Err(e) => Err(IllegalActionError::new(&format!(
-                "Illegal action, could not parse '{}' ({})",
-                action_string, e
+                "Illegal action, could not parse '{action_string}' ({e})"
             ))),
         }
     }

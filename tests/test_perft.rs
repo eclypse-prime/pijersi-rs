@@ -9,7 +9,7 @@ fn test_perft_iter() {
     board.init();
     assert_eq!(perft_iter(&board.cells, board.current_player, 1), 186);
     assert_eq!(perft_iter(&board.cells, board.current_player, 2), 34054);
-    assert_eq!(perft_iter(&board.cells, board.current_player, 3), 6410472);
+    assert_eq!(perft_iter(&board.cells, board.current_player, 3), 6_410_472);
 }
 
 #[test]
@@ -18,8 +18,8 @@ fn test_perft() {
     board.init();
     assert_eq!(perft(&board.cells, board.current_player, 1), 186);
     assert_eq!(perft(&board.cells, board.current_player, 2), 34054);
-    assert_eq!(perft(&board.cells, board.current_player, 3), 6410472);
-    assert_eq!(perft(&board.cells, board.current_player, 4), 1181445032);
+    assert_eq!(perft(&board.cells, board.current_player, 3), 6_410_472);
+    assert_eq!(perft(&board.cells, board.current_player, 4), 1_181_445_032);
 }
 
 #[test]
@@ -45,13 +45,13 @@ fn test_perft_split() {
             .iter()
             .map(|result| result.2)
             .sum::<u64>(),
-        6410472
+        6_410_472
     );
     assert_eq!(
         perft_split(&board.cells, board.current_player, 4)
             .iter()
             .map(|result| result.2)
             .sum::<u64>(),
-        1181445032
+        1_181_445_032
     );
 }

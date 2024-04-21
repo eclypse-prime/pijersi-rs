@@ -76,7 +76,7 @@ pub fn play_action(cells: &mut [u8; 45], action: u64) {
             // The end coordinates contain an enemy or no piece : move and unstack
             else {
                 do_move(cells, index_start, index_mid);
-                do_unstack(cells, index_mid, index_end)
+                do_unstack(cells, index_mid, index_end);
             }
         }
     }

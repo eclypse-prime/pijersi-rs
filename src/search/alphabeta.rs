@@ -7,7 +7,7 @@ use super::super::logic::{movegen::available_player_actions, MAX_PLAYER_ACTIONS}
 
 use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_with_details};
 
-pub const BASE_BETA: i64 = 262144;
+pub const BASE_BETA: i64 = 262_144;
 
 /// Returns the best move at a given depth
 pub fn search_to_depth(cells: &[u8; 45], current_player: u8, depth: u64) -> Option<u64> {

@@ -21,7 +21,7 @@ pub enum PieceType {
     Wise,
 }
 
-/// Creates a uint representation piece from a PieceColour and PieceType.
+/// Creates a uint representation piece from a `PieceColour` and `PieceType`.
 pub fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> u8 {
     let colour_uint: u8 = match piece_colour {
         PieceColour::White => 0b0000,
@@ -36,7 +36,7 @@ pub fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> u8 {
     0b0001 | colour_uint | type_uint
 }
 
-/// Creates a uint representation complete piece (top and bottom) from a PieceColour and the top and bottom PieceType.
+/// Creates a uint representation complete piece (top and bottom) from a `PieceColour` and the top and bottom `PieceType`.
 pub fn init_piece(
     piece_colour: PieceColour,
     bottom_type: Option<PieceType>,

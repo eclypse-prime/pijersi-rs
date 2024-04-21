@@ -86,8 +86,8 @@ impl UgiEngine {
     }
 
     fn ugi(&self) {
-        println!("id name {}", ENGINE_NAME);
-        println!("id author {}", AUTHOR_NAME);
+        println!("id name {ENGINE_NAME}");
+        println!("id author {AUTHOR_NAME}");
         println!("ugiok");
     }
 
@@ -169,7 +169,7 @@ impl UgiEngine {
                             fen_args.half_moves,
                             fen_args.full_moves,
                         ) {
-                            Ok(_) => {
+                            Ok(()) => {
                                 // TODO: make function (duplicate code)
                                 for action_string in action_list.iter().skip(1) {
                                     // TODO: rollback if err
@@ -239,7 +239,7 @@ impl UgiEngine {
                 }
             }
             QueryArgs::Fen => {
-                println!("{}", self.board.get_state())
+                println!("{}", self.board.get_state());
             }
         }
     }

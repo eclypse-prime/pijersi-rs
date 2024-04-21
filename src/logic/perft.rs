@@ -229,7 +229,7 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 ///
 /// Recursively counts the number of leaf nodes at the chosen depth.
 ///
-/// Separates the node count between all possible depth 1 moves and returns a vector of (action_string: String, action: u64, count: u64).
+/// Separates the node count between all possible depth 1 moves and returns a vector of (`action_string`: String, action: u64, count: u64).
 ///
 /// At depth 0, returns an empty vector.
 pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {

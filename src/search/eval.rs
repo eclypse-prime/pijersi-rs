@@ -9,7 +9,7 @@ use crate::logic::{
 };
 use crate::search::lookup::PIECE_SCORES;
 
-pub const MAX_SCORE: i64 = 524288;
+pub const MAX_SCORE: i64 = 524_288;
 
 #[inline]
 /// Returns the score of a single cell given its content and index.
