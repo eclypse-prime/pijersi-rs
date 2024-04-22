@@ -80,9 +80,11 @@ impl Default for UgiEngine {
 
 impl UgiEngine {
     pub fn new() -> Self {
-        Self {
+        let mut new_self = Self {
             board: Board::default(),
-        }
+        };
+        new_self.board.init();
+        new_self
     }
 
     fn ugi(&self) {
@@ -120,7 +122,14 @@ impl UgiEngine {
                 };
                 println!("bestmove {action_string}");
             }
-            GoArgs::Movetime { time } => {}
+            GoArgs::Movetime { time } => {
+                let action = self.board.search_to_time(time);
+                let action_string = match action {
+                    Some(action) => action_to_string(&self.board.cells, action),
+                    None => "------".to_owned(), // TODO: info null move
+                };
+                println!("bestmove {action_string}");
+            }
             GoArgs::Manual { action } => {}
         }
     }

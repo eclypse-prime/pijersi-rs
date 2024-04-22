@@ -1,7 +1,10 @@
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::atomic::{AtomicBool, AtomicI64};
+use std::time::Instant;
 
 use rayon::prelude::*;
+
+use crate::logic::translate::action_to_string;
 
 use super::super::logic::{movegen::available_player_actions, MAX_PLAYER_ACTIONS};
 
@@ -10,8 +13,12 @@ use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_w
 pub const BASE_BETA: i64 = 262_144;
 
 /// Returns the best move at a given depth
-pub fn search_to_depth(cells: &[u8; 45], current_player: u8, depth: u64) -> Option<u64> {
+pub fn search(cells: &[u8; 45], current_player: u8, depth: u64, end_time: Option<Instant>) -> Option<u64> {
     if depth == 0 {
+        return None;
+    }
+
+    if end_time.is_some() && Instant::now() > end_time.unwrap() {
         return None;
     }
 
@@ -66,6 +73,7 @@ pub fn search_to_depth(cells: &[u8; 45], current_player: u8, depth: u64) -> Opti
                             depth - 1,
                             -beta,
                             -alpha.load(Relaxed),
+                            end_time,
                         )
                     } else {
                         // Search with a null window
@@ -76,6 +84,7 @@ pub fn search_to_depth(cells: &[u8; 45], current_player: u8, depth: u64) -> Opti
                             depth - 1,
                             -alpha.load(Relaxed) - 1,
                             -alpha.load(Relaxed),
+                            end_time,
                         );
                         // If fail high, do the search with the full window
                         if alpha.load(Relaxed) < eval_null_window && eval_null_window < beta {
@@ -86,6 +95,7 @@ pub fn search_to_depth(cells: &[u8; 45], current_player: u8, depth: u64) -> Opti
                                 depth - 1,
                                 -beta,
                                 -alpha.load(Relaxed),
+                                end_time,
                             )
                         } else {
                             eval_null_window
@@ -104,9 +114,33 @@ pub fn search_to_depth(cells: &[u8; 45], current_player: u8, depth: u64) -> Opti
             .collect()
     };
 
+    if end_time.is_some() && Instant::now() > end_time.unwrap() {
+        return None;
+    }
+
     scores
         .iter()
         .enumerate()
         .max_by_key(|(_index, &score)| score)
         .map(|(index_best_move, _score)| available_actions[index_best_move])
+}
+
+pub fn search_iterative(cells: &[u8; 45], current_player: u8, max_depth: u64, end_time: Option<Instant>) -> Option<u64> {
+    let mut best_action: Option<u64> = None;
+    for depth in 1..=max_depth {
+        let start_time = Instant::now();
+        if end_time.is_some() && Instant::now() > end_time.unwrap() {
+            break;
+        }
+        let proposed_action = search(cells, current_player, depth, end_time);
+        let duration: f64 = start_time.elapsed().as_micros() as f64 / 1000f64;
+        match proposed_action {
+            None => (),
+            Some(action) => {
+                let action_string = action_to_string(cells, action);
+                println!("info depth {depth} time {duration} score *** pv {action_string}");
+                best_action = Some(action);}
+        }
+    }
+    best_action
 }

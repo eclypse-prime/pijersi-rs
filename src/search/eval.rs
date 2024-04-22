@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::time::Instant;
 
 use crate::logic::actions::play_action;
 use crate::logic::lookup::PIECE_TO_INDEX;
@@ -47,6 +48,7 @@ pub fn evaluate_action(
     depth: u64,
     alpha: i64,
     beta: i64,
+    end_time: Option<Instant>,
 ) -> i64 {
     let index_start: usize = (action & INDEX_MASK) as usize;
     let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
@@ -68,6 +70,10 @@ pub fn evaluate_action(
         } else {
             -evaluate_position(&new_cells)
         };
+    }
+
+    if end_time.is_some() && Instant::now() > end_time.unwrap() {
+        return i64::MIN;
     }
 
     let available_actions: [u64; 512] = available_player_actions(&new_cells, current_player);
@@ -107,6 +113,7 @@ pub fn evaluate_action(
                     depth - 1,
                     -beta,
                     -alpha,
+                    end_time,
                 )
             } else {
                 let eval_null_window = -evaluate_action(
@@ -116,6 +123,7 @@ pub fn evaluate_action(
                     depth - 1,
                     -alpha - 1,
                     -alpha,
+                    end_time,
                 );
                 if alpha < eval_null_window && eval_null_window < beta {
                     -evaluate_action(
@@ -125,6 +133,7 @@ pub fn evaluate_action(
                         depth - 1,
                         -beta,
                         -alpha,
+                        end_time,
                     )
                 } else {
                     eval_null_window

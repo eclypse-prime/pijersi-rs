@@ -1,3 +1,5 @@
+use std::time::{Duration, Instant};
+
 use crate::errors::{IllegalActionError, StringParseError};
 use crate::logic::actions::play_action;
 use crate::logic::rules::{
@@ -6,7 +8,7 @@ use crate::logic::rules::{
 use crate::logic::translate::{cells_to_string, string_to_action, string_to_cells};
 use crate::logic::STACK_THRESHOLD;
 use crate::piece::{init_piece, PieceColour, PieceType};
-use crate::search::alphabeta::search_to_depth;
+use crate::search::alphabeta::search_iterative;
 
 /// This struct represents a Pijersi board.
 ///
@@ -120,7 +122,11 @@ impl Board {
 
     /// Searches and returns the best action at a given depth
     pub fn search_to_depth(&self, depth: u64) -> Option<u64> {
-        search_to_depth(&self.cells, self.current_player, depth)
+        search_iterative(&self.cells, self.current_player, depth, None)
+    }
+
+    pub fn search_to_time(&self, movetime: u64) -> Option<u64> {
+        search_iterative(&self.cells, self.current_player, u64::MAX, Some(Instant::now() + Duration::from_millis(movetime)))
     }
 
     pub fn get_state(&self) -> String {
