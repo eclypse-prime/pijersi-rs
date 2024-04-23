@@ -164,7 +164,17 @@ impl UgiEngine {
             PositionArgs::Fen(fen_args) => {
                 let action_list: Vec<String> = fen_args.moves;
                 match action_list.len() {
-                    0 => {}
+                    0 => {
+                        match self.board.set_state(
+                            &fen_args.fen,
+                            fen_args.player,
+                            fen_args.half_moves,
+                            fen_args.full_moves,
+                        ) {
+                            Ok(()) => (),
+                            Err(e) => println!("info error \"{e}\""),
+                        }
+                    }
                     1 => {
                         println!("invalid argument {}", action_list[0]);
                     }
