@@ -128,10 +128,10 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64, end_time: Option
 pub fn search_iterative(cells: &[u8; 45], current_player: u8, max_depth: u64, end_time: Option<Instant>) -> Option<u64> {
     let mut best_action: Option<u64> = None;
     for depth in 1..=max_depth {
-        let start_time = Instant::now();
         if end_time.is_some() && Instant::now() > end_time.unwrap() {
             break;
         }
+        let start_time = Instant::now();
         let proposed_action = search(cells, current_player, depth, end_time);
         let duration: f64 = start_time.elapsed().as_micros() as f64 / 1000f64;
         match proposed_action {
