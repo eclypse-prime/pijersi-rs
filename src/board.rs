@@ -1,3 +1,17 @@
+//! This module contains the Board struct and methods to represent a Pijersi board and play games.
+//!
+//! A board is represented as a [u8; 45] array.
+//!
+//! Its cells are indexed as such:
+//! ```
+//!   0   1   2   3   4   5
+//! 6   7   8   9   10  11  12
+//!   13  14  15  16  17  18
+//! 19  20  21  22  23  24  25
+//!   26  27  28  29  30  31
+//! 32  33  34  35  36  37  38
+//!   39  40  41  42  43  44
+//! ```
 use std::time::{Duration, Instant};
 
 use crate::errors::{IllegalActionError, StringParseError};
@@ -12,9 +26,12 @@ use crate::search::alphabeta::search_iterative;
 
 /// This struct represents a Pijersi board.
 ///
-/// It contains all the necessary information to represent a Pijersi game at one point:
+/// It contains all the necessary information to represent a Pijersi game at any point:
 ///     - Current cells
 ///     - Current player
+///     - Current half moves count
+///     - Current full moves count
+///     - Piece count
 pub struct Board {
     pub cells: [u8; 45],
     pub current_player: u8,
@@ -126,7 +143,12 @@ impl Board {
     }
 
     pub fn search_to_time(&self, movetime: u64) -> Option<u64> {
-        search_iterative(&self.cells, self.current_player, u64::MAX, Some(Instant::now() + Duration::from_millis(movetime)))
+        search_iterative(
+            &self.cells,
+            self.current_player,
+            u64::MAX,
+            Some(Instant::now() + Duration::from_millis(movetime)),
+        )
     }
 
     pub fn get_state(&self) -> String {
