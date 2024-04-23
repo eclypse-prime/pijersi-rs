@@ -1,10 +1,11 @@
-use std::process::exit;
+use std::{process::exit, time::Instant};
 
 use clap::{Args, Parser, Subcommand};
 
 use crate::{
     board::Board,
     logic::{
+        perft::perft,
         rules::is_action_legal,
         translate::{action_to_string, string_to_action},
     },
@@ -37,6 +38,7 @@ enum GoArgs {
     Depth { depth: u64 },
     Movetime { time: u64 },
     Manual { action: String },
+    Perft { depth: u64 },
 }
 
 #[derive(Subcommand, Debug)]
@@ -131,6 +133,12 @@ impl UgiEngine {
                 println!("bestmove {action_string}");
             }
             GoArgs::Manual { action } => {}
+            GoArgs::Perft { depth } => {
+                let start_time = Instant::now();
+                let count = perft(&self.board.cells, self.board.current_player, depth);
+                let duration: f64 = start_time.elapsed().as_micros() as f64 / 1000f64;
+                println!("info perft depth {depth} result {count} time {duration}");
+            }
         }
     }
     fn position(&mut self, position_args: PositionArgs) {
