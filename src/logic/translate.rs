@@ -130,7 +130,7 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, St
     {
         index_mid = index_start;
     }
-    if cells[index_mid] == cells[index_end] {
+    if index_mid == index_end {
         index_mid = INDEX_NULL;
     }
 
