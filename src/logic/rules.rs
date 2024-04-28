@@ -136,7 +136,7 @@ pub fn is_position_win(cells: &[u8; 45]) -> bool {
     for k in 39..45 {
         let piece = cells[k];
         if piece != CELL_EMPTY {
-            // If piece is White and not Wise
+            // If piece is Black and not Wise
             if (piece & COLOUR_MASK) == COLOUR_BLACK && (piece & TYPE_MASK) != TYPE_WISE {
                 return true;
             }
@@ -164,7 +164,7 @@ pub fn get_winning_player(cells: &[u8; 45]) -> Option<u8> {
     for k in 39..45 {
         let piece = cells[k];
         if piece != CELL_EMPTY {
-            // If piece is White and not Wise
+            // If piece is Black and not Wise
             if (piece & COLOUR_MASK) == COLOUR_BLACK && (piece & TYPE_MASK) != TYPE_WISE {
                 return Some(1);
             }
