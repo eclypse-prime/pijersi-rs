@@ -37,7 +37,7 @@ enum Commands {
 enum GoArgs {
     Depth { depth: u64 },
     Movetime { time: u64 },
-    Manual { action: String },
+    Manual { action_string: String },
     Perft { depth: u64 },
 }
 
@@ -114,7 +114,7 @@ impl UgiEngine {
     fn exit(&self) {
         exit(0);
     }
-    fn go(&self, go_args: GoArgs) {
+    fn go(&mut self, go_args: GoArgs) {
         match go_args {
             GoArgs::Depth { depth } => {
                 let action = self.board.search_to_depth(depth);
@@ -132,7 +132,13 @@ impl UgiEngine {
                 };
                 println!("bestmove {action_string}");
             }
-            GoArgs::Manual { action } => {}
+            GoArgs::Manual { action_string } => {
+                let result = self.board.play_from_string(&action_string);
+                match result {
+                    Ok(_v) => (),
+                    Err(e) => println!("info error \"{e}\""),
+                }
+            }
             GoArgs::Perft { depth } => {
                 let start_time = Instant::now();
                 let count = perft(&self.board.cells, self.board.current_player, depth);
