@@ -13,7 +13,12 @@ use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_w
 pub const BASE_BETA: i64 = 262_144;
 
 /// Returns the best move at a given depth
-pub fn search(cells: &[u8; 45], current_player: u8, depth: u64, end_time: Option<Instant>) -> Option<u64> {
+pub fn search(
+    cells: &[u8; 45],
+    current_player: u8,
+    depth: u64,
+    end_time: Option<Instant>,
+) -> Option<u64> {
     if depth == 0 {
         return None;
     }
@@ -125,7 +130,12 @@ pub fn search(cells: &[u8; 45], current_player: u8, depth: u64, end_time: Option
         .map(|(index_best_move, _score)| available_actions[index_best_move])
 }
 
-pub fn search_iterative(cells: &[u8; 45], current_player: u8, max_depth: u64, end_time: Option<Instant>) -> Option<u64> {
+pub fn search_iterative(
+    cells: &[u8; 45],
+    current_player: u8,
+    max_depth: u64,
+    end_time: Option<Instant>,
+) -> Option<u64> {
     let mut best_action: Option<u64> = None;
     for depth in 1..=max_depth {
         if end_time.is_some() && Instant::now() > end_time.unwrap() {
@@ -139,7 +149,8 @@ pub fn search_iterative(cells: &[u8; 45], current_player: u8, max_depth: u64, en
             Some(action) => {
                 let action_string = action_to_string(cells, action);
                 println!("info depth {depth} time {duration} score *** pv {action_string}");
-                best_action = Some(action);}
+                best_action = Some(action);
+            }
         }
     }
     best_action
