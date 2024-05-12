@@ -18,7 +18,7 @@ pub fn search(
     current_player: u8,
     depth: u64,
     end_time: Option<Instant>,
-) -> Option<u64> {
+) -> Option<(u64, i64)> {
     if depth == 0 {
         return None;
     }
@@ -119,6 +119,8 @@ pub fn search(
             .collect()
     };
 
+    // println!("{scores:?}");
+
     if end_time.is_some() && Instant::now() > end_time.unwrap() {
         return None;
     }
@@ -126,8 +128,9 @@ pub fn search(
     scores
         .iter()
         .enumerate()
+        .rev()
         .max_by_key(|(_index, &score)| score)
-        .map(|(index_best_move, _score)| available_actions[index_best_move])
+        .map(|(index_best_move, &score)| (available_actions[index_best_move], score))
 }
 
 pub fn search_iterative(
@@ -135,8 +138,8 @@ pub fn search_iterative(
     current_player: u8,
     max_depth: u64,
     end_time: Option<Instant>,
-) -> Option<u64> {
-    let mut best_action: Option<u64> = None;
+) -> Option<(u64, i64)> {
+    let mut best_result: Option<(u64, i64)> = None;
     for depth in 1..=max_depth {
         if end_time.is_some() && Instant::now() > end_time.unwrap() {
             break;
@@ -146,12 +149,12 @@ pub fn search_iterative(
         let duration: f64 = start_time.elapsed().as_micros() as f64 / 1000f64;
         match proposed_action {
             None => (),
-            Some(action) => {
+            Some((action, score)) => {
                 let action_string = action_to_string(cells, action);
-                println!("info depth {depth} time {duration} score *** pv {action_string}");
-                best_action = Some(action);
+                println!("info depth {depth} time {duration} score {score} pv {action_string}");
+                best_result = Some((action, score));
             }
         }
     }
-    best_action
+    best_result
 }
