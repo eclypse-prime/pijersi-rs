@@ -16,8 +16,15 @@ clap = {version = "*", features = ["derive"]}
 rayon = "*"
 regex = "*"
 
+[dev-dependencies]
+criterion="*"
+
 [profile.release]
 lto = "fat"
 
 [profile.test]
 opt-level = 3
+
+[[bench]]
+name = "benchmark"
+harness = false
