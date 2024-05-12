@@ -124,8 +124,7 @@ pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> boo
 }
 
 pub fn is_position_win(cells: &[u8; 45]) -> bool {
-    for k in 0..6 {
-        let piece = cells[k];
+    for &piece in cells.iter().take(6) {
         if piece != CELL_EMPTY {
             // If piece is White and not Wise
             if (piece & COLOUR_MASK) == COLOUR_WHITE && (piece & TYPE_MASK) != TYPE_WISE {
@@ -133,8 +132,7 @@ pub fn is_position_win(cells: &[u8; 45]) -> bool {
             }
         }
     }
-    for k in 39..45 {
-        let piece = cells[k];
+    for &piece in cells.iter().skip(39).take(6) {
         if piece != CELL_EMPTY {
             // If piece is Black and not Wise
             if (piece & COLOUR_MASK) == COLOUR_BLACK && (piece & TYPE_MASK) != TYPE_WISE {
@@ -152,8 +150,7 @@ pub fn is_position_stalemate(cells: &[u8; 45], current_player: u8) -> bool {
 }
 
 pub fn get_winning_player(cells: &[u8; 45]) -> Option<u8> {
-    for k in 0..6 {
-        let piece = cells[k];
+    for &piece in cells.iter().take(6) {
         if piece != CELL_EMPTY {
             // If piece is White and not Wise
             if (piece & COLOUR_MASK) == COLOUR_WHITE && (piece & TYPE_MASK) != TYPE_WISE {
@@ -161,8 +158,7 @@ pub fn get_winning_player(cells: &[u8; 45]) -> Option<u8> {
             }
         }
     }
-    for k in 39..45 {
-        let piece = cells[k];
+    for &piece in cells.iter().skip(39).take(6) {
         if piece != CELL_EMPTY {
             // If piece is Black and not Wise
             if (piece & COLOUR_MASK) == COLOUR_BLACK && (piece & TYPE_MASK) != TYPE_WISE {
