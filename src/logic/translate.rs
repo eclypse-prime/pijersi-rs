@@ -181,22 +181,24 @@ pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), S
         for &cell_line in &cell_lines {
             let mut j: usize = 0;
             while j < cell_line.chars().count() {
-                if char_to_piece(cell_line.chars().nth(j).unwrap()).is_some() {
-                    if cell_line.chars().nth(j + 1).unwrap() != '-' {
-                        new_cells[cursor] = char_to_piece(cell_line.chars().nth(j + 1).unwrap())
-                            .unwrap()
-                            | (char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap()
-                                << HALF_PIECE_WIDTH);
-                    } else {
-                        new_cells[cursor] =
-                            char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap();
+                match char_to_piece(cell_line.chars().nth(j).unwrap()) {
+                    Some(top_char) => {
+                        if cell_line.chars().nth(j + 1).unwrap() != '-' {
+                            new_cells[cursor] =
+                                char_to_piece(cell_line.chars().nth(j + 1).unwrap()).unwrap()
+                                    | (top_char << HALF_PIECE_WIDTH);
+                        } else {
+                            new_cells[cursor] =
+                                char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap();
+                        }
+                        j += 2;
+                        cursor += 1;
                     }
-                    j += 2;
-                    cursor += 1;
-                } else {
-                    let jump = cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as usize;
-                    j += 1;
-                    cursor += jump;
+                    None => {
+                        let jump = cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as usize;
+                        j += 1;
+                        cursor += jump;
+                    }
                 }
             }
         }
