@@ -62,6 +62,7 @@ impl Board {
     ///
     /// Sets the pieces to their original position and the current player to white.
     pub fn init(&mut self) {
+        self.cells.fill(0);
         self.cells[0] = init_piece(PieceColour::Black, None, PieceType::Scissors);
         self.cells[1] = init_piece(PieceColour::Black, None, PieceType::Paper);
         self.cells[2] = init_piece(PieceColour::Black, None, PieceType::Rock);
@@ -89,6 +90,11 @@ impl Board {
         self.cells[34] = init_piece(PieceColour::White, None, PieceType::Rock);
         self.cells[32] = init_piece(PieceColour::White, None, PieceType::Paper);
         self.cells[33] = init_piece(PieceColour::White, None, PieceType::Scissors);
+
+        self.current_player = 0;
+        self.half_moves = 0;
+        self.full_moves = 0;
+        self.last_piece_count = 14;
     }
 
     /// Prints the current pieces on the board.
@@ -138,11 +144,11 @@ impl Board {
     }
 
     /// Searches and returns the best action at a given depth
-    pub fn search_to_depth(&self, depth: u64) -> Option<u64> {
+    pub fn search_to_depth(&self, depth: u64) -> Option<(u64, i64)> {
         search_iterative(&self.cells, self.current_player, depth, None)
     }
 
-    pub fn search_to_time(&self, movetime: u64) -> Option<u64> {
+    pub fn search_to_time(&self, movetime: u64) -> Option<(u64, i64)> {
         search_iterative(
             &self.cells,
             self.current_player,
