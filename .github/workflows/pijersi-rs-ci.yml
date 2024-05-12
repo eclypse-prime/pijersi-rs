@@ -1,4 +1,4 @@
-name: pijersi-rs build and test
+name: pijersi-rs-ci
 
 on:
   push:
@@ -18,6 +18,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Clippy
+      run: cargo clippy
     - name: Build
       run: cargo build --verbose
     - name: Doc
