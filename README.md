@@ -13,7 +13,20 @@ The project is adapted from the C++ implementation: [GitHub](https://github.com/
 
 ## Instructions
 
-TBD
+### Build (native Linux)
+
+* Make sure [rustup](https://rust-lang.github.io/rustup/installation/index.html) is installed
+* Clone the repo
+* Run `cargo build --release`
+* The executable is in `target/release/pijersi-rs`
+
+### Cross compile build (for Windows)
+
+* Make sure [rustup](https://rust-lang.github.io/rustup/installation/index.html) is installed
+* Install the windows gnu target: `rustup target add x86_64-pc-windows-gnu`
+* Clone the repo
+* Run `cargo build --release --target x86_64-pc-windows-gnu`
+* The executable is in `target/x86_64-pc-windows-gnu/release/pijersi-rs.exe`
 
 ## Useful data
 
