@@ -13,6 +13,7 @@ categories = ["games"]
 
 [dependencies]
 clap = {version = "*", features = ["derive"]}
+current_platform = "*"
 rayon = "*"
 regex = "*"
 
