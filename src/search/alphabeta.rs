@@ -18,7 +18,7 @@ pub fn search(
     current_player: u8,
     depth: u64,
     end_time: Option<Instant>,
-) -> Option<(u64, i64)> {
+) -> Option<(u64, i64, Vec<i64>)> {
     if depth == 0 {
         return None;
     }
@@ -131,6 +131,7 @@ pub fn search(
         .rev()
         .max_by_key(|(_index, &score)| score)
         .map(|(index_best_move, &score)| (available_actions[index_best_move], score))
+        .map(|(best_action, best_score)| (best_action, best_score, scores))
 }
 
 pub fn search_iterative(
@@ -149,7 +150,7 @@ pub fn search_iterative(
         let duration: f64 = start_time.elapsed().as_micros() as f64 / 1000f64;
         match proposed_action {
             None => (),
-            Some((action, score)) => {
+            Some((action, score, scores)) => {
                 let action_string = action_to_string(cells, action);
                 println!("info depth {depth} time {duration} score {score} pv {action_string}");
                 best_result = Some((action, score));
