@@ -1,6 +1,6 @@
 use std::{process::exit, time::Instant};
-
 use clap::{Args, Parser, Subcommand};
+use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 
 use crate::{
     board::Board,
@@ -92,6 +92,7 @@ impl UgiEngine {
     fn ugi(&self) {
         println!("id name {ENGINE_NAME}");
         println!("id author {AUTHOR_NAME}");
+        println!("info target platform {CURRENT_PLATFORM} compiled on {COMPILED_ON}");
         println!("ugiok");
     }
 
