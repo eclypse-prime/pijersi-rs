@@ -1,5 +1,5 @@
 # COPYRIGHT
-Pijersi-rs (Natural Selection) implements a GUI and a rules engine for the Pijersi boardgame.
+Pijersi-rs (Natural Selection) implements an engine for the Pijersi boardgame.
 
 Copyright © 2024 Eclypse-Prime (eclypse.prime@gmail.com).
 
