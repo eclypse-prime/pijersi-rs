@@ -1,6 +1,6 @@
-use std::{process::exit, time::Instant};
 use clap::{Args, Parser, Subcommand};
 use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
+use std::{process::exit, time::Instant};
 
 use crate::{
     board::Board,
@@ -9,7 +9,7 @@ use crate::{
         rules::is_action_legal,
         translate::{action_to_string, string_to_action},
     },
-    AUTHOR_NAME, ENGINE_NAME,
+    AUTHOR_NAME, ENGINE_NAME, VERSION,
 };
 
 #[derive(Parser, Debug)]
@@ -90,7 +90,7 @@ impl UgiEngine {
     }
 
     fn ugi(&self) {
-        println!("id name {ENGINE_NAME}");
+        println!("id name {ENGINE_NAME} {VERSION}");
         println!("id author {AUTHOR_NAME}");
         println!("info target platform {CURRENT_PLATFORM} compiled on {COMPILED_ON}");
         println!("ugiok");
