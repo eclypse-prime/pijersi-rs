@@ -5,6 +5,7 @@ use std::time::Instant;
 use rayon::prelude::*;
 
 use crate::logic::translate::action_to_string;
+use crate::utils::{argsort, reverse_argsort};
 
 use super::super::logic::{movegen::available_player_actions, MAX_PLAYER_ACTIONS};
 
@@ -18,7 +19,8 @@ pub fn search(
     current_player: u8,
     depth: u64,
     end_time: Option<Instant>,
-) -> Option<(u64, i64)> {
+    scores: &Option<Vec<i64>>,
+) -> Option<(u64, i64, Vec<i64>)> {
     if depth == 0 {
         return None;
     }
@@ -31,6 +33,11 @@ pub fn search(
     let available_actions: [u64; 512] = available_player_actions(cells, current_player);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
 
+    let order = match scores {
+        Some(scores) => argsort(scores, true),
+        None => (0..n_actions).collect(),
+    };
+
     if n_actions == 0 {
         return None;
     }
@@ -38,10 +45,10 @@ pub fn search(
     let scores: Vec<i64> = if depth == 1 {
         // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
-        available_actions
+        order
             .iter()
-            .take(n_actions)
-            .map(|&action| {
+            .map(|&index| available_actions[index])
+            .map(|action| {
                 -evaluate_action_terminal(
                     cells,
                     1 - current_player,
@@ -62,11 +69,11 @@ pub fn search(
         let cut: AtomicBool = AtomicBool::new(false);
 
         // Evaluate possible moves
-        available_actions
+        order
             .par_iter()
-            .take(n_actions)
+            .map(|&index| available_actions[index])
             .enumerate()
-            .map(|(k, &action)| {
+            .map(|(k, action)| {
                 if cut.load(Relaxed) {
                     i64::MIN
                 } else {
@@ -125,12 +132,15 @@ pub fn search(
         return None;
     }
 
+    let scores: Vec<i64> = reverse_argsort(&scores, &order);
+
     scores
         .iter()
         .enumerate()
         .rev()
         .max_by_key(|(_index, &score)| score)
-        .map(|(index_best_move, &score)| (available_actions[index_best_move], score))
+        .map(|(index, &score)| (available_actions[index], score))
+        .map(|(action, score)| (action, score, scores))
 }
 
 pub fn search_iterative(
@@ -140,19 +150,21 @@ pub fn search_iterative(
     end_time: Option<Instant>,
 ) -> Option<(u64, i64)> {
     let mut best_result: Option<(u64, i64)> = None;
+    let mut last_scores: Option<Vec<i64>> = None;
     for depth in 1..=max_depth {
         if end_time.is_some() && Instant::now() > end_time.unwrap() {
             break;
         }
         let start_time = Instant::now();
-        let proposed_action = search(cells, current_player, depth, end_time);
+        let proposed_action = search(cells, current_player, depth, end_time, &last_scores);
         let duration: f64 = start_time.elapsed().as_micros() as f64 / 1000f64;
         match proposed_action {
             None => (),
-            Some((action, score)) => {
+            Some((action, score, scores)) => {
                 let action_string = action_to_string(cells, action);
                 println!("info depth {depth} time {duration} score {score} pv {action_string}");
                 best_result = Some((action, score));
+                last_scores = Some(scores);
             }
         }
     }
