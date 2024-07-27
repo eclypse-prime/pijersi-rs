@@ -126,8 +126,6 @@ pub fn search(
             .collect()
     };
 
-    // println!("{scores:?}");
-
     if end_time.is_some() && Instant::now() > end_time.unwrap() {
         return None;
     }
