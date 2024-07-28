@@ -93,7 +93,7 @@ impl Board {
 
         self.current_player = 0;
         self.half_moves = 0;
-        self.full_moves = 0;
+        self.full_moves = 1;
         self.last_piece_count = 14;
     }
 
