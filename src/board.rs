@@ -19,10 +19,11 @@ use crate::logic::actions::play_action;
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
-use crate::logic::translate::{cells_to_string, string_to_action, string_to_cells};
+use crate::logic::translate::{action_to_string, cells_to_string, string_to_action, string_to_cells};
 use crate::logic::STACK_THRESHOLD;
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_iterative;
+use crate::search::openings::OpeningBook;
 
 /// This struct represents a Pijersi board.
 ///
@@ -143,12 +144,32 @@ impl Board {
         }
     }
 
+    // TODO: store more info in the book, like the expected score, and the search depth
+    /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
+    fn search_book(&self, opening_book: &Option<OpeningBook>) -> Option<u64> {
+        if let Some(opening_book) = opening_book {
+            if let Some(&action) = opening_book.lookup(&self.get_state()) {
+                println!("b");
+                let action_string = action_to_string(&self.cells, action);
+                println!("info book pv {action_string}");
+                return Some(action);
+            }
+        }
+        None
+    }
+
     /// Searches and returns the best action at a given depth
-    pub fn search_to_depth(&self, depth: u64) -> Option<(u64, i64)> {
+    pub fn search_to_depth(&self, depth: u64, opening_book: &Option<OpeningBook>) -> Option<(u64, i64)> {
+        if let Some(action) = self.search_book(opening_book) {
+            return Some((action, 0));
+        }
         search_iterative(&self.cells, self.current_player, depth, None)
     }
 
-    pub fn search_to_time(&self, movetime: u64) -> Option<(u64, i64)> {
+    pub fn search_to_time(&self, movetime: u64, opening_book: &Option<OpeningBook>) -> Option<(u64, i64)> {
+        if let Some(action) = self.search_book(opening_book) {
+            return Some((action, 0));
+        }
         search_iterative(
             &self.cells,
             self.current_player,
