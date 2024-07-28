@@ -7,4 +7,5 @@
 //! - lookup: Implements the lookup tables used for faster computations in the evaluation functions.
 pub mod alphabeta;
 pub mod eval;
+pub mod openings;
 pub mod lookup;

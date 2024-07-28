@@ -3,13 +3,11 @@ use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 use std::{process::exit, time::Instant};
 
 use crate::{
-    board::Board,
-    logic::{
+    board::Board, logic::{
         perft::perft,
         rules::is_action_legal,
         translate::{action_to_string, string_to_action},
-    },
-    AUTHOR_NAME, ENGINE_NAME, VERSION,
+    }, search::openings::OpeningBook, AUTHOR_NAME, ENGINE_NAME, VERSION
 };
 
 #[derive(Parser, Debug)]
@@ -72,6 +70,7 @@ enum QueryArgs {
 
 pub struct UgiEngine {
     board: Board,
+    opening_book: Option<OpeningBook>,
 }
 
 impl Default for UgiEngine {
@@ -84,6 +83,7 @@ impl UgiEngine {
     pub fn new() -> Self {
         let mut new_self = Self {
             board: Board::default(),
+            opening_book: None,
         };
         new_self.board.init();
         new_self
@@ -96,8 +96,8 @@ impl UgiEngine {
         println!("ugiok");
     }
 
-    fn isready(&self) {
-        // TODO: heavy inits here
+    fn isready(&mut self) {
+        self.opening_book = Some(OpeningBook::new());
         println!("readyok");
     }
     fn uginewgame(&mut self) {
@@ -118,7 +118,7 @@ impl UgiEngine {
     fn go(&mut self, go_args: GoArgs) {
         match go_args {
             GoArgs::Depth { depth } => {
-                let result = self.board.search_to_depth(depth);
+                let result = self.board.search_to_depth(depth, &self.opening_book);
                 let action_string = match result {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
                     None => "------".to_owned(), // TODO: info null move
@@ -126,7 +126,7 @@ impl UgiEngine {
                 println!("bestmove {action_string}");
             }
             GoArgs::Movetime { time } => {
-                let action = self.board.search_to_time(time);
+                let action = self.board.search_to_time(time, &self.opening_book);
                 let action_string = match action {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
                     None => "------".to_owned(), // TODO: info null move
