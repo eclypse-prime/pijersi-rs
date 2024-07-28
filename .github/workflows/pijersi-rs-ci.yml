@@ -1,4 +1,4 @@
-name: pijersi-rs-ci
+name: Continuous Integration
 
 on:
   push:
