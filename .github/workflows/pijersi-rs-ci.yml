@@ -18,7 +18,7 @@ jobs:
     - name: Clippy linting
       run: cargo clippy
     - name: Build Binaries
-      run: cargo build --verbose
+      run: cargo build --release --verbose
     - name: Build Documentation
       run: cargo doc --no-deps --verbose
     - name: Test
