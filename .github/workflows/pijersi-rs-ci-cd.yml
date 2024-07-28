@@ -92,7 +92,7 @@ jobs:
             os: windows-latest
             target: x86_64-pc-windows-msvc
             executable: pijersi-rs.exe
-            artifact-name: pijersi-rs-win64.exe
+            artifact-name: pijersi-rs-win.exe
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
