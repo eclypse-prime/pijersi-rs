@@ -1,13 +1,4 @@
 //! This module contains the necessary code to implement the game logic.
-//!
-//! It contains the following sub-modules:
-//!
-//! - actions: Implements the actions a player can choose (move, stack, unstack...).
-//! - lookup: Implements the lookup tables used for faster computations in the move generator.
-//! - movegen: Implements the move generator: returns the list of all available moves for a player at a given time.
-//! - perft: Implements perft, a debug function that calculates the number of leaf nodes at a given depth. It is used to assert that the move generator is correct.
-//! - rules: Implements the rules, tells if an action is valid or not.
-//! - translate: Implements translation methods to convert the internal representation into a human-readable representation and vice versa.
 
 pub mod actions;
 pub mod lookup;

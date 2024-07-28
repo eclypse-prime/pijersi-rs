@@ -1,4 +1,4 @@
-//! This sub-module contains the lookup tables for the game logic code.
+//! Implements the lookup tables used for faster computations in the move generator.
 //!
 //! These lookup tables are used to speed up the move generator. For each cell index, the NEIGHBOURS1 and NEIGHBOURS2 tables contain the pre-calculated indices of its neighbouring cells in order to avoid calculating them every time.
 

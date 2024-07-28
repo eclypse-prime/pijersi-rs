@@ -1,3 +1,5 @@
+//!Implements perft, a debug function that calculates the number of leaf nodes at a given depth. It is used to assert that the move generator is correct.
+
 use rayon::prelude::*;
 
 use super::{
@@ -173,6 +175,8 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
 ///
 /// Recursively counts the number of leaf nodes at the chosen depth.
 ///
+/// Uses parallel search.
+///
 /// At depth 0, returns 1.
 pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
     match depth {
@@ -228,6 +232,8 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 /// Split Perft debug function to measure the number of leaf nodes (possible moves) at a given depth.
 ///
 /// Recursively counts the number of leaf nodes at the chosen depth.
+///
+/// Uses parallel search.
 ///
 /// Separates the node count between all possible depth 1 moves and returns a vector of (`action_string`: String, action: u64, count: u64).
 ///

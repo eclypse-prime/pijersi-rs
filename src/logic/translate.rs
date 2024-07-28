@@ -1,3 +1,5 @@
+//! Implements translation methods to convert the internal representation into a human-readable representation and vice versa.
+
 use regex::Regex;
 
 use crate::errors::StringParseError;
@@ -10,6 +12,7 @@ use super::{
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
 // TODO: create consts for piece values
+/// Converts a character to its corresponding piece (if it exists).
 pub fn char_to_piece(piece_char: char) -> Option<u8> {
     match piece_char {
         '-' => Some(CELL_EMPTY),
@@ -26,6 +29,7 @@ pub fn char_to_piece(piece_char: char) -> Option<u8> {
 }
 
 // TODO: create consts for piece values
+/// Converts a piece to its corresponding character (if it exists).
 pub fn piece_to_char(piece: u8) -> Option<char> {
     match piece {
         CELL_EMPTY => Some('-'),
@@ -168,6 +172,7 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
     format!("{action_string_start}{action_string_mid}{action_string_end}")
 }
 
+/// Reads a Pijersi Standard Notation string to apply its state to the cells.
 pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), StringParseError> {
     let cell_lines: Vec<&str> = cells_string.split('/').collect();
     if cell_lines.len() != 7 {
@@ -207,6 +212,7 @@ pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), S
     }
 }
 
+/// Converts the cells state to a Pijersi Standard Notation string.
 pub fn cells_to_string(cells: &[u8; 45]) -> String {
     let mut cells_string = String::new();
     for i in 0..7usize {

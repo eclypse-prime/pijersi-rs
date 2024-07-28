@@ -1,3 +1,5 @@
+//! This module contains custom errors for this crate.
+
 use core::fmt;
 
 /// An error that can be returned when attempting to play an illegal action.
