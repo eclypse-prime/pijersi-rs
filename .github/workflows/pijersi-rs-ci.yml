@@ -20,6 +20,6 @@ jobs:
     - name: Build Binaries
       run: cargo build --verbose
     - name: Build Documentation
-      run: cargo doc --verbose
+      run: cargo doc --no-deps --verbose
     - name: Test
       run: cargo test --verbose
