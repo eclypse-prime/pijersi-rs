@@ -106,15 +106,7 @@ impl UgiEngine {
     fn uginewgame(&mut self) {
         self.board.init();
     }
-    // fn help(&self) {
-    //     println!("ugi");
-    //     println!("isready");
-    //     println!("uginewgame");
-    //     println!("quit");
-    //     println!("go");
-    //     println!("position");
-    //     println!("query");
-    // }
+    // TODO: help function?
     fn exit(&self) {
         exit(0);
     }

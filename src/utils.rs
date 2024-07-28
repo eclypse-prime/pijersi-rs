@@ -13,7 +13,6 @@ pub fn reverse_argsort<T: Clone>(original: &[T], indices: &[usize]) -> Vec<T> {
     let mut sorted = Vec::from(original);
 
     for (index_original, &index) in indices.iter().enumerate() {
-        // println!("{index}");
         sorted[index] = original[index_original].clone();
     }
 
