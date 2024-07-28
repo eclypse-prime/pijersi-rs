@@ -100,5 +100,5 @@ jobs:
     - name: Upload Artifact to Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ needs.create-release.outputs.tag-name }}
+        tag_name: ${{ github.ref_name }}
         files: target/${{ matrix.target }}/release/${{ matrix.executable }}
