@@ -30,7 +30,7 @@ fn line_to_tuple(line: &str) -> Option<(String, u64)> {
 
 impl OpeningBook {
     pub fn new() -> OpeningBook {
-        let opening_lines: Vec<&str> = OPENINGS_FILE.split('\n').collect();
+        let opening_lines: Vec<&str> = OPENINGS_FILE.lines().collect();
         let map: HashMap<String, u64> = opening_lines
             .iter()
             .filter_map(|&line| line_to_tuple(line))

@@ -295,7 +295,7 @@ impl UgiEngine {
             Err(e) => {
                 println!(
                     "info error \"{}\"",
-                    e.to_string().split('\n').next().unwrap()
+                    e.to_string().lines().next().unwrap()
                 );
             }
         }
