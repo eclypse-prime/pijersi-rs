@@ -2,6 +2,9 @@
 
 This project is a Rust implementation of a Pijersi game engine. It can be used standalone (using the [UGI protocol](https://github.com/arthur-liu-lsh/pijersi-engine/blob/main/ugi.md)) and will also provide bindings for use in C#/Unity and Python projects. (to do)
 
+[![GitHub Release](https://img.shields.io/github/v/release/eclypse-prime/pijersi-rs)]()
+[![CI/CD](https://github.com/eclypse-prime/pijersi-rs/actions/workflows/pijersi-rs-ci-cd.yml/badge.svg)](https://github.com/eclypse-prime/pijersi-rs/actions/workflows/pijersi-rs-ci-cd.yml)
+
 To learn more about Pijersi: [GitHub](https://github.com/LucasBorboleta/pijersi).
 The Unity project can be found here: [GitHub](https://github.com/arthur-liu-lsh/pijersi-unity).
 
@@ -9,7 +12,7 @@ The project is adapted from the C++ implementation: [GitHub](https://github.com/
 
 ## Requirements
 
-* Rust 1.79.0+ (nightly)
+* Rust 1.80.0+
 
 ## Instructions
 
