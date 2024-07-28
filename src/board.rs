@@ -19,7 +19,9 @@ use crate::logic::actions::play_action;
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
-use crate::logic::translate::{action_to_string, cells_to_string, string_to_action, string_to_cells};
+use crate::logic::translate::{
+    action_to_string, cells_to_string, string_to_action, string_to_cells,
+};
 use crate::logic::STACK_THRESHOLD;
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_iterative;
@@ -159,14 +161,22 @@ impl Board {
     }
 
     /// Searches and returns the best action at a given depth
-    pub fn search_to_depth(&self, depth: u64, opening_book: &Option<OpeningBook>) -> Option<(u64, i64)> {
+    pub fn search_to_depth(
+        &self,
+        depth: u64,
+        opening_book: &Option<OpeningBook>,
+    ) -> Option<(u64, i64)> {
         if let Some(action) = self.search_book(opening_book) {
             return Some((action, 0));
         }
         search_iterative(&self.cells, self.current_player, depth, None)
     }
 
-    pub fn search_to_time(&self, movetime: u64, opening_book: &Option<OpeningBook>) -> Option<(u64, i64)> {
+    pub fn search_to_time(
+        &self,
+        movetime: u64,
+        opening_book: &Option<OpeningBook>,
+    ) -> Option<(u64, i64)> {
         if let Some(action) = self.search_book(opening_book) {
             return Some((action, 0));
         }

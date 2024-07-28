@@ -162,14 +162,14 @@ pub fn search_iterative(
                 let action_string = action_to_string(cells, action);
                 println!("info depth {depth} time {duration} score {score} pv {action_string}");
                 if score < -BASE_BETA {
-                    println!("info loss in {}", depth/2);
+                    println!("info loss in {}", depth / 2);
                     break;
                 }
                 best_result = Some((action, score));
                 last_scores = Some(scores);
                 if score > BASE_BETA {
                     if depth > 1 {
-                        println!("info mate in {}", depth/2);
+                        println!("info mate in {}", depth / 2);
                     } else {
                         println!("info mate");
                     }
