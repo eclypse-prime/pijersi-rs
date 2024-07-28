@@ -3,11 +3,14 @@ use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 use std::{process::exit, time::Instant};
 
 use crate::{
-    board::Board, logic::{
+    board::Board,
+    logic::{
         perft::perft,
         rules::is_action_legal,
         translate::{action_to_string, string_to_action},
-    }, search::openings::OpeningBook, AUTHOR_NAME, ENGINE_NAME, VERSION
+    },
+    search::openings::OpeningBook,
+    AUTHOR_NAME, ENGINE_NAME, VERSION,
 };
 
 #[derive(Parser, Debug)]
@@ -293,10 +296,12 @@ impl UgiEngine {
                 Commands::Query(query_args) => self.query(query_args),
             },
             Err(e) => {
-                println!(
-                    "info error \"{}\"",
-                    e.to_string().lines().next().unwrap()
-                );
+                let error_text = if command.is_empty() {
+                    "Empty command"
+                } else {
+                    &e.to_string().lines().next().unwrap().to_owned()
+                };
+                println!("info error \"{}\"", error_text);
             }
         }
     }
