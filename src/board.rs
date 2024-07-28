@@ -64,6 +64,8 @@ impl Board {
     /// Initializes the the board to the starting configuration.
     ///
     /// Sets the pieces to their original position and the current player to white.
+    ///
+    /// Sets the half move counter to 0 and the full move counter to 1.
     pub fn init(&mut self) {
         self.cells.fill(0);
         self.cells[0] = init_piece(PieceColour::Black, None, PieceType::Scissors);
@@ -160,7 +162,7 @@ impl Board {
         None
     }
 
-    /// Searches and returns the best action at a given depth
+    /// Searches and returns the best action at a given depth.
     pub fn search_to_depth(
         &self,
         depth: u64,
@@ -172,6 +174,7 @@ impl Board {
         search_iterative(&self.cells, self.current_player, depth, None)
     }
 
+    /// Searches and returns the best action after a given time.
     pub fn search_to_time(
         &self,
         movetime: u64,
@@ -188,6 +191,7 @@ impl Board {
         )
     }
 
+    /// Get the Pijersi Standard Notation of the current board state.
     pub fn get_state(&self) -> String {
         let cells_string = cells_to_string(&self.cells);
         format!(
@@ -198,6 +202,7 @@ impl Board {
         )
     }
 
+    /// Sets the state of the board according to Pijersi Standard Notation data.
     pub fn set_state(
         &mut self,
         cells_string: &str,
@@ -267,6 +272,9 @@ impl Board {
         }
     }
 
+    /// Counts the number of pieces on the board.
+    ///
+    /// A stack counts as two pieces.
     pub fn count_pieces(&self) -> u64 {
         self.cells
             .iter()
@@ -274,14 +282,17 @@ impl Board {
             .sum()
     }
 
+    /// Returns whether the board is in a winning position (one player is winning).
     pub fn is_win(&self) -> bool {
         is_position_win(&self.cells) || is_position_stalemate(&self.cells, self.current_player)
     }
 
+    /// Returns whether the board is in a drawing position (half move counter reaches 20).
     pub fn is_draw(&self) -> bool {
         self.half_moves >= 20
     }
 
+    /// Returns the winner of the game if there is one.
     pub fn get_winner(&self) -> Option<u8> {
         get_winning_player(&self.cells)
     }
