@@ -70,7 +70,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
-          body_path: data/RELEASE_NOTES.md
+          body_path: ${{ github.workspace }}/data/RELEASE_NOTES.md
           draft: false
           prerelease: false
           generate_release_notes: false
