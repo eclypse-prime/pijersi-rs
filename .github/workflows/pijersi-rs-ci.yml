@@ -11,18 +11,15 @@ jobs:
   build-and-test:
 
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain:
-          - nightly
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Clippy
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Clippy linting
       run: cargo clippy
-    - name: Build
+    - name: Build binaries
       run: cargo build --verbose
-    - name: Doc
+    - name: Build documentation
       run: cargo doc --verbose
     - name: Test
       run: cargo test --verbose
