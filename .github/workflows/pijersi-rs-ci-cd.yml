@@ -75,7 +75,7 @@ jobs:
           generate_release_notes: false
 
   publish-bin:
-    name: Build and Publish Binaries
+    name: Build and Publish Binaries for ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     needs: create-release
     # Only run this job on pushes to tags
@@ -83,25 +83,29 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Linux
+          - platform: Linux
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             executable: pijersi-rs
-          - name: Windows
+            artifact-name: pijersi-rs-linux
+          - platform: Windows
             os: windows-latest
             target: x86_64-pc-windows-msvc
             executable: pijersi-rs.exe
+            artifact-name: pijersi-rs-win64.exe
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    - name: Update Rustup and Install Target on ${{ matrix.name }}
+    - name: Update Rustup and Install Target on ${{ matrix.platform }}
       run: |
         rustup update --no-self-update stable
         rustup target add ${{ matrix.target }}
     - name: Build Binary
       run: cargo build --release --target ${{ matrix.target }}
+    - name: Rename binary
+      run: mv target/${{ matrix.target }}/release/${{ matrix.executable }} target/${{ matrix.target }}/release/${{ matrix.artifact-name }}
     - name: Upload Artifact to Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
-        files: target/${{ matrix.target }}/release/${{ matrix.executable }}
+        files: target/${{ matrix.target }}/release/${{ matrix.artifact-name }}
