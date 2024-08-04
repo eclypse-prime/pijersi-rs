@@ -1,5 +1,5 @@
 //! This module contains the OpeningBook struct and its associated functions.
-//! 
+//!
 //! It contains the opening book data in the form of a HashMap.
 //! The keys are strings representing the Pijersi Standard Notation of the stored position.
 //! The values are the stored actions in the native triple-index format (u64).
@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 
 #[derive(Debug)]
+/// The OpeningBook struct containing the opening book data.
 pub struct OpeningBook {
     map: HashMap<String, u64>,
 }
@@ -29,6 +30,8 @@ fn line_to_tuple(line: &str) -> Option<(String, u64)> {
 }
 
 impl OpeningBook {
+    /// Created a new OpeningBook.
+    /// Loads the precompiled opening book.
     pub fn new() -> OpeningBook {
         let opening_lines: Vec<&str> = OPENINGS_FILE.lines().collect();
         let map: HashMap<String, u64> = opening_lines
@@ -38,6 +41,7 @@ impl OpeningBook {
         OpeningBook { map }
     }
 
+    /// Looks for a stored move corresponding to the provided board state and returns it if it exists.
     pub fn lookup(&self, state: &str) -> Option<&u64> {
         self.map.get(state)
     }

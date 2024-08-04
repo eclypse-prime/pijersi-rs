@@ -1,4 +1,4 @@
-//! Implements the code to generate pieces from their colour and type.
+//! This module implements the code to generate pieces from their colour and type.
 //!  
 //! Pieces are represented by u8 numbers and have the following structure : TTCPTTCP
 //!
@@ -9,15 +9,23 @@
 //! C is 1 bit representing the color
 //! P is 1 bit set to 1 as long as there is a piece
 
+/// Represents the colour of a piece
 pub enum PieceColour {
+    /// White
     White,
+    /// Black
     Black,
 }
 
+/// Represents the type of a piece
 pub enum PieceType {
+    /// Scissors
     Scissors,
+    /// Paper
     Paper,
+    /// Rock
     Rock,
+    /// Wise
     Wise,
 }
 

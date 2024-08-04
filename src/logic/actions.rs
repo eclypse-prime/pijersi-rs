@@ -1,3 +1,5 @@
+//! Implements the actions a player can choose (move, stack, unstack...).
+
 use super::{
     CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL, INDEX_WIDTH, TOP_MASK,
 };

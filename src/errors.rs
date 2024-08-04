@@ -1,3 +1,5 @@
+//! This module contains custom errors for this crate.
+
 use core::fmt;
 
 /// An error that can be returned when attempting to play an illegal action.
@@ -7,6 +9,7 @@ pub struct IllegalActionError {
 }
 
 impl IllegalActionError {
+    /// Creates a new IllegalActionError
     pub fn new(msg: &str) -> IllegalActionError {
         IllegalActionError {
             message: msg.to_owned(),
@@ -27,6 +30,7 @@ pub struct StringParseError {
 }
 
 impl StringParseError {
+    /// Creates a new StringParseError
     pub fn new(msg: &str) -> StringParseError {
         StringParseError {
             message: msg.to_owned(),

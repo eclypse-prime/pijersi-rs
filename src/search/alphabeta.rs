@@ -1,3 +1,5 @@
+//! This module implements the alphabeta search that chooses the best move
+
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::time::Instant;
@@ -11,6 +13,7 @@ use super::super::logic::{movegen::available_player_actions, MAX_PLAYER_ACTIONS}
 
 use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_with_details};
 
+/// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
 pub const BASE_BETA: i64 = 262_144;
 
 /// Returns the best move at a given depth
@@ -141,6 +144,10 @@ pub fn search(
         .map(|(action, score)| (action, score, scores))
 }
 
+/// Returns the best move by searching up to the chosen depth.
+/// 
+/// The search starts at depth 1 and the depth increases until the chosen depth is reached or a winning move is found.
+/// The results at lower depths are used to sort the search order at higher depths.
 pub fn search_iterative(
     cells: &[u8; 45],
     current_player: u8,
@@ -162,14 +169,14 @@ pub fn search_iterative(
                 let action_string = action_to_string(cells, action);
                 println!("info depth {depth} time {duration} score {score} pv {action_string}");
                 if score < -BASE_BETA {
-                    println!("info loss in {}", depth/2);
+                    println!("info loss in {}", depth / 2);
                     break;
                 }
                 best_result = Some((action, score));
                 last_scores = Some(scores);
                 if score > BASE_BETA {
                     if depth > 1 {
-                        println!("info mate in {}", depth/2);
+                        println!("info mate in {}", depth / 2);
                     } else {
                         println!("info mate");
                     }

@@ -1,3 +1,5 @@
+//! This module implements various helper functions.
+
 /// Returns a vector of sorted indices
 pub fn argsort<T: Ord>(data: &[T], reverse: bool) -> Vec<usize> {
     let mut indices = (0..data.len()).collect::<Vec<_>>();
@@ -13,7 +15,6 @@ pub fn reverse_argsort<T: Clone>(original: &[T], indices: &[usize]) -> Vec<T> {
     let mut sorted = Vec::from(original);
 
     for (index_original, &index) in indices.iter().enumerate() {
-        // println!("{index}");
         sorted[index] = original[index_original].clone();
     }
 

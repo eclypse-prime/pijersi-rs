@@ -1,3 +1,4 @@
+//! Implements the rules to check if an action is valid or not.
 use super::{
     movegen::available_player_actions, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE,
     INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK,
@@ -113,7 +114,7 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
     false
 }
 
-/// Returns true if the given action is legal
+/// Returns true if the given action is legal.
 pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> bool {
     let available_actions: [u64; 512] = available_player_actions(cells, current_player);
     let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
@@ -123,6 +124,7 @@ pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> boo
         .any(|&available_action| available_action == action)
 }
 
+/// Returns true if the current position is winning for one of the players.
 pub fn is_position_win(cells: &[u8; 45]) -> bool {
     for &piece in cells.iter().take(6) {
         if piece != CELL_EMPTY {
@@ -143,12 +145,16 @@ pub fn is_position_win(cells: &[u8; 45]) -> bool {
     false
 }
 
+/// Returns true if the current position is a stalemate for one of the players.
+///
+/// This means one of the two players has no legal move left.
 pub fn is_position_stalemate(cells: &[u8; 45], current_player: u8) -> bool {
     let available_actions = available_player_actions(cells, current_player);
     let n_moves = available_actions[MAX_PLAYER_ACTIONS - 1];
     n_moves == 0
 }
 
+/// Returns the winning player if there is one.
 pub fn get_winning_player(cells: &[u8; 45]) -> Option<u8> {
     for &piece in cells.iter().take(6) {
         if piece != CELL_EMPTY {
