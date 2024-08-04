@@ -1,3 +1,5 @@
+//! This module implements various helper functions.
+
 /// Returns a vector of sorted indices
 pub fn argsort<T: Ord>(data: &[T], reverse: bool) -> Vec<usize> {
     let mut indices = (0..data.len()).collect::<Vec<_>>();

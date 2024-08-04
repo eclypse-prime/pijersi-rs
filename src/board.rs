@@ -30,13 +30,15 @@ use crate::search::openings::OpeningBook;
 /// This struct represents a Pijersi board.
 ///
 /// It contains all the necessary information to represent a Pijersi game at any point:
-///     - Current cells
-///     - Current player
-///     - Current half moves count
-///     - Current full moves count
-///     - Piece count
+///     * Current cells
+///     * Current player
+///     * Current half moves count
+///     * Current full moves count
+///     * Piece count
 pub struct Board {
+    /// The current cells storing the piece data as u8 (see [`crate::piece`])
     pub cells: [u8; 45],
+    /// The current player: 0 if white, 1 if black
     pub current_player: u8,
     half_moves: u64,
     full_moves: u64,

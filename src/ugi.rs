@@ -1,3 +1,5 @@
+//! This module implements the UGI protocol.
+
 use clap::{Args, Parser, Subcommand};
 use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 use std::{process::exit, time::Instant};
@@ -71,6 +73,7 @@ enum QueryArgs {
     Fen,
 }
 
+/// The UgiEngine struct that implements the UGI protocol.
 pub struct UgiEngine {
     board: Board,
     opening_book: Option<OpeningBook>,
@@ -83,6 +86,7 @@ impl Default for UgiEngine {
 }
 
 impl UgiEngine {
+    /// Creates a new UgiEngine
     pub fn new() -> Self {
         let mut new_self = Self {
             board: Board::default(),
@@ -273,6 +277,9 @@ impl UgiEngine {
         }
     }
 
+    /// Reads a command and responds to it (using stdout).
+    /// 
+    /// The parsing is done using the clap crate.
     pub fn get_command(&mut self, command: &str) {
         let words: Vec<&str> = command.split_whitespace().collect();
         let parse_results = UgiParser::try_parse_from(words);

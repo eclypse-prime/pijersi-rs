@@ -1,3 +1,5 @@
+//! This module implements the evaluation functions: evaluates the score of a current position or evaluates the best score at a given depth.
+
 use std::cmp::max;
 use std::time::Instant;
 
@@ -10,6 +12,7 @@ use crate::logic::{
 };
 use crate::search::lookup::PIECE_SCORES;
 
+/// The max score (is reached on winning position)
 pub const MAX_SCORE: i64 = 524_288;
 
 #[inline]

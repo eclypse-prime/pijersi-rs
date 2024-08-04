@@ -1,4 +1,4 @@
-/// Implements the rules, check if an action is valid or not.
+//! Implements the rules to check if an action is valid or not.
 use super::{
     movegen::available_player_actions, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE,
     INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK,

@@ -1,4 +1,6 @@
-// Associates a piece's type index and cell index to its score, index = pieceIndex*45 + cellIndex
+//! This module implements the lookup tables used for faster computations in the evaluation functions.
+
+/// Associates a piece's type index and cell index to its score, index = pieceIndex*45 + cellIndex
 pub const PIECE_SCORES: [i64; 1575] = [
     76790, 76790, 76790, 76790, 76790, 76790, 260, 260, 260, 260, 260, 260, 260, 250, 250, 250,
     250, 250, 250, 220, 220, 220, 220, 220, 220, 220, 210, 210, 210, 210, 210, 210, 190, 190, 190,

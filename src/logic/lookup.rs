@@ -652,7 +652,7 @@ pub const NEIGHBOURS2: [usize; 315] = [
     usize::MAX,
 ];
 
-// Associates a piece's u8 representation to an index that can be used in other lookup tables
+/// Associates a piece's u8 representation to an index that can be used in other lookup tables
 pub const PIECE_TO_INDEX: [usize; 256] = [
     34, 13, 34, 30, 34, 14, 34, 31, 34, 15, 34, 32, 34, 16, 34, 33, 34, 0, 34, 34, 34, 1, 34, 34,
     34, 2, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34,
