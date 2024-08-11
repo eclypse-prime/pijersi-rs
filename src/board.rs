@@ -155,7 +155,6 @@ impl Board {
     fn search_book(&self, opening_book: &Option<OpeningBook>) -> Option<u64> {
         if let Some(opening_book) = opening_book {
             if let Some(&action) = opening_book.lookup(&self.get_state()) {
-                println!("b");
                 let action_string = action_to_string(&self.cells, action);
                 println!("info book pv {action_string}");
                 return Some(action);
