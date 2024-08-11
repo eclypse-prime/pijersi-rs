@@ -3,7 +3,8 @@
 # Script to be run as part of the github pre-push hook.
 #
 # Checks if there is a "version-like" tag being pushed
-# Then edits the version tag in Cargo.toml and commits it.
+# Then checks if it matches the version tag in Cargo.toml
+# Cancels the push if the tags don't match
 #
 # This hook is called with the following parameters:
 #
@@ -30,25 +31,17 @@ while read local_ref local_oid remote_ref remote_oid; do
     #echo "Checking commit $local_oid ..."
     # skip ref deletions
     if [ "$local_oid" != "$zero" ]; then
-        #if [ "$remote_oid" = "$zero" ]; then
-        #    # 'new branch'
-        #    range="$local_oid"
-        #else
-        #    # 'update to existing branch'
-        #    range="$remote_oid..$local_oid"
-        #fi
-        # @todo in case we have a range (see commented out code 2 lines above), should we check more commits?
         tags="$(git tag --points-at $local_oid)"
         if [ -n "$tags" ]; then
-            # @todo this will not work predictably if there are 2 version tags attached to the same commit. Which probably
-            #       there should not be anyway. Should we check for that too and abort in case?
             while IFS= read -r tag; do
                 echo "Found tag: '$tag'..."
                 if [[ "$tag" =~ $version_tag_regexp ]]; then
-                    echo "Tag looks like a version number. Changing version tag in Cargo.toml."
-                    sed -i -e 's/^version = .*/version = "$tag"/' Cargo.toml
-                    git add Cargo.toml
-                    git commit -m "Update package version to $tag in Cargo.toml"
+                    echo "Tag looks like a version number. Checking if the version tag is matching in Cargo.toml"
+                    current_version="$(cargo pkgid | cut -d "#" -f2)"
+                    if [ "$current_version" != "$tag" ]; then
+                        echo "The tag you're trying to push ($tag) does not match the version tag in Cargo.toml ($current_version)"
+                        exit 1
+                    fi
                     break 2; # exit from both while loops: no need to check for further tags
                 fi
             done <<< "$tags"
