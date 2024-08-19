@@ -278,7 +278,7 @@ impl UgiEngine {
     }
 
     /// Reads a command and responds to it (using stdout).
-    /// 
+    ///
     /// The parsing is done using the clap crate.
     pub fn get_command(&mut self, command: &str) {
         let words: Vec<&str> = command.split_whitespace().collect();

@@ -145,7 +145,7 @@ pub fn search(
 }
 
 /// Returns the best move by searching up to the chosen depth.
-/// 
+///
 /// The search starts at depth 1 and the depth increases until the chosen depth is reached or a winning move is found.
 /// The results at lower depths are used to sort the search order at higher depths.
 pub fn search_iterative(

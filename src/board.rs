@@ -22,7 +22,7 @@ use crate::logic::rules::{
 use crate::logic::translate::{
     action_to_string, cells_to_string, string_to_action, string_to_cells,
 };
-use crate::logic::STACK_THRESHOLD;
+use crate::logic::{CELL_EMPTY, STACK_THRESHOLD};
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
@@ -101,7 +101,7 @@ impl Board {
         self.current_player = 0;
         self.half_moves = 0;
         self.full_moves = 1;
-        self.last_piece_count = 14;
+        self.last_piece_count = self.count_pieces(); // 28 starting pieces (14 for each side)
     }
 
     /// Prints the current pieces on the board.
@@ -233,6 +233,7 @@ impl Board {
         }
         self.half_moves = half_moves;
         self.full_moves = full_moves;
+        self.last_piece_count = self.count_pieces();
         Ok(())
     }
 
@@ -279,6 +280,7 @@ impl Board {
     pub fn count_pieces(&self) -> u64 {
         self.cells
             .iter()
+            .filter(|&&piece| piece != CELL_EMPTY)
             .map(|&piece| if piece >= STACK_THRESHOLD { 2 } else { 1 })
             .sum()
     }
