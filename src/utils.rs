@@ -20,3 +20,16 @@ pub fn reverse_argsort<T: Clone>(original: &[T], indices: &[usize]) -> Vec<T> {
 
     sorted
 }
+
+/// Parses bool arguments in string format ("true", "false"). Returns None if the value is anything else.
+pub fn parse_bool_arg(argument: &str) -> Option<bool> {
+    if argument == "true" {
+        Some(true)
+    }
+    else if argument == "false" {
+        Some(false)
+    }
+    else {
+        None
+    }
+}
