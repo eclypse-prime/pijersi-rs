@@ -117,7 +117,9 @@ impl UgiEngine {
     fn go(&mut self, go_args: GoArgs) {
         match go_args {
             GoArgs::Depth { depth } => {
-                let result = self.board.search_to_depth(depth, &self.opening_book);
+                let result = self
+                    .board
+                    .search_to_depth(depth, self.opening_book.as_ref());
                 let action_string = match result {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
                     None => "------".to_owned(), // TODO: info null move
@@ -125,7 +127,7 @@ impl UgiEngine {
                 println!("bestmove {action_string}");
             }
             GoArgs::Movetime { time } => {
-                let action = self.board.search_to_time(time, &self.opening_book);
+                let action = self.board.search_to_time(time, self.opening_book.as_ref());
                 let action_string = match action {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
                     None => "------".to_owned(), // TODO: info null move
