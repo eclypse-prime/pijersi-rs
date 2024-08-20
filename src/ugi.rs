@@ -5,14 +5,11 @@ use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 use std::{process::exit, time::Instant};
 
 use crate::{
-    board::Board,
-    logic::{
+    board::Board, logic::{
         perft::perft,
         rules::is_action_legal,
         translate::{action_to_string, string_to_action},
-    },
-    search::openings::OpeningBook,
-    AUTHOR_NAME, ENGINE_NAME, VERSION,
+    }, search::openings::OpeningBook, utils::parse_bool_arg, AUTHOR_NAME, ENGINE_NAME, VERSION
 };
 
 #[derive(Parser, Debug)]
@@ -34,6 +31,8 @@ enum Commands {
     Position(PositionArgs),
     #[command(subcommand)]
     Query(QueryArgs),
+    #[command(subcommand)]
+    Setoption(SetoptionArgs),
 }
 
 #[derive(Subcommand, Debug)]
@@ -73,6 +72,12 @@ enum QueryArgs {
     Fen,
 }
 
+#[derive(Subcommand, Debug)]
+enum SetoptionArgs {
+    UseBook {value: String},
+    Verbose {value: String},
+}
+
 /// The UgiEngine struct that implements the UGI protocol.
 pub struct UgiEngine {
     board: Board,
@@ -100,6 +105,8 @@ impl UgiEngine {
         println!("id name {ENGINE_NAME} {VERSION}");
         println!("id author {AUTHOR_NAME}");
         println!("info target platform {CURRENT_PLATFORM} compiled on {COMPILED_ON}");
+        println!("option name verbose type check default true");
+        println!("option name use-book type check default true");
         println!("ugiok");
     }
 
@@ -107,13 +114,16 @@ impl UgiEngine {
         self.opening_book = Some(OpeningBook::new());
         println!("readyok");
     }
+
     fn uginewgame(&mut self) {
         self.board.init();
     }
+
     // TODO: help function?
     fn exit(&self) {
         exit(0);
     }
+
     fn go(&mut self, go_args: GoArgs) {
         match go_args {
             GoArgs::Depth { depth } => {
@@ -147,6 +157,7 @@ impl UgiEngine {
             }
         }
     }
+
     fn position(&mut self, position_args: PositionArgs) {
         match position_args {
             PositionArgs::Startpos(startpos_args) => {
@@ -220,6 +231,7 @@ impl UgiEngine {
             }
         }
     }
+
     fn query(&self, query_args: QueryArgs) {
         match query_args {
             QueryArgs::Gameover => {
@@ -277,6 +289,21 @@ impl UgiEngine {
         }
     }
 
+    fn setoption(&mut self, option: SetoptionArgs) {
+        match option {
+            SetoptionArgs::UseBook { value } => {
+                if let Some(value) = parse_bool_arg(&value) {
+                    self.board.options.use_book = value;
+                }
+            }
+            SetoptionArgs::Verbose { value } => {
+                if let Some(value) = parse_bool_arg(&value) {
+                    self.board.options.verbose = value;
+                }
+            }
+        }
+    }
+
     /// Reads a command and responds to it (using stdout).
     ///
     /// The parsing is done using the clap crate.
@@ -293,6 +320,7 @@ impl UgiEngine {
                 Commands::Go(go_args) => self.go(go_args),
                 Commands::Position(position_args) => self.position(position_args),
                 Commands::Query(query_args) => self.query(query_args),
+                Commands::Setoption(setoption_args) => self.setoption(setoption_args),
             },
             Err(e) => {
                 let error_text = if command.is_empty() {
