@@ -153,6 +153,7 @@ pub fn search_iterative(
     current_player: u8,
     max_depth: u64,
     end_time: Option<Instant>,
+    verbose: bool,
 ) -> Option<(u64, i64)> {
     let mut best_result: Option<(u64, i64)> = None;
     let mut last_scores: Option<Vec<i64>> = None;
@@ -167,18 +168,24 @@ pub fn search_iterative(
             None => (),
             Some((action, score, scores)) => {
                 let action_string = action_to_string(cells, action);
-                println!("info depth {depth} time {duration} score {score} pv {action_string}");
+                if verbose {
+                    println!("info depth {depth} time {duration} score {score} pv {action_string}");
+                }
                 if score < -BASE_BETA {
-                    println!("info loss in {}", depth / 2);
+                    if verbose {
+                        println!("info loss in {}", depth / 2);
+                    }
                     break;
                 }
                 best_result = Some((action, score));
                 last_scores = Some(scores);
                 if score > BASE_BETA {
-                    if depth > 1 {
-                        println!("info mate in {}", depth / 2);
-                    } else {
-                        println!("info mate");
+                    if verbose {
+                        if depth > 1 {
+                            println!("info mate in {}", depth / 2);
+                        } else {
+                            println!("info mate");
+                        }
                     }
                     break;
                 }

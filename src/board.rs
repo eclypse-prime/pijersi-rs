@@ -27,6 +27,38 @@ use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
 
+/// This struct represents the board options.
+///
+/// It contains various parameters for the search engine:
+/// * Using the opening book
+/// * Printing the info logs during searches
+pub struct BoardOptions {
+    /// Using the opening book
+    pub use_book: bool,
+    /// Printing the info logs during searches
+    pub verbose: bool,
+}
+
+impl Default for BoardOptions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl BoardOptions {
+    /// BoardOptions constructor. By default, the options are set to:
+    /// ```ignore
+    /// use_book: true
+    /// verbose: true
+    /// ```
+    pub fn new() -> Self {
+        Self {
+            use_book: true,
+            verbose: true,
+        }
+    }
+}
+
 /// This struct represents a Pijersi board.
 ///
 /// It contains all the necessary information to represent a Pijersi game at any point:
@@ -36,6 +68,8 @@ use crate::search::openings::OpeningBook;
 /// * Current full moves count
 /// * Piece count
 pub struct Board {
+    /// The board options
+    pub options: BoardOptions,
     /// The current cells storing the piece data as u8 (see [`crate::piece`])
     pub cells: [u8; 45],
     /// The current player: 0 if white, 1 if black
@@ -55,6 +89,7 @@ impl Board {
     /// Board constructor: the cells are empty on initialization, the current player is white.
     pub fn new() -> Self {
         Self {
+            options: BoardOptions::new(),
             cells: [0u8; 45],
             current_player: 0u8,
             half_moves: 0u64,
@@ -156,7 +191,9 @@ impl Board {
         if let Some(opening_book) = opening_book {
             if let Some(&action) = opening_book.lookup(&self.get_state()) {
                 let action_string = action_to_string(&self.cells, action);
-                println!("info book pv {action_string}");
+                if self.options.verbose {
+                    println!("info book pv {action_string}");
+                }
                 return Some(action);
             }
         }
@@ -169,10 +206,18 @@ impl Board {
         depth: u64,
         opening_book: &Option<OpeningBook>,
     ) -> Option<(u64, i64)> {
-        if let Some(action) = self.search_book(opening_book) {
-            return Some((action, 0));
+        if self.options.use_book {
+            if let Some(action) = self.search_book(opening_book) {
+                return Some((action, 0));
+            }
         }
-        search_iterative(&self.cells, self.current_player, depth, None)
+        search_iterative(
+            &self.cells,
+            self.current_player,
+            depth,
+            None,
+            self.options.verbose,
+        )
     }
 
     /// Searches and returns the best action after a given time.
@@ -181,14 +226,17 @@ impl Board {
         movetime: u64,
         opening_book: &Option<OpeningBook>,
     ) -> Option<(u64, i64)> {
-        if let Some(action) = self.search_book(opening_book) {
-            return Some((action, 0));
+        if self.options.use_book {
+            if let Some(action) = self.search_book(opening_book) {
+                return Some((action, 0));
+            }
         }
         search_iterative(
             &self.cells,
             self.current_player,
             u64::MAX,
             Some(Instant::now() + Duration::from_millis(movetime)),
+            self.options.verbose,
         )
     }
 
