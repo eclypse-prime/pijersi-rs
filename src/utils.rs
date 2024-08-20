@@ -25,11 +25,9 @@ pub fn reverse_argsort<T: Clone>(original: &[T], indices: &[usize]) -> Vec<T> {
 pub fn parse_bool_arg(argument: &str) -> Option<bool> {
     if argument == "true" {
         Some(true)
-    }
-    else if argument == "false" {
+    } else if argument == "false" {
         Some(false)
-    }
-    else {
+    } else {
         None
     }
 }

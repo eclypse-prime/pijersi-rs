@@ -189,7 +189,7 @@ impl Board {
     /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
     fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<u64> {
         if let Some(opening_book) = opening_book {
-            if let Some(&action) = opening_book.lookup(&self.get_state()) {
+            if let Some(&action) = opening_book.lookup(&self.get_string_state()) {
                 let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO create const for this
                 let action_string = action_to_string(&self.cells, action);
                 if self.options.verbose {
@@ -210,7 +210,7 @@ impl Board {
         // TODO: start searching from the book move's depth and use it to sort the search order
         if self.options.use_book {
             // TODO: start searching from the book move's depth and use it to sort the search order
-        if let Some(action) = self.search_book(opening_book) {
+            if let Some(action) = self.search_book(opening_book) {
                 return Some((action, 0));
             }
         }
@@ -232,7 +232,7 @@ impl Board {
         // TODO: start searching from the book move's depth and use it to sort the search order
         if self.options.use_book {
             // TODO: start searching from the book move's depth and use it to sort the search order
-        if let Some(action) = self.search_book(opening_book) {
+            if let Some(action) = self.search_book(opening_book) {
                 return Some((action, 0));
             }
         }
@@ -245,49 +245,83 @@ impl Board {
         )
     }
 
-    /// Get the Pijersi Standard Notation of the current board state.
-    pub fn get_state(&self) -> String {
-        let cells_string = cells_to_string(&self.cells);
-        format!(
-            "{cells_string} {} {} {}",
-            if self.current_player == 0 { "w" } else { "b" },
+    /// Get the current board state.
+    pub fn get_state(&self) -> ([u8; 45], char, u64, u64) {
+        (
+            self.cells,
+            if self.current_player == 0 { 'w' } else { 'b' },
             self.half_moves,
-            self.full_moves
+            self.full_moves,
         )
     }
 
-    /// Sets the state of the board according to Pijersi Standard Notation data.
+    /// Sets the board state.
     pub fn set_state(
         &mut self,
-        cells_string: &str,
+        cells: &[u8; 45],
         player: char,
         half_moves: u64,
         full_moves: u64,
     ) -> Result<(), StringParseError> {
-        match string_to_cells(&mut self.cells, cells_string) {
-            Ok(_v) => (),
-            Err(e) => {
-                return Err(StringParseError::new(&format!(
-                    "Illegal board notation '{cells_string}' ({e})"
-                )));
-            }
-        }
-        match match player {
-            'w' => Some(0u8),
-            'b' => Some(1u8),
-            _ => None,
-        } {
-            Some(current_player) => {
-                self.current_player = current_player;
-            }
-            None => {
+        // match string_to_cells(&mut self.cells, cells_string) {
+        //     Ok(_v) => (),
+        //     Err(e) => {
+        //         return Err(StringParseError::new(&format!(
+        //             "Illegal board notation '{cells_string}' ({e})"
+        //         )));
+        //     }
+        // }
+        self.cells = *cells;
+        self.current_player = match player {
+            'w' => 0u8,
+            'b' => 1u8,
+            _ => {
                 return Err(StringParseError::new(&format!("Unknown player {player}")));
             }
-        }
+        };
         self.half_moves = half_moves;
         self.full_moves = full_moves;
         self.last_piece_count = self.count_pieces();
         Ok(())
+    }
+
+    /// Get the Pijersi Standard Notation of the current board state.
+    pub fn get_string_state(&self) -> String {
+        let state = self.get_state();
+        format!(
+            "{} {} {} {}",
+            cells_to_string(&state.0),
+            state.1,
+            state.2,
+            state.3
+        )
+    }
+
+    /// Sets the state of the board according to Pijersi Standard Notation data.
+    pub fn set_string_state(&mut self, state_string: &str) -> Result<(), StringParseError> {
+        if let [cells_string, player_string, half_moves_string, full_moves_string] =
+            state_string.split(' ').collect::<Vec<&str>>()[..]
+        {
+            // TODO: use anyhow
+            let new_cells = string_to_cells(&cells_string).unwrap();
+            let player = match player_string {
+                "w" => 'w',
+                "b" => 'b',
+                _ => {
+                    return Err(StringParseError::new(&format!(
+                        "Unknown player {player_string}"
+                    )))
+                }
+            };
+            // TODO: use anyhow
+            let half_moves: u64 = half_moves_string.parse().unwrap();
+            let full_moves: u64 = full_moves_string.parse().unwrap();
+            self.set_state(&new_cells, player, half_moves, full_moves)
+        } else {
+            Err(StringParseError::new(&format!(
+                "Illegal board notation '{state_string}"
+            )))
+        }
     }
 
     /// Plays the chosen action provided in string representation.

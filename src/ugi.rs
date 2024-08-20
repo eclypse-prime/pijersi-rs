@@ -5,11 +5,15 @@ use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 use std::{process::exit, time::Instant};
 
 use crate::{
-    board::Board, logic::{
+    board::Board,
+    logic::{
         perft::perft,
         rules::is_action_legal,
-        translate::{action_to_string, string_to_action},
-    }, search::openings::OpeningBook, utils::parse_bool_arg, AUTHOR_NAME, ENGINE_NAME, VERSION
+        translate::{action_to_string, string_to_action, string_to_cells},
+    },
+    search::openings::OpeningBook,
+    utils::parse_bool_arg,
+    AUTHOR_NAME, ENGINE_NAME, VERSION,
 };
 
 #[derive(Parser, Debug)]
@@ -74,8 +78,8 @@ enum QueryArgs {
 
 #[derive(Subcommand, Debug)]
 enum SetoptionArgs {
-    UseBook {value: String},
-    Verbose {value: String},
+    UseBook { value: String },
+    Verbose { value: String },
 }
 
 /// The UgiEngine struct that implements the UGI protocol.
@@ -191,44 +195,50 @@ impl UgiEngine {
             PositionArgs::Fen(fen_args) => {
                 let action_list: Vec<String> = fen_args.moves;
                 match action_list.len() {
-                    0 => {
-                        match self.board.set_state(
-                            &fen_args.fen,
-                            fen_args.player,
-                            fen_args.half_moves,
-                            fen_args.full_moves,
-                        ) {
-                            Ok(()) => (),
-                            Err(e) => println!("info error \"{e}\""),
+                    0 => match string_to_cells(&fen_args.fen) {
+                        Ok(new_cells) => {
+                            match self.board.set_state(
+                                &new_cells,
+                                fen_args.player,
+                                fen_args.half_moves,
+                                fen_args.full_moves,
+                            ) {
+                                Ok(()) => (),
+                                Err(e) => println!("info error \"{e}\""),
+                            }
                         }
-                    }
+                        Err(e) => println!("info error \"{e}\""),
+                    },
                     1 => {
                         println!("invalid argument {}", action_list[0]);
                     }
                     _ if action_list[0] != "moves" => {
                         println!("invalid argument {}", action_list[0]);
                     }
-                    _ => {
-                        match self.board.set_state(
-                            &fen_args.fen,
-                            fen_args.player,
-                            fen_args.half_moves,
-                            fen_args.full_moves,
-                        ) {
-                            Ok(()) => {
-                                // TODO: make function (duplicate code)
-                                for action_string in action_list.iter().skip(1) {
-                                    // TODO: rollback if err
-                                    let result = self.board.play_from_string(action_string);
-                                    match result {
-                                        Ok(_v) => (),
-                                        Err(e) => println!("info error \"{e}\""),
+                    _ => match string_to_cells(&fen_args.fen) {
+                        Ok(new_cells) => {
+                            match self.board.set_state(
+                                &new_cells,
+                                fen_args.player,
+                                fen_args.half_moves,
+                                fen_args.full_moves,
+                            ) {
+                                Ok(()) => {
+                                    // TODO: make function (duplicate code)
+                                    for action_string in action_list.iter().skip(1) {
+                                        // TODO: rollback if err
+                                        let result = self.board.play_from_string(action_string);
+                                        match result {
+                                            Ok(_v) => (),
+                                            Err(e) => println!("info error \"{e}\""),
+                                        }
                                     }
                                 }
+                                Err(e) => println!("info error \"{e}\""),
                             }
-                            Err(e) => println!("info error \"{e}\""),
                         }
-                    }
+                        Err(e) => println!("info error \"{e}\""),
+                    },
                 }
             }
         }
@@ -286,7 +296,7 @@ impl UgiEngine {
                 }
             }
             QueryArgs::Fen => {
-                println!("{}", self.board.get_state());
+                println!("{}", self.board.get_string_state());
             }
         }
     }

@@ -173,7 +173,7 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
 }
 
 /// Reads a Pijersi Standard Notation string to apply its state to the cells.
-pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), StringParseError> {
+pub fn string_to_cells(cells_string: &str) -> Result<[u8; 45], StringParseError> {
     let cell_lines: Vec<&str> = cells_string.split('/').collect();
     if cell_lines.len() != 7 {
         Err(StringParseError::new(&format!(
@@ -207,8 +207,7 @@ pub fn string_to_cells(cells: &mut [u8; 45], cells_string: &str) -> Result<(), S
                 }
             }
         }
-        *cells = new_cells;
-        Ok(())
+        Ok(new_cells)
     }
 }
 
