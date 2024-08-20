@@ -22,7 +22,7 @@ use crate::logic::rules::{
 use crate::logic::translate::{
     action_to_string, cells_to_string, string_to_action, string_to_cells,
 };
-use crate::logic::{CELL_EMPTY, STACK_THRESHOLD};
+use crate::logic::{CELL_EMPTY, INDEX_WIDTH, STACK_THRESHOLD};
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
@@ -155,8 +155,9 @@ impl Board {
     fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<u64> {
         if let Some(opening_book) = opening_book {
             if let Some(&action) = opening_book.lookup(&self.get_state()) {
+                let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO create const for this
                 let action_string = action_to_string(&self.cells, action);
-                println!("info book pv {action_string}");
+                println!("info book depth {depth} pv {action_string}");
                 return Some(action);
             }
         }
@@ -169,6 +170,7 @@ impl Board {
         depth: u64,
         opening_book: Option<&OpeningBook>,
     ) -> Option<(u64, i64)> {
+        // TODO: start searching from the book move's depth and use it to sort the search order
         if let Some(action) = self.search_book(opening_book) {
             return Some((action, 0));
         }
@@ -181,6 +183,7 @@ impl Board {
         movetime: u64,
         opening_book: Option<&OpeningBook>,
     ) -> Option<(u64, i64)> {
+        // TODO: start searching from the book move's depth and use it to sort the search order
         if let Some(action) = self.search_book(opening_book) {
             return Some((action, 0));
         }
