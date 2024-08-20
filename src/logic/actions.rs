@@ -1,4 +1,10 @@
 //! Implements the actions a player can choose (move, stack, unstack...).
+//!
+//! An action is stored as a u64 value. Its contents are divided into the following sections:
+//!
+//! | Data  | Empty | Depth (optional) | Third index | Second index | First index |
+//! |-------|-------|------------------|-------------|--------------|-------------|
+//! | Width | 32    | 8                | 8           | 8            | 8           |
 
 use super::{
     CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL, INDEX_WIDTH, TOP_MASK,
