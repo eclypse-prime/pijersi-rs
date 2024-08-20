@@ -207,6 +207,7 @@ impl Board {
         depth: u64,
         opening_book: Option<&OpeningBook>,
     ) -> Option<(u64, i64)> {
+        // TODO: start searching from the book move's depth and use it to sort the search order
         if self.options.use_book {
             // TODO: start searching from the book move's depth and use it to sort the search order
         if let Some(action) = self.search_book(opening_book) {
@@ -228,6 +229,7 @@ impl Board {
         movetime: u64,
         opening_book: Option<&OpeningBook>,
     ) -> Option<(u64, i64)> {
+        // TODO: start searching from the book move's depth and use it to sort the search order
         if self.options.use_book {
             // TODO: start searching from the book move's depth and use it to sort the search order
         if let Some(action) = self.search_book(opening_book) {
