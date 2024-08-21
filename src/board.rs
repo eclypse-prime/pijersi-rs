@@ -185,15 +185,14 @@ impl Board {
         }
     }
 
-    // TODO: store more info in the book, like the expected score, and the search depth
     /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
     fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<u64> {
         if let Some(opening_book) = opening_book {
-            if let Some(&action) = opening_book.lookup(&self.get_string_state()) {
+            if let Some(&(action, score)) = opening_book.lookup(&self.get_string_state()) {
                 let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO create const for this
                 let action_string = action_to_string(&self.cells, action);
                 if self.options.verbose {
-                    println!("info book depth {depth} pv {action_string}");
+                    println!("info book depth {depth} score {score} pv {action_string}");
                 }
                 return Some(action);
             }
