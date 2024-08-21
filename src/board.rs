@@ -303,7 +303,7 @@ impl Board {
             state_string.split(' ').collect::<Vec<&str>>()[..]
         {
             // TODO: use anyhow
-            let new_cells = string_to_cells(&cells_string).unwrap();
+            let new_cells = string_to_cells(cells_string).unwrap();
             let player = match player_string {
                 "w" => 'w',
                 "b" => 'b',
