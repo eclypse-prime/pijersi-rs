@@ -186,7 +186,7 @@ impl Board {
     }
 
     /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
-    fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<u64> {
+    fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(u64, u64, i64)> {
         if let Some(opening_book) = opening_book {
             if let Some(&(action, score)) = opening_book.lookup(&self.get_string_state()) {
                 let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO create const for this
@@ -194,7 +194,7 @@ impl Board {
                 if self.options.verbose {
                     println!("info book depth {depth} score {score} pv {action_string}");
                 }
-                return Some(action);
+                return Some((action, depth, score));
             }
         }
         None
@@ -206,11 +206,12 @@ impl Board {
         depth: u64,
         opening_book: Option<&OpeningBook>,
     ) -> Option<(u64, i64)> {
-        // TODO: start searching from the book move's depth and use it to sort the search order
         if self.options.use_book {
-            // TODO: start searching from the book move's depth and use it to sort the search order
-            if let Some(action) = self.search_book(opening_book) {
-                return Some((action, 0));
+            if let Some((action, book_depth, score)) = self.search_book(opening_book) {
+                // TODO: start searching from the book move's depth and use it to sort the search order
+                if book_depth > depth {
+                    return Some((action, score));
+                }
             }
         }
         search_iterative(
@@ -228,11 +229,10 @@ impl Board {
         movetime: u64,
         opening_book: Option<&OpeningBook>,
     ) -> Option<(u64, i64)> {
-        // TODO: start searching from the book move's depth and use it to sort the search order
         if self.options.use_book {
-            // TODO: start searching from the book move's depth and use it to sort the search order
-            if let Some(action) = self.search_book(opening_book) {
-                return Some((action, 0));
+            if let Some((action, _depth, score)) = self.search_book(opening_book) {
+                // TODO: start searching from the book move's depth and use it to sort the search order
+                return Some((action, score));
             }
         }
         search_iterative(
