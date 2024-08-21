@@ -5,8 +5,7 @@ use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 use std::{process::exit, time::Instant};
 
 use crate::{
-    board::Board,
-    logic::{
+    board::Board, logic::{
         perft::perft,
         rules::is_action_legal,
         translate::{action_to_string, string_to_action, string_to_cells},
