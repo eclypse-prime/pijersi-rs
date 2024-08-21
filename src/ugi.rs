@@ -8,8 +8,11 @@ use crate::{
     board::Board, logic::{
         perft::perft,
         rules::is_action_legal,
-        translate::{action_to_string, string_to_action},
-    }, search::openings::OpeningBook, utils::parse_bool_arg, AUTHOR_NAME, ENGINE_NAME, VERSION
+        translate::{action_to_string, string_to_action, string_to_cells},
+    },
+    search::openings::OpeningBook,
+    utils::parse_bool_arg,
+    AUTHOR_NAME, ENGINE_NAME, VERSION,
 };
 
 #[derive(Parser, Debug)]
@@ -74,8 +77,8 @@ enum QueryArgs {
 
 #[derive(Subcommand, Debug)]
 enum SetoptionArgs {
-    UseBook {value: String},
-    Verbose {value: String},
+    UseBook { value: String },
+    Verbose { value: String },
 }
 
 /// The UgiEngine struct that implements the UGI protocol.
@@ -127,7 +130,9 @@ impl UgiEngine {
     fn go(&mut self, go_args: GoArgs) {
         match go_args {
             GoArgs::Depth { depth } => {
-                let result = self.board.search_to_depth(depth, &self.opening_book);
+                let result = self
+                    .board
+                    .search_to_depth(depth, self.opening_book.as_ref());
                 let action_string = match result {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
                     None => "------".to_owned(), // TODO: info null move
@@ -135,7 +140,7 @@ impl UgiEngine {
                 println!("bestmove {action_string}");
             }
             GoArgs::Movetime { time } => {
-                let action = self.board.search_to_time(time, &self.opening_book);
+                let action = self.board.search_to_time(time, self.opening_book.as_ref());
                 let action_string = match action {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
                     None => "------".to_owned(), // TODO: info null move
@@ -189,44 +194,50 @@ impl UgiEngine {
             PositionArgs::Fen(fen_args) => {
                 let action_list: Vec<String> = fen_args.moves;
                 match action_list.len() {
-                    0 => {
-                        match self.board.set_state(
-                            &fen_args.fen,
-                            fen_args.player,
-                            fen_args.half_moves,
-                            fen_args.full_moves,
-                        ) {
-                            Ok(()) => (),
-                            Err(e) => println!("info error \"{e}\""),
+                    0 => match string_to_cells(&fen_args.fen) {
+                        Ok(new_cells) => {
+                            match self.board.set_state(
+                                &new_cells,
+                                fen_args.player,
+                                fen_args.half_moves,
+                                fen_args.full_moves,
+                            ) {
+                                Ok(()) => (),
+                                Err(e) => println!("info error \"{e}\""),
+                            }
                         }
-                    }
+                        Err(e) => println!("info error \"{e}\""),
+                    },
                     1 => {
                         println!("invalid argument {}", action_list[0]);
                     }
                     _ if action_list[0] != "moves" => {
                         println!("invalid argument {}", action_list[0]);
                     }
-                    _ => {
-                        match self.board.set_state(
-                            &fen_args.fen,
-                            fen_args.player,
-                            fen_args.half_moves,
-                            fen_args.full_moves,
-                        ) {
-                            Ok(()) => {
-                                // TODO: make function (duplicate code)
-                                for action_string in action_list.iter().skip(1) {
-                                    // TODO: rollback if err
-                                    let result = self.board.play_from_string(action_string);
-                                    match result {
-                                        Ok(_v) => (),
-                                        Err(e) => println!("info error \"{e}\""),
+                    _ => match string_to_cells(&fen_args.fen) {
+                        Ok(new_cells) => {
+                            match self.board.set_state(
+                                &new_cells,
+                                fen_args.player,
+                                fen_args.half_moves,
+                                fen_args.full_moves,
+                            ) {
+                                Ok(()) => {
+                                    // TODO: make function (duplicate code)
+                                    for action_string in action_list.iter().skip(1) {
+                                        // TODO: rollback if err
+                                        let result = self.board.play_from_string(action_string);
+                                        match result {
+                                            Ok(_v) => (),
+                                            Err(e) => println!("info error \"{e}\""),
+                                        }
                                     }
                                 }
+                                Err(e) => println!("info error \"{e}\""),
                             }
-                            Err(e) => println!("info error \"{e}\""),
                         }
-                    }
+                        Err(e) => println!("info error \"{e}\""),
+                    },
                 }
             }
         }
@@ -284,7 +295,7 @@ impl UgiEngine {
                 }
             }
             QueryArgs::Fen => {
-                println!("{}", self.board.get_state());
+                println!("{}", self.board.get_string_state());
             }
         }
     }
