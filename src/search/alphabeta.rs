@@ -9,7 +9,7 @@ use rayon::prelude::*;
 use crate::logic::translate::action_to_string;
 use crate::utils::{argsort, reverse_argsort};
 
-use super::super::logic::{movegen::available_player_actions, MAX_PLAYER_ACTIONS};
+use super::super::logic::movegen::available_player_actions;
 
 use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_with_details};
 
@@ -33,8 +33,7 @@ pub fn search(
     }
 
     // Get an array of all the available moves for the current player, the last element of the array is the number of available moves
-    let available_actions: [u64; 512] = available_player_actions(cells, current_player);
-    let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+    let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
     let order = match scores {
         Some(scores) => argsort(scores, true),

@@ -20,19 +20,20 @@ pub fn concatenate_half_action(half_action: u64, index_end: usize) -> u64 {
 
 /// Returns the possible moves for a player.
 /// The result is a size `MAX_PLAYER_ACTIONS` array of u64 where the last element is the number of actions.
-pub fn available_player_actions(cells: &[u8; 45], current_player: u8) -> [u64; MAX_PLAYER_ACTIONS] {
+pub fn available_player_actions(cells: &[u8; 45], current_player: u8) -> ([u64; MAX_PLAYER_ACTIONS], usize) {
     let mut player_actions: [u64; MAX_PLAYER_ACTIONS] = [0u64; MAX_PLAYER_ACTIONS];
+    let mut index_actions: usize = 0;
 
     // Calculate possible player_actions
     for index in 0..45 {
         if cells[index] != 0 {
             // Choose pieces of the current player's colour
             if (cells[index] & COLOUR_MASK) == (current_player << 1) {
-                available_piece_actions(cells, index, &mut player_actions);
+                index_actions = available_piece_actions(cells, index, &mut player_actions, index_actions);
             }
         }
     }
-    player_actions
+    (player_actions, index_actions)
 }
 
 /// Calculates the possible moves for a player.
@@ -43,10 +44,10 @@ fn available_piece_actions(
     cells: &[u8; 45],
     index_start: usize,
     player_actions: &mut [u64; MAX_PLAYER_ACTIONS],
-) {
-    let mut index_actions: usize = player_actions[MAX_PLAYER_ACTIONS - 1] as usize;
-
+    index_actions: usize,
+) -> usize {
     let piece_start: u8 = cells[index_start];
+    let mut index_actions = index_actions;
 
     // If the piece is not a stack
     if piece_start < STACK_THRESHOLD {
@@ -207,6 +208,5 @@ fn available_piece_actions(
             }
         }
     }
-
-    player_actions[MAX_PLAYER_ACTIONS - 1] = index_actions as u64;
+    index_actions
 }
