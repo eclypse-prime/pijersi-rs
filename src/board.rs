@@ -262,14 +262,6 @@ impl Board {
         half_moves: u64,
         full_moves: u64,
     ) -> Result<(), StringParseError> {
-        // match string_to_cells(&mut self.cells, cells_string) {
-        //     Ok(_v) => (),
-        //     Err(e) => {
-        //         return Err(StringParseError::new(&format!(
-        //             "Illegal board notation '{cells_string}' ({e})"
-        //         )));
-        //     }
-        // }
         self.cells = *cells;
         self.current_player = match player {
             'w' => 0u8,
