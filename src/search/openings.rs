@@ -3,7 +3,7 @@
 //! It contains the opening book data in the form of a HashMap.
 //! The keys are strings representing the Pijersi Standard Notation of the stored position.
 //! The values are the stored actions in the native triple-index format (u64) and the expected score at the pre-calculated search depth.
-//! 
+//!
 //! The stored actions contain search depth values (see [`crate::logic::actions`]).
 
 use std::collections::HashMap;

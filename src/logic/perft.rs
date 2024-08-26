@@ -240,8 +240,7 @@ pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(Str
     match depth {
         0 => vec![],
         _ => {
-            let (available_actions, n_actions) =
-                available_player_actions(cells, current_player);
+            let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
             available_actions
                 .par_iter()

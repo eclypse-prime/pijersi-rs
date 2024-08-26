@@ -1,6 +1,8 @@
 //! Implements the rules to check if an action is valid or not.
 use super::{
-    movegen::available_player_actions, perft::perft_iter, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE
+    movegen::available_player_actions, perft::perft_iter, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK,
+    COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK,
+    TYPE_SCISSORS, TYPE_WISE,
 };
 
 /// Returns whether an attacker piece can capture a target piece.
