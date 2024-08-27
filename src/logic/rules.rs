@@ -1,7 +1,7 @@
 //! Implements the rules to check if an action is valid or not.
 use super::{
-    movegen::available_player_actions, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE,
-    INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK,
+    movegen::available_player_actions, perft::perft_iter, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK,
+    COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK,
     TYPE_SCISSORS, TYPE_WISE,
 };
 
@@ -116,8 +116,7 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
 
 /// Returns true if the given action is legal.
 pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> bool {
-    let available_actions: [u64; 512] = available_player_actions(cells, current_player);
-    let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+    let (available_actions, n_actions) = available_player_actions(cells, current_player);
     available_actions
         .iter()
         .take(n_actions)
@@ -149,9 +148,7 @@ pub fn is_position_win(cells: &[u8; 45]) -> bool {
 ///
 /// This means one of the two players has no legal move left.
 pub fn is_position_stalemate(cells: &[u8; 45], current_player: u8) -> bool {
-    let available_actions = available_player_actions(cells, current_player);
-    let n_moves = available_actions[MAX_PLAYER_ACTIONS - 1];
-    n_moves == 0
+    perft_iter(cells, current_player, 1) == 0
 }
 
 /// Returns the winning player if there is one.

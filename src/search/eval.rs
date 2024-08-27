@@ -7,8 +7,7 @@ use crate::logic::actions::play_action;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
 use crate::logic::{
-    COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_WIDTH, MAX_PLAYER_ACTIONS, TOP_MASK,
-    TYPE_MASK, TYPE_WISE,
+    COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_WIDTH, TOP_MASK, TYPE_MASK, TYPE_WISE,
 };
 use crate::search::lookup::PIECE_SCORES;
 
@@ -79,8 +78,7 @@ pub fn evaluate_action(
         return i64::MIN;
     }
 
-    let available_actions: [u64; 512] = available_player_actions(&new_cells, current_player);
-    let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+    let (available_actions, n_actions) = available_player_actions(&new_cells, current_player);
 
     let mut score = i64::MIN;
 

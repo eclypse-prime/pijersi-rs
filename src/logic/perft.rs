@@ -8,7 +8,7 @@ use super::{
     movegen::available_player_actions,
     rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
     translate::action_to_string,
-    COLOUR_MASK, MAX_PLAYER_ACTIONS, STACK_THRESHOLD,
+    COLOUR_MASK, STACK_THRESHOLD,
 };
 
 /// Returns the number of possible actions for a player.
@@ -183,8 +183,7 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
         0 => 1u64,
         1 | 2 => perft_iter(cells, current_player, depth),
         _ => {
-            let available_actions: [u64; 512] = available_player_actions(cells, current_player);
-            let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+            let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
             available_actions
                 .par_iter()
@@ -210,8 +209,7 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
         0 => 1u64,
         1 => count_player_actions(cells, current_player),
         _ => {
-            let available_actions: [u64; 512] = available_player_actions(cells, current_player);
-            let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+            let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
             let mut new_cells: [u8; 45] = [0u8; 45];
 
@@ -242,9 +240,7 @@ pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(Str
     match depth {
         0 => vec![],
         _ => {
-            let available_actions: [u64; MAX_PLAYER_ACTIONS] =
-                available_player_actions(cells, current_player);
-            let n_actions: usize = available_actions[MAX_PLAYER_ACTIONS - 1] as usize;
+            let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
             available_actions
                 .par_iter()
