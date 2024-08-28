@@ -13,6 +13,8 @@ pub const INDEX_WIDTH: usize = 8;
 pub const INDEX_NULL: usize = 0xFFusize;
 /// Mask to get the first index of a move (rightmost)
 pub const INDEX_MASK: u64 = 0xFFu64;
+/// Mask to get the action without additional data
+pub const ACTION_MASK: u64 = 0xFFFFFFu64;
 
 /// Bit width of a half piece
 pub const HALF_PIECE_WIDTH: usize = 4;
@@ -45,3 +47,5 @@ pub const TYPE_WISE: u8 = 0b1100u8;
 
 /// Size of the array that stores player actions
 pub const MAX_PLAYER_ACTIONS: usize = 512;
+
+// TODO: implement inline helper functions for common bitwise operations on pieces and actions

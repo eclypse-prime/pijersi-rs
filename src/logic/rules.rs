@@ -1,8 +1,6 @@
 //! Implements the rules to check if an action is valid or not.
 use super::{
-    movegen::available_player_actions, perft::perft_iter, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK,
-    COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK,
-    TYPE_SCISSORS, TYPE_WISE,
+    movegen::available_player_actions, perft::perft_iter, ACTION_MASK, CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE
 };
 
 /// Returns whether an attacker piece can capture a target piece.
@@ -116,6 +114,7 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
 
 /// Returns true if the given action is legal.
 pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> bool {
+    let action = action & ACTION_MASK;
     let (available_actions, n_actions) = available_player_actions(cells, current_player);
     available_actions
         .iter()
