@@ -1,5 +1,7 @@
 //! This module implements various helper functions.
 
+use crate::errors::StringParseError;
+
 /// Returns a vector of sorted indices
 pub fn argsort<T: Ord>(data: &[T], reverse: bool) -> Vec<usize> {
     let mut indices = (0..data.len()).collect::<Vec<_>>();
@@ -29,5 +31,15 @@ pub fn parse_bool_arg(argument: &str) -> Option<bool> {
         Some(false)
     } else {
         None
+    }
+}
+
+pub fn parse_player_arg(player: &str) -> Result<u8, StringParseError> {
+    match player {
+        "w" => Ok(0u8),
+        "b" => Ok(1u8),
+        _ => {
+            Err(StringParseError::new(&format!("Unknown player {player}")))
+        }
     }
 }

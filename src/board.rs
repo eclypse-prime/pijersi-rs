@@ -26,6 +26,7 @@ use crate::logic::{CELL_EMPTY, INDEX_WIDTH, STACK_THRESHOLD};
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
+use crate::utils::parse_player_arg;
 
 /// This struct represents the board options.
 ///
@@ -245,10 +246,10 @@ impl Board {
     }
 
     /// Get the current board state.
-    pub fn get_state(&self) -> ([u8; 45], char, u64, u64) {
+    pub fn get_state(&self) -> ([u8; 45], u8, u64, u64) {
         (
             self.cells,
-            if self.current_player == 0 { 'w' } else { 'b' },
+            self.current_player,
             self.half_moves,
             self.full_moves,
         )
@@ -258,18 +259,12 @@ impl Board {
     pub fn set_state(
         &mut self,
         cells: &[u8; 45],
-        player: char,
+        player: u8,
         half_moves: u64,
         full_moves: u64,
     ) -> Result<(), StringParseError> {
         self.cells = *cells;
-        self.current_player = match player {
-            'w' => 0u8,
-            'b' => 1u8,
-            _ => {
-                return Err(StringParseError::new(&format!("Unknown player {player}")));
-            }
-        };
+        self.current_player = player;
         self.half_moves = half_moves;
         self.full_moves = full_moves;
         self.last_piece_count = self.count_pieces();
@@ -295,16 +290,8 @@ impl Board {
         {
             // TODO: use anyhow
             let new_cells = string_to_cells(cells_string).unwrap();
-            let player = match player_string {
-                "w" => 'w',
-                "b" => 'b',
-                _ => {
-                    return Err(StringParseError::new(&format!(
-                        "Unknown player {player_string}"
-                    )))
-                }
-            };
             // TODO: use anyhow
+            let player = parse_player_arg(player_string).unwrap();
             let half_moves: u64 = half_moves_string.parse().unwrap();
             let full_moves: u64 = full_moves_string.parse().unwrap();
             self.set_state(&new_cells, player, half_moves, full_moves)
