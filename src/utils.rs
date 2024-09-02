@@ -34,6 +34,7 @@ pub fn parse_bool_arg(argument: &str) -> Option<bool> {
     }
 }
 
+/// Parses the player argument: "w" -> Ok(0u8), "b" -> Ok(1u8)
 pub fn parse_player_arg(player: &str) -> Result<u8, StringParseError> {
     match player {
         "w" => Ok(0u8),
