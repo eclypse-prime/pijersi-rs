@@ -12,7 +12,7 @@ use crate::{
         translate::{action_to_string, string_to_action, string_to_cells},
     },
     search::openings::OpeningBook,
-    utils::parse_bool_arg,
+    utils::{parse_bool_arg, parse_player_arg},
     AUTHOR_NAME, ENGINE_NAME, VERSION,
 };
 
@@ -61,7 +61,7 @@ struct StartposArgs {
 #[derive(Args, Debug)]
 struct FenArgs {
     fen: String,
-    player: char,
+    player: String,
     half_moves: u64,
     full_moves: u64,
     moves: Vec<String>,
@@ -199,7 +199,8 @@ impl UgiEngine {
                         Ok(new_cells) => {
                             match self.board.set_state(
                                 &new_cells,
-                                fen_args.player,
+                                // TODO: use anyhow or handle
+                                parse_player_arg(&fen_args.player).unwrap(),
                                 fen_args.half_moves,
                                 fen_args.full_moves,
                             ) {
@@ -219,7 +220,8 @@ impl UgiEngine {
                         Ok(new_cells) => {
                             match self.board.set_state(
                                 &new_cells,
-                                fen_args.player,
+                                // TODO: use anyhow or handle
+                                parse_player_arg(&fen_args.player).unwrap(),
                                 fen_args.half_moves,
                                 fen_args.full_moves,
                             ) {
