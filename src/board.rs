@@ -210,7 +210,7 @@ impl Board {
         if self.options.use_book {
             if let Some((action, book_depth, score)) = self.search_book(opening_book) {
                 // TODO: start searching from the book move's depth and use it to sort the search order
-                if book_depth > depth {
+                if book_depth >= depth {
                     return Some((action, score));
                 }
             }
