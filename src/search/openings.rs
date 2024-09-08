@@ -8,26 +8,30 @@
 
 use std::collections::HashMap;
 
-use bincode::{deserialize, serialize, serialized_size};
+use bincode::{deserialize, serialized_size};
 use serde::{Deserialize, Serialize};
 
 use crate::board::Board;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
+/// Represents a board's cells and current player. They are used to index the opening book.
 pub struct Position {
     #[serde(with = "serde_bytes")]
+    /// The current cells storing the piece data as u8 (see [`crate::piece`])
     pub cells: [u8; 45],
+    /// The current player: 0 if white, 1 if black
     pub current_player: u8,
 }
 
 impl Position {
+    /// Creates a new Position from a board. Copies its cells and current player.
     pub fn new(board: &Board) -> Position {
         Position {
             cells: board.cells,
             current_player: board.current_player,
         }
     }
-    pub fn empty() -> Position {
+    fn empty() -> Position {
         Position {
             cells: [0; 45],
             current_player: 0,
@@ -36,14 +40,19 @@ impl Position {
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
+/// Represents a pre-calculated response to a given position. It is used to generate the opening book HashMap.
 pub struct Response {
+    /// The position that is used as a key
     pub position: Position,
+    /// The pre-calculated response
     pub action: u64,
+    /// The predicted score of the response
     pub score: i64,
 }
 const RESPONSE_SIZE: usize = 70;
 
 impl Response {
+    /// Creates a new Response
     pub fn new(position: Position, action: u64, score: i64) -> Response {
         Response {
             position,
@@ -51,7 +60,7 @@ impl Response {
             score,
         }
     }
-    pub fn empty() -> Response {
+    fn empty() -> Response {
         Response {
             position: Position::empty(),
             action: 0,
@@ -67,23 +76,6 @@ pub struct OpeningBook {
 }
 
 const OPENINGS_BYTES: &[u8] = include_bytes!("../../data/openings");
-
-// // TODO: use anyerror
-// /// Converts a \[psn\];\[action\];\[score\] string to a (psn, action, score) tuple
-// fn line_to_tuple(line: &str) -> Option<(String, (u64, i64))> {
-//     let words: Vec<&str> = line.split(';').collect();
-//     let state = words.first();
-//     let action_str = words.get(1);
-//     let score_str = words.get(2);
-//     if let (Some(state), Some(action_str), Some(score_str)) = (state, action_str, score_str) {
-//         let state = (*state).to_owned();
-//         let action: u64 = (*action_str).parse::<u64>().ok()?;
-//         let score: i64 = (*score_str).parse::<i64>().ok()?;
-//         Some((state, (action, score)))
-//     } else {
-//         None
-//     }
-// }
 
 fn decode_response(response_bytes: &[u8; RESPONSE_SIZE]) -> Option<Response> {
     deserialize(response_bytes).ok()
