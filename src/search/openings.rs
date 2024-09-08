@@ -8,46 +8,118 @@
 
 use std::collections::HashMap;
 
+use bincode::{deserialize, serialize, serialized_size};
+use serde::{Deserialize, Serialize};
+
+use crate::board::Board;
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub struct Position {
+    #[serde(with = "serde_bytes")]
+    pub cells: [u8; 45],
+    pub current_player: u8,
+}
+
+impl Position {
+    pub fn new(board: &Board) -> Position {
+        Position {
+            cells: board.cells,
+            current_player: board.current_player,
+        }
+    }
+    pub fn empty() -> Position {
+        Position {
+            cells: [0; 45],
+            current_player: 0,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub struct Response {
+    pub position: Position,
+    pub action: u64,
+    pub score: i64,
+}
+const RESPONSE_SIZE: usize = 70;
+
+impl Response {
+    pub fn new(position: Position, action: u64, score: i64) -> Response {
+        Response {
+            position,
+            action,
+            score,
+        }
+    }
+    pub fn empty() -> Response {
+        Response {
+            position: Position::empty(),
+            action: 0,
+            score: 0,
+        }
+    }
+}
+
 #[derive(Debug)]
 /// The OpeningBook struct containing the opening book data.
 pub struct OpeningBook {
-    map: HashMap<String, (u64, i64)>,
+    map: HashMap<Position, (u64, i64)>,
 }
 
-const OPENINGS_FILE: &str = include_str!("../../data/openings.txt");
+const OPENINGS_BYTES: &[u8] = include_bytes!("../../data/openings");
 
-// TODO: use anyerror
-/// Converts a \[psn\];\[action\];\[score\] string to a (psn, action, score) tuple
-fn line_to_tuple(line: &str) -> Option<(String, (u64, i64))> {
-    let words: Vec<&str> = line.split(';').collect();
-    let state = words.first();
-    let action_str = words.get(1);
-    let score_str = words.get(2);
-    if let (Some(state), Some(action_str), Some(score_str)) = (state, action_str, score_str) {
-        let state = (*state).to_owned();
-        let action: u64 = (*action_str).parse::<u64>().ok()?;
-        let score: i64 = (*score_str).parse::<i64>().ok()?;
-        Some((state, (action, score)))
-    } else {
-        None
+// // TODO: use anyerror
+// /// Converts a \[psn\];\[action\];\[score\] string to a (psn, action, score) tuple
+// fn line_to_tuple(line: &str) -> Option<(String, (u64, i64))> {
+//     let words: Vec<&str> = line.split(';').collect();
+//     let state = words.first();
+//     let action_str = words.get(1);
+//     let score_str = words.get(2);
+//     if let (Some(state), Some(action_str), Some(score_str)) = (state, action_str, score_str) {
+//         let state = (*state).to_owned();
+//         let action: u64 = (*action_str).parse::<u64>().ok()?;
+//         let score: i64 = (*score_str).parse::<i64>().ok()?;
+//         Some((state, (action, score)))
+//     } else {
+//         None
+//     }
+// }
+
+fn decode_response(response_bytes: &[u8; RESPONSE_SIZE]) -> Option<Response> {
+    deserialize(response_bytes).ok()
+}
+
+fn decode_responses(responses_bytes: &[u8]) -> Vec<Response> {
+    let n_responses = responses_bytes.len() / RESPONSE_SIZE;
+    let mut responses: Vec<Response> = Vec::with_capacity(n_responses);
+    let openings_bytes_chunks = responses_bytes.chunks(RESPONSE_SIZE);
+    for response_bytes in openings_bytes_chunks {
+        if let Ok(response_bytes) = response_bytes.try_into() {
+            if let Some(response) = decode_response(&response_bytes) {
+                responses.push(response);
+            }
+        }
     }
+    responses
 }
 
 impl OpeningBook {
     /// Created a new OpeningBook.
     /// Loads the precompiled opening book.
     pub fn new() -> OpeningBook {
-        let opening_lines: Vec<&str> = OPENINGS_FILE.lines().collect();
-        let map: HashMap<String, (u64, i64)> = opening_lines
+        assert!(RESPONSE_SIZE == serialized_size(&Response::empty()).unwrap() as usize);
+        assert!(OPENINGS_BYTES.len() % RESPONSE_SIZE == 0);
+        let responses = decode_responses(OPENINGS_BYTES);
+        let map: HashMap<Position, (u64, i64)> = responses
             .iter()
-            .filter_map(|&line| line_to_tuple(line))
+            .map(|&response| (response.position, (response.action, response.score)))
             .collect();
         OpeningBook { map }
     }
 
     /// Looks for a stored move corresponding to the provided board state and returns it if it exists.
-    pub fn lookup(&self, state: &str) -> Option<&(u64, i64)> {
-        self.map.get(state)
+    pub fn lookup(&self, board: &Board) -> Option<&(u64, i64)> {
+        self.map.get(&Position::new(board))
     }
 }
 

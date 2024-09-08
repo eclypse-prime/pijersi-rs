@@ -189,7 +189,7 @@ impl Board {
     /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
     fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(u64, u64, i64)> {
         if let Some(opening_book) = opening_book {
-            if let Some(&(action, score)) = opening_book.lookup(&self.get_string_state()) {
+            if let Some(&(action, score)) = opening_book.lookup(self) {
                 let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO create const for this
                 let action_string = action_to_string(&self.cells, action);
                 if self.options.verbose {
