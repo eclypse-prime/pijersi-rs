@@ -20,13 +20,12 @@ use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
 use crate::logic::translate::{
-    action_to_string, cells_to_string, string_to_action, string_to_cells,
+    action_to_string, cells_to_string, player_to_str, str_to_player, string_to_action, string_to_cells
 };
 use crate::logic::{CELL_EMPTY, INDEX_WIDTH, STACK_THRESHOLD};
 use crate::piece::{init_piece, PieceColour, PieceType};
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
-use crate::utils::parse_player_arg;
 
 /// This struct represents the board options.
 ///
@@ -277,7 +276,7 @@ impl Board {
         format!(
             "{} {} {} {}",
             cells_to_string(&state.0),
-            state.1,
+            player_to_str(state.1).unwrap(),
             state.2,
             state.3
         )
@@ -291,7 +290,7 @@ impl Board {
             // TODO: use anyhow
             let new_cells = string_to_cells(cells_string).unwrap();
             // TODO: use anyhow
-            let player = parse_player_arg(player_string).unwrap();
+            let player = str_to_player(player_string).unwrap();
             let half_moves: u64 = half_moves_string.parse().unwrap();
             let full_moves: u64 = full_moves_string.parse().unwrap();
             self.set_state(&new_cells, player, half_moves, full_moves)

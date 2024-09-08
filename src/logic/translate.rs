@@ -246,3 +246,25 @@ pub fn cells_to_string(cells: &[u8; 45]) -> String {
     }
     cells_string
 }
+
+/// Parses the player argument: "w" -> Ok(0u8), "b" -> Ok(1u8)
+pub fn str_to_player(player: &str) -> Result<u8, StringParseError> {
+    match player {
+        "w" => Ok(0u8),
+        "b" => Ok(1u8),
+        _ => {
+            Err(StringParseError::new(&format!("Unknown player {player}")))
+        }
+    }
+}
+
+/// Converts the current player to its Pijersi Standard Notation form: 0 -> Ok("w".to_owned()), 1 -> Ok("b".to_owned())
+pub fn player_to_str(current_player: u8) -> Result<String, StringParseError> {
+    match current_player {
+        0u8 => Ok("w".to_owned()),
+        1u8 => Ok("b".to_owned()),
+        _ => {
+            Err(StringParseError::new(&format!("Unknown player {current_player}")))
+        }
+    }
+}
