@@ -9,6 +9,7 @@
 use std::collections::HashMap;
 
 use bincode::{deserialize, serialized_size};
+use miniz_oxide::inflate::decompress_to_vec;
 use serde::{Deserialize, Serialize};
 
 use crate::board::Board;
@@ -75,7 +76,7 @@ pub struct OpeningBook {
     map: HashMap<Position, (u64, i64)>,
 }
 
-const OPENINGS_BYTES: &[u8] = include_bytes!("../../data/openings");
+const OPENINGS_BYTES_COMPRESSED: &[u8] = include_bytes!("../../data/openings");
 
 fn decode_response(response_bytes: &[u8; RESPONSE_SIZE]) -> Option<Response> {
     deserialize(response_bytes).ok()
@@ -99,9 +100,11 @@ impl OpeningBook {
     /// Created a new OpeningBook.
     /// Loads the precompiled opening book.
     pub fn new() -> OpeningBook {
+        // TODO: handle result
+        let openings_bytes = decompress_to_vec(OPENINGS_BYTES_COMPRESSED).unwrap();
         assert!(RESPONSE_SIZE == serialized_size(&Response::empty()).unwrap() as usize);
-        assert!(OPENINGS_BYTES.len() % RESPONSE_SIZE == 0);
-        let responses = decode_responses(OPENINGS_BYTES);
+        assert!(openings_bytes.len() % RESPONSE_SIZE == 0);
+        let responses = decode_responses(&openings_bytes);
         let map: HashMap<Position, (u64, i64)> = responses
             .iter()
             .map(|&response| (response.position, (response.action, response.score)))

@@ -15,6 +15,7 @@ categories = ["games"]
 bincode = "*"
 clap = {version = "*", features = ["derive"]}
 current_platform = "*"
+miniz_oxide = "*"
 rayon = "*"
 regex = "*"
 serde = {version = "*", features = ["derive"]}
