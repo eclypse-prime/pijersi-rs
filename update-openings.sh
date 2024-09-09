@@ -11,6 +11,9 @@ echo Local latest tag: "$CURRENT_TAG"
 
 if ! (printf "%s\n%s" "$LATEST_TAG" "$CURRENT_TAG" | sort -V -C); then
     echo Remote tag is higher, updating local opening book...
+    wget https://github.com/eclypse-prime/pijersi-toolbox/releases/latest/download/openings -O data/openings -q
+    echo "$LATEST_TAG" > data/openings_tag
+    echo Remote opening book downloaded at version "$LATEST_TAG"
 elif [ ! -f data/openings ]; then
     echo No local openings, downloading remote opening book...
     wget https://github.com/eclypse-prime/pijersi-toolbox/releases/latest/download/openings -O data/openings -q
