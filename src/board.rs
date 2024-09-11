@@ -20,7 +20,7 @@ use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
 use crate::logic::translate::{
-    action_to_string, cells_to_string, player_to_str, str_to_player, string_to_action, string_to_cells
+    action_to_string, cells_to_pretty_string, cells_to_string, player_to_str, str_to_player, string_to_action, string_to_cells
 };
 use crate::logic::{CELL_EMPTY, INDEX_WIDTH, STACK_THRESHOLD};
 use crate::piece::{init_piece, PieceColour, PieceType};
@@ -141,48 +141,7 @@ impl Board {
 
     /// Prints the current pieces on the board.
     pub fn print(&self) {
-        print!(" ");
-        for i in 0..45 {
-            let piece: u8 = self.cells[i];
-            let top_piece: u8 = piece & 0b1111;
-            let bottom_piece: u8 = piece >> 4;
-            let char1: char = match top_piece {
-                0b0000 => '.',
-                0b0001 => 'S',
-                0b0101 => 'P',
-                0b1001 => 'R',
-                0b1101 => 'W',
-                0b0011 => 's',
-                0b0111 => 'p',
-                0b1011 => 'r',
-                0b1111 => 'w',
-                _ => '?',
-            };
-            let char2: char = if top_piece == 0 {
-                ' '
-            } else {
-                match bottom_piece {
-                    0b0000 => '-',
-                    0b0001 => 'S',
-                    0b0101 => 'P',
-                    0b1001 => 'R',
-                    0b1101 => 'W',
-                    0b0011 => 's',
-                    0b0111 => 'p',
-                    0b1011 => 'r',
-                    0b1111 => 'w',
-                    _ => '?',
-                }
-            };
-            print!("{char1}{char2} ");
-
-            if [5, 12, 18, 25, 31, 38, 44].contains(&i) {
-                println!();
-                if [12, 25, 38].contains(&i) {
-                    print!(" ");
-                }
-            }
-        }
+        println!("{}", cells_to_pretty_string(&self.cells));
     }
 
     /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
