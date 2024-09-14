@@ -174,6 +174,7 @@ pub fn search_iterative(
                     if verbose {
                         println!("info loss in {}", depth / 2);
                     }
+                    best_result = if let Some((last_action, _last_score)) = best_result {Some((last_action, score))} else {None};
                     break;
                 }
                 best_result = Some((action, score));

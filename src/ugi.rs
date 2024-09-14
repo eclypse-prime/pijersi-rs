@@ -9,10 +9,10 @@ use crate::{
     logic::{
         perft::perft,
         rules::is_action_legal,
-        translate::{action_to_string, string_to_action, string_to_cells},
+        translate::{action_to_string, str_to_player, string_to_action, string_to_cells},
     },
     search::openings::OpeningBook,
-    utils::{parse_bool_arg, parse_player_arg},
+    utils::parse_bool_arg,
     AUTHOR_NAME, ENGINE_NAME, VERSION,
 };
 
@@ -200,7 +200,7 @@ impl UgiEngine {
                             match self.board.set_state(
                                 &new_cells,
                                 // TODO: use anyhow or handle
-                                parse_player_arg(&fen_args.player).unwrap(),
+                                str_to_player(&fen_args.player).unwrap(),
                                 fen_args.half_moves,
                                 fen_args.full_moves,
                             ) {
@@ -221,7 +221,7 @@ impl UgiEngine {
                             match self.board.set_state(
                                 &new_cells,
                                 // TODO: use anyhow or handle
-                                parse_player_arg(&fen_args.player).unwrap(),
+                                str_to_player(&fen_args.player).unwrap(),
                                 fen_args.half_moves,
                                 fen_args.full_moves,
                             ) {

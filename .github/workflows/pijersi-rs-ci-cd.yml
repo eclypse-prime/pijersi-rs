@@ -27,16 +27,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Clippy
-      run: cargo clippy
-    - name: Build Binaries
-      run: cargo build --release --verbose
-    - name: Build Documentation
-      run: cargo doc --no-deps --verbose
-    - name: Test
-      run: cargo test --verbose
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Updating openings
+        run: ./update-openings.sh
+      - name: Clippy
+        run: cargo clippy
+      - name: Build Binaries
+        run: cargo build --release --verbose
+      - name: Build Documentation
+        run: cargo doc --no-deps --verbose
+      - name: Test
+        run: cargo test --verbose
 
   publish-doc:
     name: Publish Documentation
@@ -45,19 +47,21 @@ jobs:
     # Only run this job on pushes to tags
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Build Documentation
-      run: cargo doc --all --no-deps
-    - name: Add Redirect
-      run: echo '<meta http-equiv="refresh" content="0;url=pijersi_rs/index.html">' > target/doc/index.html
-    - name: Upload Artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: target/doc
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Updating openings
+        run: ./update-openings.sh
+      - name: Build Documentation
+        run: cargo doc --all --no-deps
+      - name: Add Redirect
+        run: echo '<meta http-equiv="refresh" content="0;url=pijersi_rs/index.html">' > target/doc/index.html
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   create-release:
     name: Create Release
@@ -65,9 +69,11 @@ jobs:
     needs: build-and-test
     # Only run this job on pushes to tags
     if: startsWith(github.ref, 'refs/tags/')
-    steps: 
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Updating openings
+        run: ./update-openings.sh
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -97,18 +103,20 @@ jobs:
             executable: pijersi-rs.exe
             artifact-name: pijersi-rs-win.exe
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Update Rustup and Install Target on ${{ matrix.platform }}
-      run: |
-        rustup update --no-self-update stable
-        rustup target add ${{ matrix.target }}
-    - name: Build Binary
-      run: cargo build --release --target ${{ matrix.target }}
-    - name: Rename binary
-      run: mv target/${{ matrix.target }}/release/${{ matrix.executable }} target/${{ matrix.target }}/release/${{ matrix.artifact-name }}
-    - name: Upload Artifact to Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ github.ref_name }}
-        files: target/${{ matrix.target }}/release/${{ matrix.artifact-name }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Updating openings
+        run: ./update-openings.sh
+      - name: Update Rustup and Install Target on ${{ matrix.platform }}
+        run: |
+          rustup update --no-self-update stable
+          rustup target add ${{ matrix.target }}
+      - name: Build Binary
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Rename binary
+        run: mv target/${{ matrix.target }}/release/${{ matrix.executable }} target/${{ matrix.target }}/release/${{ matrix.artifact-name }}
+      - name: Upload Artifact to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: target/${{ matrix.target }}/release/${{ matrix.artifact-name }}

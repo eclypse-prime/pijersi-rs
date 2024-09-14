@@ -246,3 +246,71 @@ pub fn cells_to_string(cells: &[u8; 45]) -> String {
     }
     cells_string
 }
+
+/// Converts the cells to a pretty-formatted string.
+pub fn cells_to_pretty_string(cells: &[u8; 45]) -> String {
+    let mut cells_pretty_print: String = " ".to_owned();
+    for (i, &piece) in cells.iter().enumerate() {
+        let top_piece: u8 = piece & 0b1111;
+        let bottom_piece: u8 = piece >> 4;
+        let char1: char = match top_piece {
+            0b0000 => '.',
+            0b0001 => 'S',
+            0b0101 => 'P',
+            0b1001 => 'R',
+            0b1101 => 'W',
+            0b0011 => 's',
+            0b0111 => 'p',
+            0b1011 => 'r',
+            0b1111 => 'w',
+            _ => '?',
+        };
+        let char2: char = if top_piece == 0 {
+            ' '
+        } else {
+            match bottom_piece {
+                0b0000 => '-',
+                0b0001 => 'S',
+                0b0101 => 'P',
+                0b1001 => 'R',
+                0b1101 => 'W',
+                0b0011 => 's',
+                0b0111 => 'p',
+                0b1011 => 'r',
+                0b1111 => 'w',
+                _ => '?',
+            }
+        };
+        cells_pretty_print += &format!("{char1}{char2} ");
+
+        if [5, 12, 18, 25, 31, 38].contains(&i) {
+            cells_pretty_print += "\n";
+            if [12, 25, 38].contains(&i) {
+                cells_pretty_print += " ";
+            }
+        }
+    }
+    cells_pretty_print
+}
+
+/// Parses the player argument: "w" -> Ok(0u8), "b" -> Ok(1u8)
+pub fn str_to_player(player: &str) -> Result<u8, StringParseError> {
+    match player {
+        "w" => Ok(0u8),
+        "b" => Ok(1u8),
+        _ => {
+            Err(StringParseError::new(&format!("Unknown player {player}")))
+        }
+    }
+}
+
+/// Converts the current player to its Pijersi Standard Notation form: 0 -> Ok("w".to_owned()), 1 -> Ok("b".to_owned())
+pub fn player_to_str(current_player: u8) -> Result<String, StringParseError> {
+    match current_player {
+        0u8 => Ok("w".to_owned()),
+        1u8 => Ok("b".to_owned()),
+        _ => {
+            Err(StringParseError::new(&format!("Unknown player {current_player}")))
+        }
+    }
+}
