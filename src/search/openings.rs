@@ -100,7 +100,6 @@ impl OpeningBook {
     /// Created a new OpeningBook.
     /// Loads the precompiled opening book.
     pub fn new() -> OpeningBook {
-        // TODO: handle result
         let openings_bytes = decompress_to_vec(OPENINGS_BYTES_COMPRESSED).unwrap();
         assert!(RESPONSE_SIZE == serialized_size(&Response::empty()).unwrap() as usize);
         assert!(openings_bytes.len() % RESPONSE_SIZE == 0);

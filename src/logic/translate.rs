@@ -2,7 +2,9 @@
 
 use regex::Regex;
 
-use crate::errors::StringParseError;
+use crate::errors::{
+    InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
+};
 
 use super::{
     movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL,
@@ -67,8 +69,10 @@ pub fn index_to_coords(index: usize) -> (usize, usize) {
 }
 
 /// Converts a "a1" style string coordinate into an index.
-pub fn string_to_index(cell_string: &str) -> usize {
+fn string_to_index(cell_string: &str) -> Result<usize, ParseError> {
     let mut iterator = cell_string.chars();
+
+    // Guaranteed to match regex "\w\d", no handling needed.
     let char_i: char = iterator.next().unwrap();
     let char_j: char = iterator.next().unwrap();
     let i: usize = match char_i {
@@ -80,7 +84,13 @@ pub fn string_to_index(cell_string: &str) -> usize {
         'f' => 1,
         'g' => 0,
         _ => {
-            panic!("Unknown vertical coordinate '{char_i}' of '{cell_string}'.")
+            return Err(ParseError {
+                kind: ParseErrorKind::InvalidCoordinates {
+                    kind: InvalidCoordinatesKind::Vertical,
+                    value: char_i,
+                },
+                value: cell_string.to_owned(),
+            })
         }
     };
     let j: usize = match char_j {
@@ -92,10 +102,16 @@ pub fn string_to_index(cell_string: &str) -> usize {
         '6' => 5,
         '7' => 6,
         _ => {
-            panic!("Unknown horizontal coordinate '{char_j}' of '{cell_string}'")
+            return Err(ParseError {
+                kind: ParseErrorKind::InvalidCoordinates {
+                    kind: InvalidCoordinatesKind::Horizontal,
+                    value: char_i,
+                },
+                value: cell_string.to_owned(),
+            })
         }
     };
-    coords_to_index(i, j)
+    Ok(coords_to_index(i, j))
 }
 
 /// Converts a native index into a "a1" style string.
@@ -106,27 +122,23 @@ pub fn index_to_string(index: usize) -> String {
 }
 
 /// Converts a string (a1b1c1 style) move to the native triple-index format.
-pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, StringParseError> {
+pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, ParseError> {
     let action_pattern = Regex::new(r"(\w\d)(\w\d)?(\w\d)").unwrap();
 
-    let Some(action_captures) = action_pattern.captures(action_string) else {
-        return Err(StringParseError::new(&format!(
-            "Unknown action string '{action_string}'"
-        )));
-    };
+    let action_captures = action_pattern.captures(action_string).ok_or(ParseError {
+        kind: ParseErrorKind::InvalidAction,
+        value: action_string.to_owned(),
+    })?;
 
-    let index_start: usize = action_captures.get(1).map_or_else(
-        || INDEX_NULL,
-        |cell_match| string_to_index(cell_match.as_str()),
-    );
-    let mut index_mid: usize = action_captures.get(2).map_or_else(
-        || INDEX_NULL,
-        |cell_match| string_to_index(cell_match.as_str()),
-    );
-    let index_end: usize = action_captures.get(3).map_or_else(
-        || INDEX_NULL,
-        |cell_match| string_to_index(cell_match.as_str()),
-    );
+    // Guaranteed to match regex "\w\d", no handling needed.
+    let index_start: usize = string_to_index(action_captures.get(1).unwrap().as_str())?;
+    // Guaranteed to match regex "\w\d", no handling needed.
+    let mut index_mid: usize = string_to_index(action_captures.get(2).unwrap().as_str())?;
+    let index_end: usize = if let Some(action_capture) = action_captures.get(3) {
+        string_to_index(action_capture.as_str())?
+    } else {
+        INDEX_NULL
+    };
 
     if cells[index_end] != CELL_EMPTY
         && (cells[index_start] & COLOUR_MASK == cells[index_end] & COLOUR_MASK)
@@ -173,13 +185,15 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
 }
 
 /// Reads a Pijersi Standard Notation string to apply its state to the cells.
-pub fn string_to_cells(cells_string: &str) -> Result<[u8; 45], StringParseError> {
+pub fn string_to_cells(cells_string: &str) -> Result<[u8; 45], ParseError> {
     let cell_lines: Vec<&str> = cells_string.split('/').collect();
     if cell_lines.len() != 7 {
-        Err(StringParseError::new(&format!(
-            "Invalid number of lines in board notation: {} (expected 7)",
-            cell_lines.len()
-        )))
+        Err(ParseError {
+            kind: ParseErrorKind::InvalidPosition(InvalidPositionKind::WrongLineNumber(
+                cell_lines.len(),
+            )),
+            value: cells_string.to_owned(),
+        })
     } else {
         let mut cursor: usize = 0;
         let mut new_cells: [u8; 45] = [0; 45];
@@ -294,23 +308,35 @@ pub fn cells_to_pretty_string(cells: &[u8; 45]) -> String {
 }
 
 /// Parses the player argument: "w" -> Ok(0u8), "b" -> Ok(1u8)
-pub fn str_to_player(player: &str) -> Result<u8, StringParseError> {
+pub fn str_to_player(player: &str) -> Result<u8, ParseError> {
     match player {
         "w" => Ok(0u8),
         "b" => Ok(1u8),
-        _ => {
-            Err(StringParseError::new(&format!("Unknown player {player}")))
-        }
+        _ => Err(ParseError {
+            kind: ParseErrorKind::InvalidPlayer(InvalidPlayerKind::StrToPlayer(player.to_owned())),
+            value: player.to_owned(),
+        }),
     }
 }
 
 /// Converts the current player to its Pijersi Standard Notation form: 0 -> Ok("w".to_owned()), 1 -> Ok("b".to_owned())
-pub fn player_to_str(current_player: u8) -> Result<String, StringParseError> {
+pub fn player_to_str(current_player: u8) -> Result<String, ParseError> {
     match current_player {
         0u8 => Ok("w".to_owned()),
         1u8 => Ok("b".to_owned()),
-        _ => {
-            Err(StringParseError::new(&format!("Unknown player {current_player}")))
-        }
+        _ => Err(ParseError {
+            kind: ParseErrorKind::InvalidPlayer(InvalidPlayerKind::PlayerToStr(current_player)),
+            value: current_player.to_string(),
+        }),
     }
+}
+
+/// Converts an action to its contained indices.
+/// The format is (index_start, index_mid, index_end, depth)
+#[inline]
+pub fn action_to_indices(action: u64) -> (usize, usize, usize) {
+    let index_start: usize = (action & INDEX_MASK) as usize;
+    let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
+    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+    (index_start, index_mid, index_end)
 }

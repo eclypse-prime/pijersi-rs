@@ -12,6 +12,7 @@ categories = ["games"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "*"
 bincode = "*"
 clap = {version = "*", features = ["derive"]}
 current_platform = "*"
@@ -20,6 +21,7 @@ rayon = "*"
 regex = "*"
 serde = {version = "*", features = ["derive"]}
 serde_bytes = "*"
+thiserror = "*"
 
 [dev-dependencies]
 criterion="*"

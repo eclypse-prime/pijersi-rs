@@ -1,45 +1,105 @@
 //! This module contains custom errors for this crate.
 
-use core::fmt;
+use std::{fmt::Display, num::ParseIntError};
 
-/// An error that can be returned when attempting to play an illegal action.
+use thiserror::Error;
+
+use crate::logic::translate::action_to_indices;
+
+/// General Pijersi errors
+#[derive(Debug, Error)]
+pub enum RuntimeError {
+    /// Broken rules
+    #[error("Rules error.")]
+    Rules(#[from] RulesErrorKind),
+    /// Failed parsing
+    #[error("Parsing error.")]
+    Parse(#[from] ParseError),
+}
+
+/// Errors returned if game rules are broken
+#[derive(Debug, Error)]
+pub enum RulesErrorKind {
+    /// Illegal action
+    #[error("This action is illegal: {0} ({} {} {}).", action_to_indices(*.0).0, action_to_indices(*.0).1, action_to_indices(*.0).2)]
+    IllegalAction(u64),
+}
+
+/// Errors returned if parsing fails
+#[derive(Debug, Error)]
+#[error("Could not parse the following value: \"{}\".", self.value)]
+pub struct ParseError {
+    /// The kind of parsing error
+    #[source]
+    pub kind: ParseErrorKind,
+    /// The value that caused the error
+    pub value: String,
+}
+
+/// The different kinds of parsing errors
+#[derive(Debug, Error)]
+pub enum ParseErrorKind {
+    /// Invalid action
+    #[error("Invalid action string. Expected \"a1b1c1\" or \"a1b1\" format.")]
+    InvalidAction,
+    /// Invalid position
+    #[error("Invalid position string. See documentation at https://github.com/eclypse-prime/pijersi-rs/blob/main/UGI.md.")]
+    InvalidPosition(InvalidPositionKind),
+    /// Invalid PSN string
+    #[error("Invalid Pijersi Standard Notation string. See documentation at https://github.com/eclypse-prime/pijersi-rs/blob/main/UGI.md.")]
+    InvalidPSN,
+    /// Invalid coordinates
+    #[error("Invalid {kind} coordinate '{value}'.")]
+    InvalidCoordinates {
+        /// The kind of coordinates error (vertical or horizontal)
+        kind: InvalidCoordinatesKind,
+        /// The value that caused the error
+        value: char,
+    },
+    /// Invalid player
+    #[error("Invalid Player.")]
+    InvalidPlayer(InvalidPlayerKind),
+    /// Invalid bool
+    #[error("Invalid bool string. Expected \"true\" or \"false\".")]
+    InvalidBool,
+    /// Invalid int
+    #[error("Invalid int string.")]
+    InvalidInt(#[from] ParseIntError),
+}
+
+/// The different kinds of invalid position errors
+#[derive(Debug, Error)]
+pub enum InvalidPositionKind {
+    /// Wrong number of lines
+    #[error("Invalid number of lines in board notation: {0} (expected 7)")]
+    WrongLineNumber(usize),
+}
+
+/// The kind of coordinates error (vertical or horizontal)
 #[derive(Debug)]
-pub struct IllegalActionError {
-    message: String,
+pub enum InvalidCoordinatesKind {
+    /// Vertical
+    Vertical,
+    /// Horizontal
+    Horizontal,
 }
 
-impl IllegalActionError {
-    /// Creates a new IllegalActionError
-    pub fn new(msg: &str) -> IllegalActionError {
-        IllegalActionError {
-            message: msg.to_owned(),
+/// The different kinds of invalid player errors
+#[derive(Debug, Error)]
+pub enum InvalidPlayerKind {
+    /// String to player
+    #[error("Got {0}, expected \"w\" or \"b\".")]
+    StrToPlayer(String),
+    /// Player to string
+    #[error("Got {0}, expected 0 or 1.")]
+    PlayerToStr(u8),
+}
+
+impl Display for InvalidCoordinatesKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InvalidCoordinatesKind::Vertical => write!(f, "vertical"),
+            InvalidCoordinatesKind::Horizontal => write!(f, "horizontal"),
         }
-    }
-}
-
-impl fmt::Display for IllegalActionError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-/// An error that can be returned when attempting to convert from an illegal FEN string.
-#[derive(Debug)]
-pub struct StringParseError {
-    message: String,
-}
-
-impl StringParseError {
-    /// Creates a new StringParseError
-    pub fn new(msg: &str) -> StringParseError {
-        StringParseError {
-            message: msg.to_owned(),
-        }
-    }
-}
-
-impl fmt::Display for StringParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.message)
     }
 }

@@ -1,5 +1,7 @@
 //! This module implements various helper functions.
 
+use crate::errors::{ParseError, ParseErrorKind};
+
 /// Returns a vector of sorted indices
 pub fn argsort<T: Ord>(data: &[T], reverse: bool) -> Vec<usize> {
     let mut indices = (0..data.len()).collect::<Vec<_>>();
@@ -21,13 +23,16 @@ pub fn reverse_argsort<T: Clone>(original: &[T], indices: &[usize]) -> Vec<T> {
     sorted
 }
 
-/// Parses bool arguments in string format ("true", "false"). Returns None if the value is anything else.
-pub fn parse_bool_arg(argument: &str) -> Option<bool> {
+/// Parses bool arguments in string format ("true", "false"). Returns an error if the value is anything else.
+pub fn parse_bool_arg(argument: &str) -> Result<bool, ParseError> {
     if argument == "true" {
-        Some(true)
+        Ok(true)
     } else if argument == "false" {
-        Some(false)
+        Ok(false)
     } else {
-        None
+        Err(ParseError {
+            kind: ParseErrorKind::InvalidBool,
+            value: argument.to_owned(),
+        })
     }
 }

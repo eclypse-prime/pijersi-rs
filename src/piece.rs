@@ -9,6 +9,8 @@
 //! C is 1 bit representing the color
 //! P is 1 bit set to 1 as long as there is a piece
 
+use crate::logic::HALF_PIECE_WIDTH;
+
 /// Represents the colour of a piece
 pub enum PieceColour {
     /// White
@@ -55,5 +57,5 @@ pub fn init_piece(
         None => 0u8,
         Some(bottom_type) => piece_to_uint(&piece_colour, &bottom_type),
     };
-    top_uint | bottom_uint << 4
+    top_uint | bottom_uint << HALF_PIECE_WIDTH
 }

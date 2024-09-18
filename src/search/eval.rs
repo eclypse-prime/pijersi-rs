@@ -74,8 +74,10 @@ pub fn evaluate_action(
         };
     }
 
-    if end_time.is_some() && Instant::now() > end_time.unwrap() {
-        return i64::MIN;
+    if let Some(end_time) = end_time {
+        if Instant::now() > end_time {
+            return i64::MIN;
+        }
     }
 
     let (available_actions, n_actions) = available_player_actions(&new_cells, current_player);

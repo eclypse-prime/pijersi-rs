@@ -197,16 +197,13 @@ impl UgiEngine {
                 match action_list.len() {
                     0 => match string_to_cells(&fen_args.fen) {
                         Ok(new_cells) => {
-                            match self.board.set_state(
+                            self.board.set_state(
                                 &new_cells,
                                 // TODO: use anyhow or handle
                                 str_to_player(&fen_args.player).unwrap(),
                                 fen_args.half_moves,
                                 fen_args.full_moves,
-                            ) {
-                                Ok(()) => (),
-                                Err(e) => println!("info error \"{e}\""),
-                            }
+                            );
                         }
                         Err(e) => println!("info error \"{e}\""),
                     },
@@ -218,25 +215,21 @@ impl UgiEngine {
                     }
                     _ => match string_to_cells(&fen_args.fen) {
                         Ok(new_cells) => {
-                            match self.board.set_state(
+                            self.board.set_state(
                                 &new_cells,
                                 // TODO: use anyhow or handle
                                 str_to_player(&fen_args.player).unwrap(),
                                 fen_args.half_moves,
                                 fen_args.full_moves,
-                            ) {
-                                Ok(()) => {
-                                    // TODO: make function (duplicate code)
-                                    for action_string in action_list.iter().skip(1) {
-                                        // TODO: rollback if err
-                                        let result = self.board.play_from_string(action_string);
-                                        match result {
-                                            Ok(_v) => (),
-                                            Err(e) => println!("info error \"{e}\""),
-                                        }
-                                    }
+                            );
+                            // TODO: make function (duplicate code)
+                            for action_string in action_list.iter().skip(1) {
+                                // TODO: rollback if err
+                                let result = self.board.play_from_string(action_string);
+                                match result {
+                                    Ok(_v) => (),
+                                    Err(e) => println!("info error \"{e}\""),
                                 }
-                                Err(e) => println!("info error \"{e}\""),
                             }
                         }
                         Err(e) => println!("info error \"{e}\""),
@@ -306,13 +299,23 @@ impl UgiEngine {
     fn setoption(&mut self, option: SetoptionArgs) {
         match option {
             SetoptionArgs::UseBook { value } => {
-                if let Some(value) = parse_bool_arg(&value) {
-                    self.board.options.use_book = value;
+                match parse_bool_arg(&value) {
+                    Ok(value) => {
+                        self.board.options.use_book = value;
+                    }
+                    Err(e) => {
+                        println!("info error: \"{e}\"")
+                    }
                 }
             }
             SetoptionArgs::Verbose { value } => {
-                if let Some(value) = parse_bool_arg(&value) {
-                    self.board.options.verbose = value;
+                match parse_bool_arg(&value) {
+                    Ok(value) => {
+                        self.board.options.verbose = value;
+                    }
+                    Err(e) => {
+                        println!("info error: \"{e}\"")
+                    }
                 }
             }
         }
@@ -337,12 +340,13 @@ impl UgiEngine {
                 Commands::Setoption(setoption_args) => self.setoption(setoption_args),
             },
             Err(e) => {
+                println!("{e}");
                 let error_text = if command.is_empty() {
                     "Empty command"
                 } else {
                     &e.to_string().lines().next().unwrap().to_owned()
                 };
-                println!("info error \"{}\"", error_text);
+                println!("info error \"{error_text}\"");
             }
         }
     }
