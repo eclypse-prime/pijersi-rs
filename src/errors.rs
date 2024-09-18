@@ -10,10 +10,10 @@ use crate::logic::translate::action_to_indices;
 #[derive(Debug, Error)]
 pub enum RuntimeError {
     /// Broken rules
-    #[error("Rules error.")]
+    #[error("Rules error at {}:{}:{}.", file!(), line!(), column!())]
     Rules(#[from] RulesErrorKind),
     /// Failed parsing
-    #[error("Parsing error.")]
+    #[error("Parsing error at {}:{}:{}.", file!(), line!(), column!())]
     Parse(#[from] ParseError),
 }
 
