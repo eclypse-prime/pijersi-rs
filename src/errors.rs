@@ -43,8 +43,9 @@ pub enum ParseErrorKind {
     #[error("Invalid action string. Expected \"a1b1c1\" or \"a1b1\" format.")]
     InvalidAction,
     /// Invalid position
+
     #[error("Invalid position string. See documentation at https://github.com/eclypse-prime/pijersi-rs/blob/main/UGI.md.")]
-    InvalidPosition(InvalidPositionKind),
+    InvalidPosition(#[from] InvalidPositionKind),
     /// Invalid PSN string
     #[error("Invalid Pijersi Standard Notation string. See documentation at https://github.com/eclypse-prime/pijersi-rs/blob/main/UGI.md.")]
     InvalidPSN,
@@ -58,7 +59,7 @@ pub enum ParseErrorKind {
     },
     /// Invalid player
     #[error("Invalid Player.")]
-    InvalidPlayer(InvalidPlayerKind),
+    InvalidPlayer(#[from] InvalidPlayerKind),
     /// Invalid bool
     #[error("Invalid bool string. Expected \"true\" or \"false\".")]
     InvalidBool,
@@ -102,4 +103,15 @@ impl Display for InvalidCoordinatesKind {
             InvalidCoordinatesKind::Horizontal => write!(f, "horizontal"),
         }
     }
+}
+
+/// Gets the error traceback as a String vector.
+pub fn get_error_trace(error: &dyn std::error::Error) -> Vec<String> {
+    let mut error: &dyn std::error::Error = error;
+    let mut trace: Vec<String> = vec![error.to_string()];
+    while let Some(source) = error.source() {
+        trace.push(source.to_string());
+        error = source;
+    }
+    trace
 }
