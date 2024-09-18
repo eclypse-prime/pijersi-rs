@@ -10,7 +10,7 @@ use crate::{
     logic::{
         perft::perft,
         rules::is_action_legal,
-        translate::{action_to_string, str_to_player, string_to_action, string_to_cells},
+        translate::{action_to_string, string_to_action, string_to_cells, string_to_player},
     },
     search::openings::OpeningBook,
     utils::parse_bool_arg,
@@ -186,38 +186,20 @@ impl UgiEngine {
                 }
             }
             PositionArgs::Fen(fen_args) => {
-                let action_list: Vec<String> = fen_args.moves;
+                let action_list: &Vec<String> = &fen_args.moves;
                 match action_list.len() {
-                    0 => match string_to_cells(&fen_args.fen) {
-                        Ok(new_cells) => {
-                            self.board.set_state(
-                                &new_cells,
-                                // TODO: use anyhow or handle
-                                str_to_player(&fen_args.player).unwrap(),
-                                fen_args.half_moves,
-                                fen_args.full_moves,
-                            );
-                        }
-                        Err(e) => print_error_trace(&e),
-                    },
+                    0 => {
+                        set_fen(&mut self.board, &fen_args);
+                    }
                     1 => {
-                        println!("invalid argument {}", action_list[0]);
+                        println!("invalid argument {}", action_list[0]); // TODO error
                     }
                     _ if action_list[0] != "moves" => {
-                        println!("invalid argument {}", action_list[0]);
+                        println!("invalid argument {}", action_list[0]); // TODO error
                     }
-                    _ => match string_to_cells(&fen_args.fen) {
-                        Ok(new_cells) => {
-                            self.board.set_state(
-                                &new_cells,
-                                // TODO: use anyhow or handle
-                                str_to_player(&fen_args.player).unwrap(),
-                                fen_args.half_moves,
-                                fen_args.full_moves,
-                            );
-                            play_actions(&mut self.board, &action_list[1..]);
-                        }
-                        Err(e) => print_error_trace(&e),
+                    _ =>    {
+                        set_fen(&mut self.board, &fen_args); // TODO when to rollback?
+                        play_actions(&mut self.board, &action_list[1..]);
                     },
                 }
             }
@@ -349,6 +331,28 @@ fn play_actions(board: &mut Board, actions: &[String]) {
                 print_error_trace(&e);
                 break;
             }
+        }
+    }
+}
+
+/// Sets the state of the board using PSN/FEN arguments
+fn set_fen(board: &mut Board, fen_args: &FenArgs) {
+    let new_cells = string_to_cells(&fen_args.fen);
+    let player = string_to_player(&fen_args.player);
+    match (new_cells, player) {
+        (Ok(new_cells), Ok(player)) => {
+            board.set_state(
+                &new_cells,
+                player,
+                fen_args.half_moves,
+                fen_args.full_moves,
+            );
+        }
+        (Err(e), Ok(_player)) => print_error_trace(&e),
+        (Ok(_player), Err(e)) => print_error_trace(&e),
+        (Err(e1), Err(e2)) => {
+            print_error_trace(&e1);
+            print_error_trace(&e2);
         }
     }
 }
