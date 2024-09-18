@@ -6,6 +6,7 @@ use std::{process::exit, time::Instant};
 
 use crate::{
     board::Board,
+    errors::get_error_trace,
     logic::{
         perft::perft,
         rules::is_action_legal,
@@ -124,7 +125,7 @@ impl UgiEngine {
     }
 
     // TODO: help function?
-    fn exit(&self) {
+    fn quit(&self) {
         exit(0);
     }
 
@@ -152,7 +153,7 @@ impl UgiEngine {
                 let result = self.board.play_from_string(&action_string);
                 match result {
                     Ok(_v) => (),
-                    Err(e) => println!("info error \"{e}\""),
+                    Err(e) => print_error_trace(&e),
                 }
             }
             GoArgs::Perft { depth } => {
@@ -173,22 +174,14 @@ impl UgiEngine {
                         self.board.init();
                     }
                     1 => {
-                        println!("invalid argument {}", action_list[0]);
+                        println!("invalid argument {}", action_list[0]); // TODO error
                     }
                     _ if action_list[0] != "moves" => {
-                        println!("invalid argument {}", action_list[0]);
+                        println!("invalid argument {}", action_list[0]); // TODO error
                     }
                     _ => {
                         self.board.init();
-                        // TODO: make function (duplicate code)
-                        for action_string in action_list.iter().skip(1) {
-                            // TODO: rollback if err
-                            let result = self.board.play_from_string(action_string);
-                            match result {
-                                Ok(_v) => (),
-                                Err(e) => println!("info error \"{e}\""),
-                            }
-                        }
+                        play_actions(&mut self.board, &action_list[1..]);
                     }
                 }
             }
@@ -205,7 +198,7 @@ impl UgiEngine {
                                 fen_args.full_moves,
                             );
                         }
-                        Err(e) => println!("info error \"{e}\""),
+                        Err(e) => print_error_trace(&e),
                     },
                     1 => {
                         println!("invalid argument {}", action_list[0]);
@@ -222,17 +215,9 @@ impl UgiEngine {
                                 fen_args.half_moves,
                                 fen_args.full_moves,
                             );
-                            // TODO: make function (duplicate code)
-                            for action_string in action_list.iter().skip(1) {
-                                // TODO: rollback if err
-                                let result = self.board.play_from_string(action_string);
-                                match result {
-                                    Ok(_v) => (),
-                                    Err(e) => println!("info error \"{e}\""),
-                                }
-                            }
+                            play_actions(&mut self.board, &action_list[1..]);
                         }
-                        Err(e) => println!("info error \"{e}\""),
+                        Err(e) => print_error_trace(&e),
                     },
                 }
             }
@@ -298,26 +283,18 @@ impl UgiEngine {
 
     fn setoption(&mut self, option: SetoptionArgs) {
         match option {
-            SetoptionArgs::UseBook { value } => {
-                match parse_bool_arg(&value) {
-                    Ok(value) => {
-                        self.board.options.use_book = value;
-                    }
-                    Err(e) => {
-                        println!("info error: \"{e}\"")
-                    }
+            SetoptionArgs::UseBook { value } => match parse_bool_arg(&value) {
+                Ok(value) => {
+                    self.board.options.use_book = value;
                 }
-            }
-            SetoptionArgs::Verbose { value } => {
-                match parse_bool_arg(&value) {
-                    Ok(value) => {
-                        self.board.options.verbose = value;
-                    }
-                    Err(e) => {
-                        println!("info error: \"{e}\"")
-                    }
+                Err(e) => print_error_trace(&e),
+            },
+            SetoptionArgs::Verbose { value } => match parse_bool_arg(&value) {
+                Ok(value) => {
+                    self.board.options.verbose = value;
                 }
-            }
+                Err(e) => print_error_trace(&e),
+            },
         }
     }
 
@@ -333,20 +310,44 @@ impl UgiEngine {
                 Commands::Ugi => self.ugi(),
                 Commands::Isready => self.isready(),
                 Commands::Uginewgame => self.uginewgame(),
-                Commands::Quit => self.exit(),
+                Commands::Quit => self.quit(),
                 Commands::Go(go_args) => self.go(go_args),
                 Commands::Position(position_args) => self.position(position_args),
                 Commands::Query(query_args) => self.query(query_args),
                 Commands::Setoption(setoption_args) => self.setoption(setoption_args),
             },
             Err(e) => {
-                println!("{e}");
-                let error_text = if command.is_empty() {
-                    "Empty command"
+                if command.is_empty() {
+                    println!("info error empty command") // TODO: turn into error
                 } else {
-                    &e.to_string().lines().next().unwrap().to_owned()
+                    print_error_trace(&e);
                 };
-                println!("info error \"{error_text}\"");
+            }
+        }
+    }
+}
+
+/// Utility function to print an error's traceback.
+fn print_error_trace(error: &dyn std::error::Error) {
+    let trace = get_error_trace(error);
+    for source in trace {
+        for line in source.lines().filter(|&line| !line.is_empty()) {
+            println!("info error \"{line}\"")
+        }
+    }
+}
+
+/// Plays all the actions in the list. If there is an invalid action in the list, stops and rolls back to the initial state.
+fn play_actions(board: &mut Board, actions: &[String]) {
+    let (cells, player, half_moves, full_moves) = board.get_state();
+    for action_string in actions {
+        let result = board.play_from_string(action_string);
+        match result {
+            Ok(_v) => (),
+            Err(e) => {
+                board.set_state(&cells, player, half_moves, full_moves);
+                print_error_trace(&e);
+                break;
             }
         }
     }
