@@ -105,7 +105,7 @@ fn string_to_index(cell_string: &str) -> Result<usize, ParseError> {
             return Err(ParseError {
                 kind: ParseErrorKind::InvalidCoordinates {
                     kind: InvalidCoordinatesKind::Horizontal,
-                    value: char_i,
+                    value: char_j,
                 },
                 value: cell_string.to_owned(),
             })
