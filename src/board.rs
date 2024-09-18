@@ -20,7 +20,7 @@ use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
 use crate::logic::translate::{
-    action_to_string, cells_to_pretty_string, cells_to_string, player_to_str, str_to_player,
+    action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_player,
     string_to_action, string_to_cells,
 };
 use crate::logic::{CELL_EMPTY, INDEX_WIDTH, STACK_THRESHOLD};
@@ -229,7 +229,7 @@ impl Board {
         format!(
             "{} {} {} {}",
             cells_to_string(&cells),
-            player_to_str(current_player).unwrap(),
+            player_to_string(current_player).unwrap(),
             half_moves,
             full_moves,
         )
@@ -241,7 +241,7 @@ impl Board {
             state_string.split(' ').collect::<Vec<&str>>()[..]
         {
             let new_cells = string_to_cells(cells_string)?;
-            let player = str_to_player(player_string)?;
+            let player = string_to_player(player_string)?;
             let half_moves = half_moves_string.parse::<u64>().map_err(|err| ParseError {
                 kind: ParseErrorKind::InvalidInt(err),
                 value: half_moves_string.to_string(),
