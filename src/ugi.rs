@@ -6,7 +6,7 @@ use std::{process::exit, time::Instant};
 
 use crate::{
     board::Board,
-    errors::get_error_trace,
+    errors::{get_error_trace, RuntimeError, UgiErrorKind},
     logic::{
         perft::perft,
         rules::is_action_legal,
@@ -173,12 +173,12 @@ impl UgiEngine {
                     0 => {
                         self.board.init();
                     }
-                    1 => {
-                        println!("invalid argument {}", action_list[0]); // TODO error
-                    }
-                    _ if action_list[0] != "moves" => {
-                        println!("invalid argument {}", action_list[0]); // TODO error
-                    }
+                    1 => print_error_trace(&RuntimeError::UGI(UgiErrorKind::InvalidUGIPosition(
+                        action_list.join(" "),
+                    ))),
+                    _ if action_list[0] != "moves" => print_error_trace(&RuntimeError::UGI(
+                        UgiErrorKind::InvalidUGIPosition(action_list.join(" ")),
+                    )),
                     _ => {
                         self.board.init();
                         play_actions(&mut self.board, &action_list[1..]);
@@ -191,16 +191,16 @@ impl UgiEngine {
                     0 => {
                         set_fen(&mut self.board, &fen_args);
                     }
-                    1 => {
-                        println!("invalid argument {}", action_list[0]); // TODO error
-                    }
-                    _ if action_list[0] != "moves" => {
-                        println!("invalid argument {}", action_list[0]); // TODO error
-                    }
-                    _ =>    {
-                        set_fen(&mut self.board, &fen_args); // TODO when to rollback?
+                    1 => print_error_trace(&RuntimeError::UGI(UgiErrorKind::InvalidUGIPosition(
+                        action_list.join(" "),
+                    ))),
+                    _ if action_list[0] != "moves" => print_error_trace(&RuntimeError::UGI(
+                        UgiErrorKind::InvalidUGIPosition(action_list.join(" ")),
+                    )),
+                    _ => {
+                        set_fen(&mut self.board, &fen_args);
                         play_actions(&mut self.board, &action_list[1..]);
-                    },
+                    }
                 }
             }
         }
@@ -299,11 +299,11 @@ impl UgiEngine {
                 Commands::Setoption(setoption_args) => self.setoption(setoption_args),
             },
             Err(e) => {
-                if command.is_empty() {
-                    println!("info error empty command") // TODO: turn into error
+                print_error_trace(&if command.is_empty() {
+                    RuntimeError::UGI(UgiErrorKind::EmptyCommand)
                 } else {
-                    print_error_trace(&e);
-                };
+                    RuntimeError::UGI(UgiErrorKind::ClapError(e))
+                });
             }
         }
     }
@@ -341,12 +341,7 @@ fn set_fen(board: &mut Board, fen_args: &FenArgs) {
     let player = string_to_player(&fen_args.player);
     match (new_cells, player) {
         (Ok(new_cells), Ok(player)) => {
-            board.set_state(
-                &new_cells,
-                player,
-                fen_args.half_moves,
-                fen_args.full_moves,
-            );
+            board.set_state(&new_cells, player, fen_args.half_moves, fen_args.full_moves);
         }
         (Err(e), Ok(_player)) => print_error_trace(&e),
         (Ok(_player), Err(e)) => print_error_trace(&e),

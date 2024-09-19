@@ -15,6 +15,9 @@ pub enum RuntimeError {
     /// Failed parsing
     #[error("Parsing error at {}:{}:{}.", file!(), line!(), column!())]
     Parse(#[from] ParseError),
+    /// UGI engine error
+    #[error("UGI error at {}:{}:{}.", file!(), line!(), column!())]
+    UGI(#[from] UgiErrorKind),
 }
 
 /// Errors returned if game rules are broken
@@ -103,6 +106,20 @@ impl Display for InvalidCoordinatesKind {
             InvalidCoordinatesKind::Horizontal => write!(f, "horizontal"),
         }
     }
+}
+
+/// UGI engine errors
+#[derive(Debug, Error)]
+pub enum UgiErrorKind {
+    /// Empty command
+    #[error("Empty command")]
+    EmptyCommand,
+    /// Invalid position arguments
+    #[error("Invalid position arguments: \"{0}\", expected optional \"moves [moves]\"")]
+    InvalidUGIPosition(String),
+    /// Clap error
+    #[error("Command parsing error.")]
+    ClapError(#[from] clap::Error),
 }
 
 /// Gets the error traceback as a String vector.
