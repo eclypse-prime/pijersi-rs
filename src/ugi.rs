@@ -137,7 +137,10 @@ impl UgiEngine {
                     .search_to_depth(depth, self.opening_book.as_ref());
                 let action_string = match result {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
-                    None => "------".to_owned(), // TODO: info null move
+                    None => {
+                        println!("info null move");
+                        "------".to_owned()
+                    }
                 };
                 println!("bestmove {action_string}");
             }
@@ -145,7 +148,10 @@ impl UgiEngine {
                 let action = self.board.search_to_time(time, self.opening_book.as_ref());
                 let action_string = match action {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
-                    None => "------".to_owned(), // TODO: info null move
+                    None => {
+                        println!("info null move");
+                        "------".to_owned()
+                    }
                 };
                 println!("bestmove {action_string}");
             }
