@@ -23,8 +23,8 @@ use crate::logic::translate::{
     action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_player,
     string_to_action, string_to_cells,
 };
-use crate::logic::{CELL_EMPTY, INDEX_WIDTH, STACK_THRESHOLD};
-use crate::piece::{init_piece, PieceColour, PieceType};
+use crate::logic::{INDEX_WIDTH, MAX_HALF_MOVES};
+use crate::piece::{init_piece, PieceColour, PieceType, CELL_EMPTY, STACK_THRESHOLD};
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
 
@@ -149,7 +149,7 @@ impl Board {
     fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(u64, u64, i64)> {
         if let Some(opening_book) = opening_book {
             if let Some(&(action, score)) = opening_book.lookup(self) {
-                let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO create const for this
+                let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO implement function for this
                 let action_string = action_to_string(&self.cells, action);
                 if self.options.verbose {
                     println!("info book depth {depth} score {score} pv {action_string}");
@@ -306,7 +306,7 @@ impl Board {
 
     /// Returns whether the board is in a drawing position (half move counter reaches 20).
     pub fn is_draw(&self) -> bool {
-        self.half_moves >= 20
+        self.half_moves >= MAX_HALF_MOVES
     }
 
     /// Returns the winner of the game if there is one.

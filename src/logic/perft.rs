@@ -2,13 +2,14 @@
 
 use rayon::prelude::*;
 
+use crate::piece::{COLOUR_MASK, STACK_THRESHOLD};
+
 use super::{
     actions::play_action,
     lookup::{NEIGHBOURS1, NEIGHBOURS2},
     movegen::available_player_actions,
     rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
     translate::action_to_string,
-    COLOUR_MASK, STACK_THRESHOLD,
 };
 
 /// Returns the number of possible actions for a player.

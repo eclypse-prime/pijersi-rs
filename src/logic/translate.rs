@@ -2,47 +2,42 @@
 
 use regex::Regex;
 
-use crate::errors::{
+use crate::{errors::{
     InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
-};
+}, piece::{BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, STACK_THRESHOLD, TOP_MASK, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE}};
 
-use super::{
-    movegen::concatenate_action, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL,
-    INDEX_WIDTH, STACK_THRESHOLD, TOP_MASK,
-};
+use super::{movegen::concatenate_action, INDEX_MASK, INDEX_NULL, INDEX_WIDTH};
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
-// TODO: create consts for piece values
 /// Converts a character to its corresponding piece (if it exists).
 pub fn char_to_piece(piece_char: char) -> Option<u8> {
     match piece_char {
         '-' => Some(CELL_EMPTY),
-        'S' => Some(0x01),
-        'P' => Some(0x05),
-        'R' => Some(0x09),
-        'W' => Some(0x0D),
-        's' => Some(0x03),
-        'p' => Some(0x07),
-        'r' => Some(0x0B),
-        'w' => Some(0x0F),
+        'S' => Some(WHITE_SCISSORS),
+        'P' => Some(WHITE_PAPER),
+        'R' => Some(WHITE_ROCK),
+        'W' => Some(WHITE_WISE),
+        's' => Some(BLACK_SCISSORS),
+        'p' => Some(BLACK_PAPER),
+        'r' => Some(BLACK_ROCK),
+        'w' => Some(BLACK_WISE),
         _ => None,
     }
 }
 
-// TODO: create consts for piece values
 /// Converts a piece to its corresponding character (if it exists).
 pub fn piece_to_char(piece: u8) -> Option<char> {
     match piece {
         CELL_EMPTY => Some('-'),
-        0x01 => Some('S'),
-        0x05 => Some('P'),
-        0x09 => Some('R'),
-        0x0D => Some('W'),
-        0x03 => Some('s'),
-        0x07 => Some('p'),
-        0x0B => Some('r'),
-        0x0F => Some('w'),
+        WHITE_SCISSORS => Some('S'),
+        WHITE_PAPER => Some('P'),
+        WHITE_ROCK => Some('R'),
+        WHITE_WISE => Some('W'),
+        BLACK_SCISSORS => Some('s'),
+        BLACK_PAPER => Some('p'),
+        BLACK_ROCK => Some('r'),
+        BLACK_WISE => Some('w'),
         _ => None,
     }
 }
