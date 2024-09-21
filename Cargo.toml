@@ -20,6 +20,7 @@ rayon = "*"
 regex = "*"
 serde = {version = "*", features = ["derive"]}
 serde_bytes = "*"
+thiserror = "*"
 
 [dev-dependencies]
 criterion="*"

@@ -6,10 +6,11 @@ use std::{process::exit, time::Instant};
 
 use crate::{
     board::Board,
+    errors::{get_error_trace, RuntimeError, UgiErrorKind},
     logic::{
         perft::perft,
         rules::is_action_legal,
-        translate::{action_to_string, str_to_player, string_to_action, string_to_cells},
+        translate::{action_to_string, string_to_action, string_to_cells, string_to_player},
     },
     search::openings::OpeningBook,
     utils::parse_bool_arg,
@@ -124,7 +125,7 @@ impl UgiEngine {
     }
 
     // TODO: help function?
-    fn exit(&self) {
+    fn quit(&self) {
         exit(0);
     }
 
@@ -136,7 +137,10 @@ impl UgiEngine {
                     .search_to_depth(depth, self.opening_book.as_ref());
                 let action_string = match result {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
-                    None => "------".to_owned(), // TODO: info null move
+                    None => {
+                        println!("info null move");
+                        "------".to_owned()
+                    }
                 };
                 println!("bestmove {action_string}");
             }
@@ -144,7 +148,10 @@ impl UgiEngine {
                 let action = self.board.search_to_time(time, self.opening_book.as_ref());
                 let action_string = match action {
                     Some((action, _score)) => action_to_string(&self.board.cells, action),
-                    None => "------".to_owned(), // TODO: info null move
+                    None => {
+                        println!("info null move");
+                        "------".to_owned()
+                    }
                 };
                 println!("bestmove {action_string}");
             }
@@ -152,7 +159,7 @@ impl UgiEngine {
                 let result = self.board.play_from_string(&action_string);
                 match result {
                     Ok(_v) => (),
-                    Err(e) => println!("info error \"{e}\""),
+                    Err(e) => print_error_trace(&e),
                 }
             }
             GoArgs::Perft { depth } => {
@@ -172,75 +179,34 @@ impl UgiEngine {
                     0 => {
                         self.board.init();
                     }
-                    1 => {
-                        println!("invalid argument {}", action_list[0]);
-                    }
-                    _ if action_list[0] != "moves" => {
-                        println!("invalid argument {}", action_list[0]);
-                    }
+                    1 => print_error_trace(&RuntimeError::UGI(UgiErrorKind::InvalidUGIPosition(
+                        action_list.join(" "),
+                    ))),
+                    _ if action_list[0] != "moves" => print_error_trace(&RuntimeError::UGI(
+                        UgiErrorKind::InvalidUGIPosition(action_list.join(" ")),
+                    )),
                     _ => {
                         self.board.init();
-                        // TODO: make function (duplicate code)
-                        for action_string in action_list.iter().skip(1) {
-                            // TODO: rollback if err
-                            let result = self.board.play_from_string(action_string);
-                            match result {
-                                Ok(_v) => (),
-                                Err(e) => println!("info error \"{e}\""),
-                            }
-                        }
+                        play_actions(&mut self.board, &action_list[1..]);
                     }
                 }
             }
             PositionArgs::Fen(fen_args) => {
-                let action_list: Vec<String> = fen_args.moves;
+                let action_list: &Vec<String> = &fen_args.moves;
                 match action_list.len() {
-                    0 => match string_to_cells(&fen_args.fen) {
-                        Ok(new_cells) => {
-                            match self.board.set_state(
-                                &new_cells,
-                                // TODO: use anyhow or handle
-                                str_to_player(&fen_args.player).unwrap(),
-                                fen_args.half_moves,
-                                fen_args.full_moves,
-                            ) {
-                                Ok(()) => (),
-                                Err(e) => println!("info error \"{e}\""),
-                            }
-                        }
-                        Err(e) => println!("info error \"{e}\""),
-                    },
-                    1 => {
-                        println!("invalid argument {}", action_list[0]);
+                    0 => {
+                        set_fen(&mut self.board, &fen_args);
                     }
-                    _ if action_list[0] != "moves" => {
-                        println!("invalid argument {}", action_list[0]);
+                    1 => print_error_trace(&RuntimeError::UGI(UgiErrorKind::InvalidUGIPosition(
+                        action_list.join(" "),
+                    ))),
+                    _ if action_list[0] != "moves" => print_error_trace(&RuntimeError::UGI(
+                        UgiErrorKind::InvalidUGIPosition(action_list.join(" ")),
+                    )),
+                    _ => {
+                        set_fen(&mut self.board, &fen_args);
+                        play_actions(&mut self.board, &action_list[1..]);
                     }
-                    _ => match string_to_cells(&fen_args.fen) {
-                        Ok(new_cells) => {
-                            match self.board.set_state(
-                                &new_cells,
-                                // TODO: use anyhow or handle
-                                str_to_player(&fen_args.player).unwrap(),
-                                fen_args.half_moves,
-                                fen_args.full_moves,
-                            ) {
-                                Ok(()) => {
-                                    // TODO: make function (duplicate code)
-                                    for action_string in action_list.iter().skip(1) {
-                                        // TODO: rollback if err
-                                        let result = self.board.play_from_string(action_string);
-                                        match result {
-                                            Ok(_v) => (),
-                                            Err(e) => println!("info error \"{e}\""),
-                                        }
-                                    }
-                                }
-                                Err(e) => println!("info error \"{e}\""),
-                            }
-                        }
-                        Err(e) => println!("info error \"{e}\""),
-                    },
                 }
             }
         }
@@ -305,16 +271,18 @@ impl UgiEngine {
 
     fn setoption(&mut self, option: SetoptionArgs) {
         match option {
-            SetoptionArgs::UseBook { value } => {
-                if let Some(value) = parse_bool_arg(&value) {
+            SetoptionArgs::UseBook { value } => match parse_bool_arg(&value) {
+                Ok(value) => {
                     self.board.options.use_book = value;
                 }
-            }
-            SetoptionArgs::Verbose { value } => {
-                if let Some(value) = parse_bool_arg(&value) {
+                Err(e) => print_error_trace(&e),
+            },
+            SetoptionArgs::Verbose { value } => match parse_bool_arg(&value) {
+                Ok(value) => {
                     self.board.options.verbose = value;
                 }
-            }
+                Err(e) => print_error_trace(&e),
+            },
         }
     }
 
@@ -330,20 +298,62 @@ impl UgiEngine {
                 Commands::Ugi => self.ugi(),
                 Commands::Isready => self.isready(),
                 Commands::Uginewgame => self.uginewgame(),
-                Commands::Quit => self.exit(),
+                Commands::Quit => self.quit(),
                 Commands::Go(go_args) => self.go(go_args),
                 Commands::Position(position_args) => self.position(position_args),
                 Commands::Query(query_args) => self.query(query_args),
                 Commands::Setoption(setoption_args) => self.setoption(setoption_args),
             },
             Err(e) => {
-                let error_text = if command.is_empty() {
-                    "Empty command"
+                print_error_trace(&if command.is_empty() {
+                    RuntimeError::UGI(UgiErrorKind::EmptyCommand)
                 } else {
-                    &e.to_string().lines().next().unwrap().to_owned()
-                };
-                println!("info error \"{}\"", error_text);
+                    RuntimeError::UGI(UgiErrorKind::ClapError(e))
+                });
             }
+        }
+    }
+}
+
+/// Utility function to print an error's traceback.
+fn print_error_trace(error: &dyn std::error::Error) {
+    let trace = get_error_trace(error);
+    for source in trace {
+        for line in source.lines().filter(|&line| !line.is_empty()) {
+            println!("info error \"{line}\"")
+        }
+    }
+}
+
+/// Plays all the actions in the list. If there is an invalid action in the list, stops and rolls back to the initial state.
+fn play_actions(board: &mut Board, actions: &[String]) {
+    let (cells, player, half_moves, full_moves) = board.get_state();
+    for action_string in actions {
+        let result = board.play_from_string(action_string);
+        match result {
+            Ok(_v) => (),
+            Err(e) => {
+                board.set_state(&cells, player, half_moves, full_moves);
+                print_error_trace(&e);
+                break;
+            }
+        }
+    }
+}
+
+/// Sets the state of the board using PSN/FEN arguments
+fn set_fen(board: &mut Board, fen_args: &FenArgs) {
+    let new_cells = string_to_cells(&fen_args.fen);
+    let player = string_to_player(&fen_args.player);
+    match (new_cells, player) {
+        (Ok(new_cells), Ok(player)) => {
+            board.set_state(&new_cells, player, fen_args.half_moves, fen_args.full_moves);
+        }
+        (Err(e), Ok(_player)) => print_error_trace(&e),
+        (Ok(_player), Err(e)) => print_error_trace(&e),
+        (Err(e1), Err(e2)) => {
+            print_error_trace(&e1);
+            print_error_trace(&e2);
         }
     }
 }

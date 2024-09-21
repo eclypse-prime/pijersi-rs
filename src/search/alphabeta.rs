@@ -28,8 +28,10 @@ pub fn search(
         return None;
     }
 
-    if end_time.is_some() && Instant::now() > end_time.unwrap() {
-        return None;
+    if let Some(end_time) = end_time {
+        if Instant::now() > end_time {
+            return None;
+        }
     }
 
     // Get an array of all the available moves for the current player, the last element of the array is the number of available moves
@@ -128,8 +130,10 @@ pub fn search(
             .collect()
     };
 
-    if end_time.is_some() && Instant::now() > end_time.unwrap() {
-        return None;
+    if let Some(end_time) = end_time {
+        if Instant::now() > end_time {
+            return None;
+        }
     }
 
     let scores: Vec<i64> = reverse_argsort(&scores, &order);
@@ -157,8 +161,10 @@ pub fn search_iterative(
     let mut best_result: Option<(u64, i64)> = None;
     let mut last_scores: Option<Vec<i64>> = None;
     for depth in 1..=max_depth {
-        if end_time.is_some() && Instant::now() > end_time.unwrap() {
-            break;
+        if let Some(end_time) = end_time {
+            if Instant::now() > end_time {
+                break;
+            }
         }
         let start_time = Instant::now();
         let proposed_action = search(cells, current_player, depth, end_time, &last_scores);
@@ -174,7 +180,11 @@ pub fn search_iterative(
                     if verbose {
                         println!("info loss in {}", depth / 2);
                     }
-                    best_result = if let Some((last_action, _last_score)) = best_result {Some((last_action, score))} else {None};
+                    best_result = if let Some((last_action, _last_score)) = best_result {
+                        Some((last_action, score))
+                    } else {
+                        None
+                    };
                     break;
                 }
                 best_result = Some((action, score));

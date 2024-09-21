@@ -7,7 +7,7 @@
 //! | Width | 32    | 8                | 8           | 8            | 8           |
 
 use super::{
-    CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_MASK, INDEX_NULL, INDEX_WIDTH, TOP_MASK,
+    translate::action_to_indices, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_NULL, TOP_MASK,
 };
 
 /// Applies a move between chosen coordinates.
@@ -48,9 +48,7 @@ fn do_unstack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
 
 /// Plays the selected action.
 pub fn play_action(cells: &mut [u8; 45], action: u64) {
-    let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
-    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
-    let index_start: usize = (action & INDEX_MASK) as usize;
+    let (index_start, index_mid, index_end) = action_to_indices(action);
 
     if index_start == INDEX_NULL {
         return;

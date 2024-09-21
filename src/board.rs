@@ -3,7 +3,7 @@
 //! A board is represented as a [u8; 45] array.
 //!
 //! Its cells are indexed as such:
-//! ```ignore
+//! ```not_rust
 //!   0   1   2   3   4   5
 //! 6   7   8   9   10  11  12
 //!   13  14  15  16  17  18
@@ -14,13 +14,14 @@
 //! ```
 use std::time::{Duration, Instant};
 
-use crate::errors::{IllegalActionError, StringParseError};
+use crate::errors::{ParseError, ParseErrorKind, RulesErrorKind, RuntimeError};
 use crate::logic::actions::play_action;
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
 use crate::logic::translate::{
-    action_to_string, cells_to_pretty_string, cells_to_string, player_to_str, str_to_player, string_to_action, string_to_cells
+    action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_player,
+    string_to_action, string_to_cells,
 };
 use crate::logic::{CELL_EMPTY, INDEX_WIDTH, STACK_THRESHOLD};
 use crate::piece::{init_piece, PieceColour, PieceType};
@@ -47,7 +48,7 @@ impl Default for BoardOptions {
 
 impl BoardOptions {
     /// BoardOptions constructor. By default, the options are set to:
-    /// ```ignore
+    /// ```not_rust
     /// use_book: true
     /// verbose: true
     /// ```
@@ -214,70 +215,60 @@ impl Board {
     }
 
     /// Sets the board state.
-    pub fn set_state(
-        &mut self,
-        cells: &[u8; 45],
-        player: u8,
-        half_moves: u64,
-        full_moves: u64,
-    ) -> Result<(), StringParseError> {
+    pub fn set_state(&mut self, cells: &[u8; 45], player: u8, half_moves: u64, full_moves: u64) {
         self.cells = *cells;
         self.current_player = player;
         self.half_moves = half_moves;
         self.full_moves = full_moves;
         self.last_piece_count = self.count_pieces();
-        Ok(())
     }
 
     /// Get the Pijersi Standard Notation of the current board state.
     pub fn get_string_state(&self) -> String {
-        let state = self.get_state();
+        let (cells, current_player, half_moves, full_moves) = self.get_state();
         format!(
             "{} {} {} {}",
-            cells_to_string(&state.0),
-            player_to_str(state.1).unwrap(),
-            state.2,
-            state.3
+            cells_to_string(&cells),
+            player_to_string(current_player).unwrap(),
+            half_moves,
+            full_moves,
         )
     }
 
     /// Sets the state of the board according to Pijersi Standard Notation data.
-    pub fn set_string_state(&mut self, state_string: &str) -> Result<(), StringParseError> {
+    pub fn set_string_state(&mut self, state_string: &str) -> Result<(), ParseError> {
         if let [cells_string, player_string, half_moves_string, full_moves_string] =
             state_string.split(' ').collect::<Vec<&str>>()[..]
         {
-            // TODO: use anyhow
-            let new_cells = string_to_cells(cells_string).unwrap();
-            // TODO: use anyhow
-            let player = str_to_player(player_string).unwrap();
-            let half_moves: u64 = half_moves_string.parse().unwrap();
-            let full_moves: u64 = full_moves_string.parse().unwrap();
-            self.set_state(&new_cells, player, half_moves, full_moves)
+            let new_cells = string_to_cells(cells_string)?;
+            let player = string_to_player(player_string)?;
+            let half_moves = half_moves_string.parse::<u64>().map_err(|err| ParseError {
+                kind: ParseErrorKind::InvalidInt(err),
+                value: half_moves_string.to_string(),
+            })?;
+            let full_moves = full_moves_string.parse::<u64>().map_err(|err| ParseError {
+                kind: ParseErrorKind::InvalidInt(err),
+                value: full_moves_string.to_string(),
+            })?;
+            self.set_state(&new_cells, player, half_moves, full_moves);
+            Ok(())
         } else {
-            Err(StringParseError::new(&format!(
-                "Illegal board notation '{state_string}"
-            )))
+            Err(ParseError {
+                kind: ParseErrorKind::InvalidPSN,
+                value: state_string.to_owned(),
+            })
         }
     }
 
-    /// Plays the chosen action provided in string representation.
-    pub fn play_from_string(&mut self, action_string: &str) -> Result<(), IllegalActionError> {
-        let action_result = string_to_action(&self.cells, action_string);
-        match action_result {
-            Ok(action) => match self.play(action) {
-                Ok(v) => Ok(v),
-                Err(_) => Err(IllegalActionError::new(&format!(
-                    "Illegal action: {action_string}"
-                ))),
-            },
-            Err(e) => Err(IllegalActionError::new(&format!(
-                "Illegal action, could not parse '{action_string}' ({e})"
-            ))),
-        }
+    /// Plays the chosen action provided in string representation.z
+    pub fn play_from_string(&mut self, action_string: &str) -> Result<(), RuntimeError> {
+        let action = string_to_action(&self.cells, action_string)?;
+        self.play(action)?;
+        Ok(())
     }
 
     /// Plays the chosen action provided in u64 representation.
-    pub fn play(&mut self, action: u64) -> Result<(), IllegalActionError> {
+    pub fn play(&mut self, action: u64) -> Result<(), RulesErrorKind> {
         if is_action_legal(&self.cells, self.current_player, action) {
             play_action(&mut self.cells, action);
             if self.current_player == 1 {
@@ -293,7 +284,7 @@ impl Board {
             }
             Ok(())
         } else {
-            Err(IllegalActionError::new("Illegal action"))
+            Err(RulesErrorKind::IllegalAction(action))
         }
     }
 
