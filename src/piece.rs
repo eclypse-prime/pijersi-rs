@@ -62,17 +62,17 @@ pub enum PieceType {
 
 /// Creates a uint representation piece from a `PieceColour` and `PieceType`.
 pub const fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> u8 {
-    let colour_uint: u8 = match piece_colour {
+    let colour_part: u8 = match piece_colour {
         PieceColour::White => COLOUR_WHITE,
         PieceColour::Black => COLOUR_BLACK,
     };
-    let type_uint: u8 = match piece_type {
+    let type_part: u8 = match piece_type {
         PieceType::Scissors => TYPE_SCISSORS,
         PieceType::Paper => TYPE_PAPER,
         PieceType::Rock => TYPE_ROCK,
         PieceType::Wise => TYPE_WISE,
     };
-    PIECE_BIT | colour_uint | type_uint
+    PIECE_BIT | colour_part | type_part
 }
 
 /// White Scissors
