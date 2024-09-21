@@ -91,17 +91,3 @@ pub const BLACK_PAPER: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Paper
 pub const BLACK_ROCK: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Rock);
 /// Black Wise
 pub const BLACK_WISE: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Wise);
-
-/// Creates a uint representation complete piece (top and bottom) from a `PieceColour` and the top and bottom `PieceType`.
-pub fn init_piece(
-    piece_colour: PieceColour,
-    bottom_type: Option<PieceType>,
-    top_type: PieceType,
-) -> u8 {
-    let top_uint: u8 = piece_to_uint(&piece_colour, &top_type);
-    let bottom_uint: u8 = match bottom_type {
-        None => CELL_EMPTY,
-        Some(bottom_type) => piece_to_uint(&piece_colour, &bottom_type),
-    };
-    top_uint | bottom_uint << HALF_PIECE_WIDTH
-}
