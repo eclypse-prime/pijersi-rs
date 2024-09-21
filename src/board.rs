@@ -23,8 +23,8 @@ use crate::logic::translate::{
     action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_player,
     string_to_action, string_to_cells,
 };
-use crate::logic::{CELL_EMPTY, INDEX_WIDTH, STACK_THRESHOLD};
-use crate::piece::{init_piece, PieceColour, PieceType};
+use crate::logic::{INDEX_WIDTH, MAX_HALF_MOVES};
+use crate::piece::{BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, HALF_PIECE_WIDTH, STACK_THRESHOLD, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE};
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
 
@@ -106,33 +106,34 @@ impl Board {
     /// Sets the half move counter to 0 and the full move counter to 1.
     pub fn init(&mut self) {
         self.cells.fill(0);
-        self.cells[0] = init_piece(PieceColour::Black, None, PieceType::Scissors);
-        self.cells[1] = init_piece(PieceColour::Black, None, PieceType::Paper);
-        self.cells[2] = init_piece(PieceColour::Black, None, PieceType::Rock);
-        self.cells[3] = init_piece(PieceColour::Black, None, PieceType::Scissors);
-        self.cells[4] = init_piece(PieceColour::Black, None, PieceType::Paper);
-        self.cells[5] = init_piece(PieceColour::Black, None, PieceType::Rock);
-        self.cells[6] = init_piece(PieceColour::Black, None, PieceType::Paper);
-        self.cells[7] = init_piece(PieceColour::Black, None, PieceType::Rock);
-        self.cells[8] = init_piece(PieceColour::Black, None, PieceType::Scissors);
-        self.cells[9] = init_piece(PieceColour::Black, Some(PieceType::Wise), PieceType::Wise);
-        self.cells[10] = init_piece(PieceColour::Black, None, PieceType::Rock);
-        self.cells[11] = init_piece(PieceColour::Black, None, PieceType::Scissors);
-        self.cells[12] = init_piece(PieceColour::Black, None, PieceType::Paper);
 
-        self.cells[44] = init_piece(PieceColour::White, None, PieceType::Scissors);
-        self.cells[43] = init_piece(PieceColour::White, None, PieceType::Paper);
-        self.cells[42] = init_piece(PieceColour::White, None, PieceType::Rock);
-        self.cells[41] = init_piece(PieceColour::White, None, PieceType::Scissors);
-        self.cells[40] = init_piece(PieceColour::White, None, PieceType::Paper);
-        self.cells[39] = init_piece(PieceColour::White, None, PieceType::Rock);
-        self.cells[38] = init_piece(PieceColour::White, None, PieceType::Paper);
-        self.cells[37] = init_piece(PieceColour::White, None, PieceType::Rock);
-        self.cells[36] = init_piece(PieceColour::White, None, PieceType::Scissors);
-        self.cells[35] = init_piece(PieceColour::White, Some(PieceType::Wise), PieceType::Wise);
-        self.cells[34] = init_piece(PieceColour::White, None, PieceType::Rock);
-        self.cells[32] = init_piece(PieceColour::White, None, PieceType::Paper);
-        self.cells[33] = init_piece(PieceColour::White, None, PieceType::Scissors);
+        self.cells[0] = BLACK_SCISSORS;
+        self.cells[1] = BLACK_PAPER;
+        self.cells[2] = BLACK_ROCK;
+        self.cells[3] = BLACK_SCISSORS;
+        self.cells[4] = BLACK_PAPER;
+        self.cells[5] = BLACK_ROCK;
+        self.cells[6] = BLACK_PAPER;
+        self.cells[7] = BLACK_ROCK;
+        self.cells[8] = BLACK_SCISSORS;
+        self.cells[9] = BLACK_WISE | BLACK_WISE << HALF_PIECE_WIDTH; // TODO: make Piece trait with stack function
+        self.cells[10] = BLACK_ROCK;
+        self.cells[11] = BLACK_SCISSORS;
+        self.cells[12] = BLACK_PAPER;
+
+        self.cells[44] = WHITE_SCISSORS;
+        self.cells[43] = WHITE_PAPER;
+        self.cells[42] = WHITE_ROCK;
+        self.cells[41] = WHITE_SCISSORS;
+        self.cells[40] = WHITE_PAPER;
+        self.cells[39] = WHITE_ROCK;
+        self.cells[38] = WHITE_PAPER;
+        self.cells[37] = WHITE_ROCK;
+        self.cells[36] = WHITE_SCISSORS;
+        self.cells[35] = WHITE_WISE | WHITE_WISE << HALF_PIECE_WIDTH; // TODO: make Piece trait with stack function
+        self.cells[34] = WHITE_ROCK;
+        self.cells[33] = WHITE_SCISSORS;
+        self.cells[32] = WHITE_PAPER;
 
         self.current_player = 0;
         self.half_moves = 0;
@@ -149,7 +150,7 @@ impl Board {
     fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(u64, u64, i64)> {
         if let Some(opening_book) = opening_book {
             if let Some(&(action, score)) = opening_book.lookup(self) {
-                let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO create const for this
+                let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO implement function for this
                 let action_string = action_to_string(&self.cells, action);
                 if self.options.verbose {
                     println!("info book depth {depth} score {score} pv {action_string}");
@@ -306,7 +307,7 @@ impl Board {
 
     /// Returns whether the board is in a drawing position (half move counter reaches 20).
     pub fn is_draw(&self) -> bool {
-        self.half_moves >= 20
+        self.half_moves >= MAX_HALF_MOVES
     }
 
     /// Returns the winner of the game if there is one.

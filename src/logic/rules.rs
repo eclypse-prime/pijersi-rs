@@ -1,8 +1,8 @@
 //! Implements the rules to check if an action is valid or not.
+use crate::piece::{CELL_EMPTY, COLOUR_BLACK, COLOUR_MASK, COLOUR_WHITE, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE};
+
 use super::{
-    movegen::available_player_actions, perft::perft_iter, ACTION_MASK, CELL_EMPTY, COLOUR_BLACK,
-    COLOUR_MASK, COLOUR_WHITE, INDEX_MASK, INDEX_WIDTH, STACK_THRESHOLD, TYPE_MASK, TYPE_PAPER,
-    TYPE_ROCK, TYPE_SCISSORS, TYPE_WISE,
+    movegen::available_player_actions, perft::perft_iter, ACTION_MASK, INDEX_MASK, INDEX_WIDTH,
 };
 
 /// Returns whether an attacker piece can capture a target piece.

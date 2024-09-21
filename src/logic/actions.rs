@@ -6,8 +6,10 @@
 //! |-------|-------|------------------|-------------|--------------|-------------|
 //! | Width | 32    | 8                | 8           | 8            | 8           |
 
+use crate::piece::{CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, TOP_MASK};
+
 use super::{
-    translate::action_to_indices, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, INDEX_NULL, TOP_MASK,
+    translate::action_to_indices, INDEX_NULL,
 };
 
 /// Applies a move between chosen coordinates.
