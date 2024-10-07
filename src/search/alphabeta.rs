@@ -6,6 +6,7 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
+use crate::logic::actions::play_action;
 use crate::logic::translate::action_to_string;
 use crate::utils::{argsort, reverse_argsort};
 
@@ -147,6 +148,31 @@ pub fn search(
         .map(|(action, score)| (action, score, scores))
 }
 
+fn get_principal_variation(
+    cells: &[u8; 45],
+    current_player: u8,
+    max_depth: u64,
+    first_move: u64,
+) -> Vec<u64> {
+    let mut principal_variation: Vec<u64> = vec![first_move];
+    for depth in 1..max_depth {
+        let mut new_cells = *cells;
+        let mut player = current_player;
+        for &action in &principal_variation {
+            play_action(&mut new_cells, action);
+            player = 1 - player;
+        }
+        if let Some((action, _score)) =
+            search_iterative(&new_cells, player, max_depth - depth, None, false)
+        {
+            principal_variation.push(action);
+        } else {
+            break;
+        }
+    }
+    principal_variation
+}
+
 /// Returns the best move by searching up to the chosen depth.
 ///
 /// The search starts at depth 1 and the depth increases until the chosen depth is reached or a winning move is found.
@@ -172,9 +198,15 @@ pub fn search_iterative(
         match proposed_action {
             None => (),
             Some((action, score, scores)) => {
-                let action_string = action_to_string(cells, action);
                 if verbose {
-                    println!("info depth {depth} time {duration} score {score} pv {action_string}");
+                    let principal_variation =
+                    get_principal_variation(cells, current_player, depth, action);
+                    let principal_variation_string = principal_variation
+                        .iter()
+                        .map(|&action| action_to_string(cells, action))
+                        .collect::<Vec<String>>()
+                        .join(" ");
+                    println!("info depth {depth} time {duration} score {score} pv {principal_variation_string}");
                 }
                 if score < -BASE_BETA {
                     if verbose {
