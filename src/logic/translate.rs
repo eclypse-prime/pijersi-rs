@@ -127,13 +127,13 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, Pa
 
     // Guaranteed to match regex "\w\d", no handling needed.
     let index_start: usize = string_to_index(action_captures.get(1).unwrap().as_str())?;
-    // Guaranteed to match regex "\w\d", no handling needed.
-    let mut index_mid: usize = string_to_index(action_captures.get(2).unwrap().as_str())?;
-    let index_end: usize = if let Some(action_capture) = action_captures.get(3) {
+    let mut index_mid: usize = if let Some(action_capture) = action_captures.get(2) {
         string_to_index(action_capture.as_str())?
     } else {
         INDEX_NULL
     };
+    // Guaranteed to match regex "\w\d", no handling needed.
+    let index_end: usize = string_to_index(action_captures.get(3).unwrap().as_str())?;
 
     if cells[index_end] != CELL_EMPTY
         && (cells[index_start] & COLOUR_MASK == cells[index_end] & COLOUR_MASK)
