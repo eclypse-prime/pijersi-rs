@@ -6,9 +6,7 @@ use std::time::Instant;
 use crate::logic::actions::play_action;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
-use crate::logic::{
-    INDEX_MASK, INDEX_WIDTH,
-};
+use crate::logic::{INDEX_MASK, INDEX_WIDTH};
 use crate::piece::{CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, TOP_MASK, TYPE_MASK, TYPE_WISE};
 use crate::search::lookup::PIECE_SCORES;
 
@@ -211,7 +209,9 @@ pub fn evaluate_action_terminal(
             current_score += evaluate_cell(end_piece, index_end);
         }
         // The piece at the end coordinates is an ally : action and stack
-        else if end_piece != CELL_EMPTY && (end_piece & COLOUR_MASK) == (start_piece & COLOUR_MASK) {
+        else if end_piece != CELL_EMPTY
+            && (end_piece & COLOUR_MASK) == (start_piece & COLOUR_MASK)
+        {
             mid_piece = start_piece;
             end_piece = (mid_piece & TOP_MASK) + (end_piece << HALF_PIECE_WIDTH);
             if index_start == index_end {

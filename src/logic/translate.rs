@@ -2,9 +2,16 @@
 
 use regex::Regex;
 
-use crate::{errors::{
-    InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
-}, piece::{BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, STACK_THRESHOLD, TOP_MASK, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE}};
+use crate::{
+    errors::{
+        InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
+    },
+    piece::{
+        BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, COLOUR_MASK,
+        HALF_PIECE_WIDTH, STACK_THRESHOLD, TOP_MASK, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS,
+        WHITE_WISE,
+    },
+};
 
 use super::{movegen::concatenate_action, INDEX_MASK, INDEX_NULL, INDEX_WIDTH};
 

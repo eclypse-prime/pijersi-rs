@@ -8,9 +8,7 @@
 
 use crate::piece::{CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, TOP_MASK};
 
-use super::{
-    translate::action_to_indices, INDEX_NULL,
-};
+use super::{translate::action_to_indices, INDEX_NULL};
 
 /// Applies a move between chosen coordinates.
 fn do_move(cells: &mut [u8; 45], index_start: usize, index_end: usize) {

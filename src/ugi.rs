@@ -1,4 +1,6 @@
 //! This module implements the UGI protocol.
+//!
+//! For a detailed description of the protocol, see https://github.com/eclypse-prime/pijersi-rs/blob/main/UGI.md
 
 use clap::{Args, Parser, Subcommand};
 use current_platform::{COMPILED_ON, CURRENT_PLATFORM};

@@ -20,11 +20,14 @@ use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
 use crate::logic::translate::{
-    action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_player,
-    string_to_action, string_to_cells,
+    action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_action,
+    string_to_cells, string_to_player,
 };
 use crate::logic::{INDEX_WIDTH, MAX_HALF_MOVES};
-use crate::piece::{BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, HALF_PIECE_WIDTH, STACK_THRESHOLD, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE};
+use crate::piece::{
+    BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, HALF_PIECE_WIDTH,
+    STACK_THRESHOLD, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
+};
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
 
