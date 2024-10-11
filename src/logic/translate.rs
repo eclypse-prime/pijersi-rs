@@ -125,7 +125,7 @@ pub fn index_to_string(index: usize) -> String {
 
 /// Converts a string (a1b1c1 style) move to the native triple-index format.
 pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, ParseError> {
-    let action_pattern = Regex::new(r"(\w\d)(\w\d)?(\w\d)").unwrap();
+    let action_pattern = Regex::new(r"^(\w\d)(\w\d)?(\w\d)$").unwrap();
 
     let action_captures = action_pattern.captures(action_string).ok_or(ParseError {
         kind: ParseErrorKind::InvalidAction,
