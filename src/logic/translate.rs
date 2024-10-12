@@ -7,9 +7,7 @@ use crate::{
         InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
     },
     piece::{
-        BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, COLOUR_MASK,
-        HALF_PIECE_WIDTH, STACK_THRESHOLD, TOP_MASK, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS,
-        WHITE_WISE,
+        Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, HALF_PIECE_WIDTH, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE
     },
 };
 
@@ -142,8 +140,8 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, Pa
     // Guaranteed to match regex "\w\d", no handling needed.
     let index_end: usize = string_to_index(action_captures.get(3).unwrap().as_str())?;
 
-    if cells[index_end] != CELL_EMPTY
-        && (cells[index_start] & COLOUR_MASK == cells[index_end] & COLOUR_MASK)
+    if !cells[index_end].is_empty()
+        && cells[index_start].colour() == cells[index_end].colour()
         && index_mid == INDEX_NULL
     {
         index_mid = index_start;
@@ -169,14 +167,12 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
     let action_string_end: String = index_to_string(index_end);
 
     let action_string_mid: String = if index_mid == INDEX_NULL {
-        if cells[index_start] >= STACK_THRESHOLD {
+        if cells[index_start].is_stack() {
             index_to_string(index_end)
         } else {
             String::new()
         }
-    } else if index_mid != INDEX_NULL
-        && index_start == index_mid
-        && cells[index_start] < STACK_THRESHOLD
+    } else if index_mid != INDEX_NULL && index_start == index_mid && !cells[index_start].is_stack()
     {
         String::new()
     } else {
@@ -235,18 +231,18 @@ pub fn cells_to_string(cells: &[u8; 45]) -> String {
         let mut counter: usize = 0;
         for j in 0..n_columns {
             let piece = cells[coords_to_index(i, j)];
-            if piece == CELL_EMPTY {
+            if piece.is_empty() {
                 counter += 1;
             } else {
                 if counter > 0 {
                     cells_string += &counter.to_string();
                     counter = 0;
                 }
-                if piece >= STACK_THRESHOLD {
+                if piece.is_stack() {
                     cells_string += &piece_to_char(piece >> HALF_PIECE_WIDTH)
                         .unwrap()
                         .to_string();
-                    cells_string += &piece_to_char(piece & TOP_MASK).unwrap().to_string();
+                    cells_string += &piece_to_char(piece.top()).unwrap().to_string();
                 } else {
                     cells_string += &piece_to_char(piece).unwrap().to_string();
                     cells_string += "-";

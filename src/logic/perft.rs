@@ -2,7 +2,7 @@
 
 use rayon::prelude::*;
 
-use crate::piece::{COLOUR_MASK, STACK_THRESHOLD};
+use crate::piece::Piece;
 
 use super::{
     actions::play_action,
@@ -20,9 +20,9 @@ fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
 
     // Calculate possible actions
     for index in 0..45 {
-        if cells[index] != 0 {
+        if !cells[index].is_empty() {
             // Choose pieces of the current player's colour
-            if (cells[index] & COLOUR_MASK) == (current_player << 1) {
+            if (cells[index].colour()) == (current_player << 1) {
                 player_action_count += count_piece_actions(cells, index);
             }
         }
@@ -40,7 +40,7 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
     let piece_start: u8 = cells[index_start];
 
     // If the piece is not a stack
-    if piece_start < STACK_THRESHOLD {
+    if !piece_start.is_stack() {
         // 1-range first action
         for &index_mid in NEIGHBOURS1
             .iter()

@@ -7,7 +7,7 @@ use crate::logic::actions::play_action;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
 use crate::logic::{INDEX_MASK, INDEX_WIDTH};
-use crate::piece::{CELL_EMPTY, COLOUR_MASK, HALF_PIECE_WIDTH, TOP_MASK, TYPE_MASK, TYPE_WISE};
+use crate::piece::{Piece, CELL_EMPTY};
 use crate::search::lookup::PIECE_SCORES;
 
 /// The max score (is reached on winning position)
@@ -54,7 +54,7 @@ pub fn evaluate_action(
     let index_start: usize = (action & INDEX_MASK) as usize;
     let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
 
-    if (cells[index_start] & TYPE_MASK) != TYPE_WISE
+    if !cells[index_start].is_wise()
         && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))
     {
         return -MAX_SCORE;
@@ -166,7 +166,7 @@ pub fn evaluate_action_terminal(
     let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
     let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
 
-    if (cells[index_start] & TYPE_MASK) != TYPE_WISE
+    if !cells[index_start].is_wise()
         && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))
     {
         return -MAX_SCORE;
@@ -186,12 +186,12 @@ pub fn evaluate_action_terminal(
         let mut mid_piece: u8 = cells[index_mid];
         let mut end_piece: u8 = cells[index_end];
         // The piece at the mid coordinates is an ally : stack and action
-        if mid_piece != CELL_EMPTY
-            && (mid_piece & COLOUR_MASK) == (start_piece & COLOUR_MASK)
+        if !mid_piece.is_empty()
+            && mid_piece.colour() == start_piece.colour()
             && (index_mid != index_start)
         {
-            end_piece = (start_piece & TOP_MASK) + (mid_piece << HALF_PIECE_WIDTH);
-            start_piece >>= HALF_PIECE_WIDTH;
+            end_piece = start_piece.stack_on(mid_piece);
+            start_piece = start_piece.bottom();
             mid_piece = CELL_EMPTY;
 
             // Starting cell
@@ -209,15 +209,15 @@ pub fn evaluate_action_terminal(
             current_score += evaluate_cell(end_piece, index_end);
         }
         // The piece at the end coordinates is an ally : action and stack
-        else if end_piece != CELL_EMPTY
-            && (end_piece & COLOUR_MASK) == (start_piece & COLOUR_MASK)
+        else if !end_piece.is_empty()
+            && end_piece.colour() == start_piece.colour()
         {
             mid_piece = start_piece;
-            end_piece = (mid_piece & TOP_MASK) + (end_piece << HALF_PIECE_WIDTH);
+            end_piece = mid_piece.stack_on(end_piece);
             if index_start == index_end {
-                end_piece = mid_piece & TOP_MASK;
+                end_piece = mid_piece.top();
             }
-            mid_piece >>= HALF_PIECE_WIDTH;
+            mid_piece = mid_piece.bottom();
 
             // Starting cell
             if index_start != index_mid {
@@ -237,8 +237,8 @@ pub fn evaluate_action_terminal(
         // The end coordinates contain an enemy or no piece : action and unstack
         else {
             mid_piece = start_piece;
-            end_piece = mid_piece & TOP_MASK;
-            mid_piece >>= HALF_PIECE_WIDTH;
+            end_piece = mid_piece.top();
+            mid_piece = mid_piece.bottom();
 
             // Starting cell
             if index_start != index_mid {

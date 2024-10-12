@@ -1,4 +1,4 @@
-//! This module implements the code to generate pieces from their colour and type.
+//! Implements the code to generate pieces from their colour and type.
 //!  
 //! Pieces are represented by u8 numbers and have the following structure : TTCPTTCP
 //!
@@ -24,7 +24,7 @@ pub const TOP_MASK: u8 = 0b1111u8;
 /// Empty cell value
 pub const CELL_EMPTY: u8 = 0x00u8;
 /// Cell value above which the cell contained inside is a stack
-pub const STACK_THRESHOLD: u8 = 16u8;
+const STACK_THRESHOLD: u8 = 16u8;
 
 /// White piece after applying the colour mask
 pub const COLOUR_WHITE: u8 = 0b0000u8;
@@ -91,3 +91,83 @@ pub const BLACK_PAPER: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Paper
 pub const BLACK_ROCK: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Rock);
 /// Black Wise
 pub const BLACK_WISE: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Wise);
+
+/// Piece trait for u8
+pub trait Piece: Copy {
+    /// Stack the piece on the provided bottom piece
+    fn stack_on(self, bottom: Self) -> Self;
+
+    /// Get the top piece of a stack
+    fn top(self) -> Self;
+    /// Get the bottom piece of a stack
+    fn bottom(self) -> Self;
+
+    /// Applies the colour mask to the piece to find its colour
+    fn colour(self) -> Self;
+    /// Applies the type mask to the piece to find its type
+    fn r#type(self) -> Self;
+
+    /// Returns true if the piece is empty
+    fn is_empty(self) -> bool;
+    /// Returns true if the piece is a stack
+    fn is_stack(self) -> bool;
+
+    /// Returns true if the piece is white
+    fn is_white(self) -> bool;
+    /// Returns true if the piece is black
+    fn is_black(self) -> bool;
+    /// Returns true if the piece is a wise
+    fn is_wise(self) -> bool;
+}
+
+impl Piece for u8 {
+    #[inline(always)]
+    fn stack_on(self, bottom: Self) -> Self {
+        self.top() | (bottom << HALF_PIECE_WIDTH)
+    }
+
+    #[inline(always)]
+    fn bottom(self) -> Self {
+        self >> HALF_PIECE_WIDTH
+    }
+
+    #[inline(always)]
+    fn top(self) -> Self {
+        self & TOP_MASK
+    }
+
+    #[inline(always)]
+    fn colour(self) -> Self {
+        self & COLOUR_MASK
+    }
+
+    #[inline(always)]
+    fn r#type(self) -> Self {
+        self & TYPE_MASK
+    }
+
+    #[inline(always)]
+    fn is_empty(self) -> bool {
+        self == CELL_EMPTY
+    }
+
+    #[inline(always)]
+    fn is_stack(self) -> bool {
+        self >= STACK_THRESHOLD
+    }
+
+    #[inline(always)]
+    fn is_white(self) -> bool {
+        self.colour() == COLOUR_WHITE
+    }
+
+    #[inline(always)]
+    fn is_black(self) -> bool {
+        self.colour() == COLOUR_BLACK
+    }
+
+    #[inline(always)]
+    fn is_wise(self) -> bool {
+        self.r#type() == TYPE_WISE
+    }
+}

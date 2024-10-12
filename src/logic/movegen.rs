@@ -1,6 +1,6 @@
 //! Implements the move generator: returns the list of all available moves for a player at a given time.
 
-use crate::piece::{CELL_EMPTY, COLOUR_MASK, STACK_THRESHOLD};
+use crate::piece::Piece;
 
 use super::lookup::{NEIGHBOURS1, NEIGHBOURS2};
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
@@ -32,9 +32,9 @@ pub fn available_player_actions(
 
     // Calculate possible player_actions
     for index in 0..45 {
-        if cells[index] != CELL_EMPTY {
+        if !cells[index].is_empty() {
             // Choose pieces of the current player's colour
-            if (cells[index] & COLOUR_MASK) == (current_player << 1) {
+            if (cells[index].colour()) == (current_player << 1) {
                 index_actions =
                     available_piece_actions(cells, index, &mut player_actions, index_actions);
             }
@@ -57,7 +57,7 @@ pub fn available_piece_actions(
     let mut index_actions = index_actions;
 
     // If the piece is not a stack
-    if piece_start < STACK_THRESHOLD {
+    if !piece_start.is_stack() {
         // 1-range first action
         for &index_mid in NEIGHBOURS1
             .iter()
