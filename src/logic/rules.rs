@@ -1,5 +1,5 @@
 //! Implements the rules to check if an action is valid or not.
-use crate::piece::{Piece, COLOUR_BLACK, COLOUR_WHITE, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS};
+use crate::piece::{Piece, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS};
 
 use super::{
     movegen::available_player_actions, perft::perft_iter, ACTION_MASK, INDEX_MASK, INDEX_WIDTH,
@@ -106,8 +106,8 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
     let moving_piece: u8 = cells[index_start];
 
     if !moving_piece.is_wise()
-        && ((moving_piece.colour() == COLOUR_WHITE && index_end <= 5)
-            || (moving_piece.colour() == COLOUR_BLACK && index_end >= 39))
+        && ((moving_piece.is_white() && index_end <= 5)
+            || (moving_piece.is_black() && index_end >= 39))
     {
         return true;
     }
@@ -127,19 +127,13 @@ pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> boo
 /// Returns true if the current position is winning for one of the players.
 pub fn is_position_win(cells: &[u8; 45]) -> bool {
     for &piece in cells.iter().take(6) {
-        if !piece.is_empty() {
-            // If piece is White and not Wise
-            if piece.colour() == COLOUR_WHITE && !piece.is_wise() {
-                return true;
-            }
+        if !piece.is_empty() && piece.is_white() && !piece.is_wise() {
+            return true;
         }
     }
     for &piece in cells.iter().skip(39).take(6) {
-        if !piece.is_empty() {
-            // If piece is Black and not Wise
-            if piece.colour() == COLOUR_BLACK && !piece.is_wise() {
-                return true;
-            }
+        if !piece.is_empty() && piece.is_black() && !piece.is_wise() {
+            return true;
         }
     }
     false
@@ -155,19 +149,13 @@ pub fn is_position_stalemate(cells: &[u8; 45], current_player: u8) -> bool {
 /// Returns the winning player if there is one.
 pub fn get_winning_player(cells: &[u8; 45]) -> Option<u8> {
     for &piece in cells.iter().take(6) {
-        if !piece.is_empty() {
-            // If piece is White and not Wise
-            if piece.colour() == COLOUR_WHITE && !piece.is_wise() {
-                return Some(0);
-            }
+        if !piece.is_empty() && piece.is_white() && !piece.is_wise() {
+            return Some(0);
         }
     }
     for &piece in cells.iter().skip(39).take(6) {
-        if !piece.is_empty() {
-            // If piece is Black and not Wise
-            if piece.colour() == COLOUR_BLACK && !piece.is_wise() {
-                return Some(1);
-            }
+        if !piece.is_empty() && piece.is_black() && !piece.is_wise() {
+            return Some(1);
         }
     }
     None
