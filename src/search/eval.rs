@@ -6,7 +6,7 @@ use std::time::Instant;
 use crate::logic::actions::play_action;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
-use crate::logic::{INDEX_MASK, INDEX_WIDTH};
+use crate::logic::translate::action_to_indices;
 use crate::piece::{Piece, CELL_EMPTY};
 use crate::search::lookup::PIECE_SCORES;
 
@@ -51,8 +51,7 @@ pub fn evaluate_action(
     beta: i64,
     end_time: Option<Instant>,
 ) -> i64 {
-    let index_start: usize = (action & INDEX_MASK) as usize;
-    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+    let (index_start, _index_mid, index_end) = action_to_indices(action);
 
     if !cells[index_start].is_wise()
         && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))
@@ -162,9 +161,7 @@ pub fn evaluate_action_terminal(
     previous_score: i64,
     previous_piece_scores: &[i64; 45],
 ) -> i64 {
-    let index_start: usize = (action & INDEX_MASK) as usize;
-    let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
-    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+    let (index_start, index_mid, index_end) = action_to_indices(action);
 
     if !cells[index_start].is_wise()
         && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))

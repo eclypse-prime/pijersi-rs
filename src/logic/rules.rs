@@ -2,7 +2,7 @@
 use crate::piece::{Piece, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS};
 
 use super::{
-    movegen::available_player_actions, perft::perft_iter, ACTION_MASK, INDEX_MASK, INDEX_WIDTH,
+    movegen::available_player_actions, perft::perft_iter, translate::action_to_indices, ACTION_MASK
 };
 
 /// Returns whether an attacker piece can capture a target piece.
@@ -100,8 +100,7 @@ pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool
 /// To win, one allied piece (except wise) must reach the last row in the opposite side.
 #[inline]
 pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
-    let index_start: usize = (action & INDEX_MASK) as usize;
-    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+    let (index_start, _index_mid, index_end) = action_to_indices(action);
 
     let moving_piece: u8 = cells[index_start];
 

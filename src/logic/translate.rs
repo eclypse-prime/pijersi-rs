@@ -7,7 +7,7 @@ use crate::{
         InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
     },
     piece::{
-        Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, HALF_PIECE_WIDTH, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE
+        Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE
     },
 };
 
@@ -155,9 +155,7 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, Pa
 
 /// Converts a native triple-index move into the string (a1b1c1 style) format.
 pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
-    let index_start: usize = (action & INDEX_MASK) as usize;
-    let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
-    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+    let (index_start, index_mid, index_end) = action_to_indices(action);
 
     if index_start == INDEX_NULL {
         return String::new();
@@ -202,8 +200,7 @@ pub fn string_to_cells(cells_string: &str) -> Result<[u8; 45], ParseError> {
                     Some(top_char) => {
                         if cell_line.chars().nth(j + 1).unwrap() != '-' {
                             new_cells[cursor] =
-                                char_to_piece(cell_line.chars().nth(j + 1).unwrap()).unwrap()
-                                    | (top_char << HALF_PIECE_WIDTH);
+                                char_to_piece(cell_line.chars().nth(j + 1).unwrap()).unwrap().stack_on(top_char);
                         } else {
                             new_cells[cursor] =
                                 char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap();
@@ -239,7 +236,7 @@ pub fn cells_to_string(cells: &[u8; 45]) -> String {
                     counter = 0;
                 }
                 if piece.is_stack() {
-                    cells_string += &piece_to_char(piece >> HALF_PIECE_WIDTH)
+                    cells_string += &piece_to_char(piece.bottom())
                         .unwrap()
                         .to_string();
                     cells_string += &piece_to_char(piece.top()).unwrap().to_string();
@@ -263,8 +260,8 @@ pub fn cells_to_string(cells: &[u8; 45]) -> String {
 pub fn cells_to_pretty_string(cells: &[u8; 45]) -> String {
     let mut cells_pretty_print: String = " ".to_owned();
     for (i, &piece) in cells.iter().enumerate() {
-        let top_piece: u8 = piece & 0b1111;
-        let bottom_piece: u8 = piece >> 4;
+        let top_piece: u8 = piece.top();
+        let bottom_piece: u8 = piece.bottom();
         let char1: char = match top_piece {
             0b0000 => '.',
             0b0001 => 'S',
