@@ -253,7 +253,7 @@ fn test_action_to_string() {
 #[test]
 fn test_string_to_cells() {
     assert_eq!(
-        string_to_cells("s-p-r-s-p-r-/p-r-s-wwr-s-p-/6/7/6/P-S-R-WWS-R-PS/R-P-S-R-P-1").unwrap(),
+        string_to_cells("s-p-r-s-1r-/p-r-s-ww1s-p-/6/5rp1/6/P-S-R-WWS-R-PS/R-P-S-R-P-1").unwrap(),
         TEST_CELLS
     );
     assert!(string_to_cells("s-p-r-s-p-r-/p-r-s-wwr-s-p-/6/7/6/P-S-R-WWS-R-PS").is_err());
@@ -267,13 +267,13 @@ fn test_string_to_cells() {
 fn test_cells_to_string() {
     assert_eq!(
         cells_to_string(&TEST_CELLS),
-        "s-p-r-s-p-r-/p-r-s-wwr-s-p-/6/7/6/P-S-R-WWS-R-PS/R-P-S-R-P-1"
+        "s-p-r-s-1r-/p-r-s-ww1s-p-/6/5rp1/6/P-S-R-WWS-R-PS/R-P-S-R-P-1"
     )
 }
 
 #[test]
 fn test_cells_to_pretty_string() {
-    assert_eq!(cells_to_pretty_string(&TEST_CELLS), " s- p- r- s- p- r- \np- r- s- ww r- s- p- \n .  .  .  .  .  .  \n.  .  .  .  .  .  .  \n .  .  .  .  .  .  \nP- S- R- WW S- R- SP \n R- P- S- R- P- .  ");
+    assert_eq!(cells_to_pretty_string(&TEST_CELLS), " s- p- r- s- .  r- \np- r- s- ww .  s- p- \n .  .  .  .  .  .  \n.  .  .  .  .  pr .  \n .  .  .  .  .  .  \nP- S- R- WW S- R- SP \n R- P- S- R- P- .  ");
 }
 
 #[test]
