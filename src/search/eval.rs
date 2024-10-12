@@ -7,7 +7,7 @@ use crate::logic::actions::play_action;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
 use crate::logic::translate::action_to_indices;
-use crate::piece::{Piece, CELL_EMPTY};
+use crate::piece::Piece;
 use crate::search::lookup::PIECE_SCORES;
 
 /// The max score (is reached on winning position)
@@ -189,7 +189,7 @@ pub fn evaluate_action_terminal(
         {
             end_piece = start_piece.stack_on(mid_piece);
             start_piece = start_piece.bottom();
-            mid_piece = CELL_EMPTY;
+            mid_piece.set_empty();
 
             // Starting cell
             current_score -= previous_piece_scores[index_start];

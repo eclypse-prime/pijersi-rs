@@ -9,6 +9,7 @@
 //! C is 1 bit representing the color
 //! P is 1 bit set to 1 as long as there is a piece
 
+
 /// Bit width of a half piece
 pub const HALF_PIECE_WIDTH: usize = 4;
 
@@ -118,6 +119,9 @@ pub trait Piece: Copy {
     fn is_black(self) -> bool;
     /// Returns true if the piece is a wise
     fn is_wise(self) -> bool;
+
+    /// Sets the piece to an empty value
+    fn set_empty(&mut self);
 }
 
 impl Piece for u8 {
@@ -169,5 +173,10 @@ impl Piece for u8 {
     #[inline(always)]
     fn is_wise(self) -> bool {
         self.r#type() == TYPE_WISE
+    }
+
+    #[inline(always)]
+    fn set_empty(&mut self) {
+        *self = CELL_EMPTY;
     }
 }
