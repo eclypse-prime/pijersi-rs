@@ -1,6 +1,7 @@
 use pijersi_rs::{
     logic::rules::{
-        can_move1, can_move2, can_stack, can_take, can_unstack, get_winning_player, is_action_legal, is_action_win, is_position_stalemate, is_position_win
+        can_move1, can_move2, can_stack, can_take, can_unstack, get_winning_player,
+        is_action_legal, is_action_win, is_position_stalemate, is_position_win,
     },
     piece::{
         BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
@@ -43,8 +44,8 @@ const TEST_CELLS3: [u8; 45] = [
 /// P- S- R- WW S- R- P-
 ///  R- P- S- R- P- S-
 const TEST_CELLS_STALEMATE: [u8; 45] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 5, 1, 9, 221, 1, 9, 5, 9, 5, 1, 9, 5, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    5, 1, 9, 221, 1, 9, 5, 9, 5, 1, 9, 5, 1,
 ];
 
 /// Cells state for testing
@@ -165,8 +166,8 @@ fn test_is_position_stalemate() {
     assert!(!is_position_stalemate(&TEST_CELLS2, 0));
     assert!(is_position_stalemate(&TEST_CELLS_STALEMATE, 1));
     assert!(!is_position_stalemate(&TEST_CELLS_STALEMATE, 0));
-    assert!(is_position_stalemate(&[0u8;45], 0));
-    assert!(is_position_stalemate(&[0u8;45], 1));
+    assert!(is_position_stalemate(&[0u8; 45], 0));
+    assert!(is_position_stalemate(&[0u8; 45], 1));
 }
 
 #[test]
