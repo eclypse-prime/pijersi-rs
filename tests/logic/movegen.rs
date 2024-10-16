@@ -1,8 +1,6 @@
 use pijersi_rs::logic::{
-    movegen::{
-        available_piece_actions, available_player_actions, concatenate_action,
-        concatenate_half_action,
-    },
+    actions::Action,
+    movegen::{available_piece_actions, available_player_actions, concatenate_half_action},
     MAX_PLAYER_ACTIONS,
 };
 
@@ -67,7 +65,7 @@ const TEST_AVAILABLE_PIECE_ACTIONS_INDEX: usize = 12;
 
 #[test]
 fn test_concatenate_action() {
-    assert_eq!(concatenate_action(39, 32, 26), 1712167);
+    assert_eq!(u64::from_indices(39, 32, 26), 1712167);
 }
 
 #[test]

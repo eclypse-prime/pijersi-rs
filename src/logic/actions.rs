@@ -6,9 +6,12 @@
 //! |-------|-------|------------------|-------------|--------------|-------------|
 //! | Width | 32    | 8                | 8           | 8            | 8           |
 
-use crate::piece::{Piece, CELL_EMPTY};
+use crate::piece::Piece;
 
-use super::{translate::action_to_indices, INDEX_NULL};
+use super::{
+    lookup::{NEIGHBOURS1, NEIGHBOURS2},
+    INDEX_MASK, INDEX_NULL, INDEX_WIDTH,
+};
 
 /// Applies a move between chosen coordinates.
 fn do_move(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
@@ -17,7 +20,7 @@ fn do_move(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
         cells[index_end] = cells[index_start];
 
         // Set the starting cell as empty
-        cells[index_start] = CELL_EMPTY;
+        cells[index_start].set_empty();
     }
 }
 
@@ -48,9 +51,9 @@ fn do_unstack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
 
 /// Plays the selected action.
 pub fn play_action(cells: &mut [u8; 45], action: u64) {
-    let (index_start, index_mid, index_end) = action_to_indices(action);
+    let (index_start, index_mid, index_end) = action.to_indices();
 
-    if index_start == INDEX_NULL {
+    if index_start.is_null() {
         return;
     }
 
@@ -58,7 +61,7 @@ pub fn play_action(cells: &mut [u8; 45], action: u64) {
 
     if !piece_start.is_empty() {
         // If there is no intermediate move
-        if index_mid == INDEX_NULL {
+        if index_mid.is_null() {
             // Simple move
             do_move(cells, index_start, index_end);
         } else {
@@ -83,5 +86,74 @@ pub fn play_action(cells: &mut [u8; 45], action: u64) {
                 do_unstack(cells, index_mid, index_end);
             }
         }
+    }
+}
+
+/// Action trait for u64
+pub trait Action: Copy {
+    /// Converts an action to its indices
+    fn to_indices(self) -> (usize, usize, usize);
+    /// Converts a set of three indices to an action
+    fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self;
+}
+
+impl Action for u64 {
+    // TODO: can we make this even more generic by implementing From and Into for Action and Indices?
+    #[inline(always)]
+    fn to_indices(self) -> (usize, usize, usize) {
+        let index_start: usize = (self & INDEX_MASK) as usize;
+        let index_mid: usize = ((self >> INDEX_WIDTH) & INDEX_MASK) as usize;
+        let index_end: usize = ((self >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+        (index_start, index_mid, index_end)
+    }
+
+    #[inline(always)]
+    /// Concatenate three indices into a u64 action.
+    /// The first index is stored in the 8 least significant bits.
+    fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self {
+        (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as u64
+    }
+}
+
+/// Cell index trait for usize
+pub trait Index: Copy {
+    /// Returns true if the index if a null index (0xFF)
+    fn is_null(self) -> bool;
+    /// Returns an iterator to the 1-range neighbours of this index
+    fn neighbours1(self) -> impl Iterator<Item = &'static Self>
+    where
+    Self: 'static;
+    /// Returns an iterator to the 2-range neighbours of this index
+    fn neighbours2(self) -> impl Iterator<Item = &'static Self>
+    where
+        Self: 'static;
+}
+
+impl Index for usize {
+    #[inline(always)]
+    fn is_null(self) -> bool {
+        self == INDEX_NULL
+    }
+
+    #[inline(always)]
+    fn neighbours1(self) -> impl Iterator<Item = &'static Self>
+    where
+        Self: 'static,
+    {
+        NEIGHBOURS1
+            .iter()
+            .skip(7 * self + 1)
+            .take(NEIGHBOURS1[7 * self])
+    }
+
+    #[inline(always)]
+    fn neighbours2(self) -> impl Iterator<Item = &'static Self>
+    where
+        Self: 'static,
+    {
+        NEIGHBOURS2
+            .iter()
+            .skip(7 * self + 1)
+            .take(NEIGHBOURS2[7 * self])
     }
 }

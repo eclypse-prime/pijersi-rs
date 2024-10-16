@@ -25,7 +25,8 @@ use crate::logic::translate::{
 };
 use crate::logic::{INDEX_WIDTH, MAX_HALF_MOVES};
 use crate::piece::{
-    Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE
+    Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
+    WHITE_SCISSORS, WHITE_WISE,
 };
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;

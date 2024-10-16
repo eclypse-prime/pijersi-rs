@@ -9,7 +9,6 @@
 //! C is 1 bit representing the color
 //! P is 1 bit set to 1 as long as there is a piece
 
-
 /// Bit width of a half piece
 pub const HALF_PIECE_WIDTH: usize = 4;
 
