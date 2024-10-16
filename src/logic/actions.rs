@@ -122,7 +122,7 @@ pub trait Index: Copy {
     /// Returns an iterator to the 1-range neighbours of this index
     fn neighbours1(self) -> impl Iterator<Item = &'static Self>
     where
-    Self: 'static;
+        Self: 'static;
     /// Returns an iterator to the 2-range neighbours of this index
     fn neighbours2(self) -> impl Iterator<Item = &'static Self>
     where
