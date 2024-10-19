@@ -1,5 +1,5 @@
 //! Implements the rules to check if an action is valid or not.
-use crate::piece::{Piece, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS};
+use crate::piece::Piece;
 
 use super::{
     actions::{Action, ACTION_MASK}, index::Index, movegen::available_player_actions, perft::perft_iter
@@ -13,9 +13,10 @@ use super::{
 pub fn can_take(attacker: u8, target: u8) -> bool {
     let attacker_type: u8 = attacker.r#type();
     let target_type: u8 = target.r#type();
-    (attacker_type == TYPE_SCISSORS && target_type == TYPE_PAPER)
-        || (attacker_type == TYPE_PAPER && target_type == TYPE_ROCK)
-        || (attacker_type == TYPE_ROCK && target_type == TYPE_SCISSORS)
+    // Concat has 16 possible values, we can use a truth table to quickly get the result
+    let concat = attacker_type | (target_type >> 2);
+    // This will optimize to a single `bt` operartion in asm
+    (0b0000_0001_0100_0010 >> concat) & 1 == 1
 }
 
 /// Returns whether the chosen 1-range move is possible.
