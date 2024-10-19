@@ -94,6 +94,8 @@ pub trait Action: Copy {
     fn to_indices(self) -> (usize, usize, usize);
     /// Converts a set of three indices to an action
     fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self;
+    /// Converts a set of two starting indices (without the end index) to an action
+    fn from_indices_half(index_start: usize, index_mid: usize) -> Self;
     /// Returns the search depth stored in the action data
     fn search_depth(self) -> u64;
     /// Adds the last index of an action to itself
@@ -115,6 +117,11 @@ impl Action for u64 {
     /// The first index is stored in the 8 least significant bits.
     fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self {
         (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as u64
+    }
+
+    #[inline(always)]
+    fn from_indices_half(index_start: usize, index_mid: usize) -> Self {
+        (index_start | (index_mid << INDEX_WIDTH)) as u64
     }
 
     #[inline(always)]

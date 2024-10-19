@@ -5,8 +5,7 @@ use crate::piece::Piece;
 use super::actions::Action;
 use super::index::Index;
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
-use super::{INDEX_NULL, INDEX_WIDTH, MAX_PLAYER_ACTIONS};
-
+use super::{INDEX_NULL, MAX_PLAYER_ACTIONS};
 
 /// Returns the possible moves for a player.
 /// The result is a size `MAX_PLAYER_ACTIONS` array of u64 and the number of actions.
@@ -48,7 +47,7 @@ pub fn available_piece_actions(
     if !piece_start.is_stack() {
         // 1-range first action
         for &index_mid in index_start.neighbours1() {
-            let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
+            let half_action: u64 = u64::from_indices_half(index_start, index_mid);
             // stack, [1/2-range move] optional
             if can_stack(cells, piece_start, index_mid) {
                 // stack, 2-range move
@@ -57,8 +56,7 @@ pub fn available_piece_actions(
                         || (index_start == ((index_mid + index_end) / 2)
                             && can_move1(cells, piece_start, index_end))
                     {
-                        player_actions[index_actions] =
-                            half_action.add_last_index(index_end);
+                        player_actions[index_actions] = half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -66,8 +64,7 @@ pub fn available_piece_actions(
                 // stack, 0/1-range move
                 for &index_end in index_mid.neighbours1() {
                     if can_move1(cells, piece_start, index_end) || index_start == index_end {
-                        player_actions[index_actions] =
-                            half_action.add_last_index(index_end);
+                        player_actions[index_actions] = half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -80,14 +77,14 @@ pub fn available_piece_actions(
             // 1-range move
             else if can_move1(cells, piece_start, index_mid) {
                 player_actions[index_actions] =
-                    u64::from_indices(index_start, 0x0000_00FF, index_mid);
+                    u64::from_indices(index_start, INDEX_NULL, index_mid);
                 index_actions += 1;
             }
         }
     } else {
         // 2 range first action
         for &index_mid in index_start.neighbours2() {
-            let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
+            let half_action: u64 = u64::from_indices_half(index_start, index_mid);
             if can_move2(cells, piece_start, index_start, index_mid) {
                 // 2-range move, stack or unstack
                 for &index_end in index_mid.neighbours1() {
@@ -95,8 +92,7 @@ pub fn available_piece_actions(
                     if can_unstack(cells, piece_start, index_end)
                         || can_stack(cells, piece_start, index_end)
                     {
-                        player_actions[index_actions] =
-                            half_action.add_last_index(index_end);
+                        player_actions[index_actions] = half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -108,7 +104,7 @@ pub fn available_piece_actions(
         }
         // 1-range first action
         for &index_mid in index_start.neighbours1() {
-            let half_action: u64 = (index_start | (index_mid << INDEX_WIDTH)) as u64;
+            let half_action: u64 = u64::from_indices_half(index_start, index_mid);
             // 1-range move, [stack or unstack] optional
             if can_move1(cells, piece_start, index_mid) {
                 // 1-range move, stack or unstack
@@ -117,8 +113,7 @@ pub fn available_piece_actions(
                     if can_unstack(cells, piece_start, index_end)
                         || can_stack(cells, piece_start, index_end)
                     {
-                        player_actions[index_actions] =
-                            half_action.add_last_index(index_end);
+                        player_actions[index_actions] = half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -137,8 +132,7 @@ pub fn available_piece_actions(
                 // stack, 2-range move
                 for &index_end in index_mid.neighbours2() {
                     if can_move2(cells, piece_start, index_mid, index_end) {
-                        player_actions[index_actions] =
-                            half_action.add_last_index(index_end);
+                        player_actions[index_actions] = half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -146,8 +140,7 @@ pub fn available_piece_actions(
                 // stack, 1-range move
                 for &index_end in index_mid.neighbours1() {
                     if can_move1(cells, piece_start, index_end) {
-                        player_actions[index_actions] =
-                            half_action.add_last_index(index_end);
+                        player_actions[index_actions] = half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
