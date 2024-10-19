@@ -102,8 +102,8 @@ pub enum InvalidPlayerKind {
 impl Display for InvalidCoordinatesKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            InvalidCoordinatesKind::Vertical => write!(f, "vertical"),
-            InvalidCoordinatesKind::Horizontal => write!(f, "horizontal"),
+            Self::Vertical => write!(f, "vertical"),
+            Self::Horizontal => write!(f, "horizontal"),
         }
     }
 }

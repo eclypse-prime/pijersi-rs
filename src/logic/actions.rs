@@ -11,7 +11,7 @@ use crate::piece::Piece;
 use super::index::{Index, INDEX_MASK, INDEX_WIDTH};
 
 /// Mask to get the action without additional data
-pub const ACTION_MASK: u64 = 0xFFFFFFu64;
+pub const ACTION_MASK: u64 = 0x00FF_FFFF_u64;
 
 /// Applies a move between chosen coordinates.
 fn do_move(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
@@ -117,12 +117,12 @@ impl Action for u64 {
     /// Concatenate three indices into a u64 action.
     /// The first index is stored in the 8 least significant bits.
     fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self {
-        (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as u64
+        (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as Self
     }
 
     #[inline(always)]
     fn from_indices_half(index_start: usize, index_mid: usize) -> Self {
-        (index_start | (index_mid << INDEX_WIDTH)) as u64
+        (index_start | (index_mid << INDEX_WIDTH)) as Self
     }
 
     #[inline(always)]
@@ -134,6 +134,6 @@ impl Action for u64 {
     /// The first index is stored in the 8 least significant bits.
     #[inline(always)]
     fn add_last_index(self, index_end: usize) -> Self {
-        self | (index_end << (2 * INDEX_WIDTH)) as u64
+        self | (index_end << (2 * INDEX_WIDTH)) as Self
     }
 }
