@@ -316,5 +316,5 @@ impl Board {
     /// Returns the winner of the game if there is one.
     pub fn get_winner(&self) -> Option<u8> {
         get_winning_player(&self.cells)
-    }d
+    }
 }
