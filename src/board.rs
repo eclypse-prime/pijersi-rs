@@ -50,12 +50,12 @@ impl Default for BoardOptions {
 }
 
 impl BoardOptions {
-    /// BoardOptions constructor. By default, the options are set to:
+    /// `BoardOptions` constructor. By default, the options are set to:
     /// ```not_rust
     /// use_book: true
     /// verbose: true
     /// ```
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             use_book: true,
             verbose: true,
@@ -280,11 +280,11 @@ impl Board {
             }
             self.current_player = 1 - self.current_player;
             let piece_count = self.count_pieces();
-            if self.last_piece_count != piece_count {
+            if self.last_piece_count == piece_count {
+                self.half_moves += 1;
+            } else {
                 self.last_piece_count = piece_count;
                 self.half_moves = 0;
-            } else {
-                self.half_moves += 1;
             }
             Ok(())
         } else {

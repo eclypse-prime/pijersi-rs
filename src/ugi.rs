@@ -85,7 +85,7 @@ enum SetoptionArgs {
     Verbose { value: String },
 }
 
-/// The UgiEngine struct that implements the UGI protocol.
+/// The `UgiEngine` struct that implements the UGI protocol.
 pub struct UgiEngine {
     board: Board,
     opening_book: Option<OpeningBook>,
@@ -93,12 +93,12 @@ pub struct UgiEngine {
 
 impl Default for UgiEngine {
     fn default() -> Self {
-        UgiEngine::new()
+        Self::new()
     }
 }
 
 impl UgiEngine {
-    /// Creates a new UgiEngine
+    /// Creates a new `UgiEngine`
     pub fn new() -> Self {
         let mut new_self = Self {
             board: Board::default(),
@@ -137,23 +137,17 @@ impl UgiEngine {
                 let result = self
                     .board
                     .search_to_depth(depth, self.opening_book.as_ref());
-                let action_string = match result {
-                    Some((action, _score)) => action_to_string(&self.board.cells, action),
-                    None => {
-                        println!("info null move");
-                        "------".to_owned()
-                    }
+                let action_string = if let Some((action, _score)) = result { action_to_string(&self.board.cells, action) } else {
+                    println!("info null move");
+                    "------".to_owned()
                 };
                 println!("bestmove {action_string}");
             }
             GoArgs::Movetime { time } => {
                 let action = self.board.search_to_time(time, self.opening_book.as_ref());
-                let action_string = match action {
-                    Some((action, _score)) => action_to_string(&self.board.cells, action),
-                    None => {
-                        println!("info null move");
-                        "------".to_owned()
-                    }
+                let action_string = if let Some((action, _score)) = action { action_to_string(&self.board.cells, action) } else {
+                    println!("info null move");
+                    "------".to_owned()
                 };
                 println!("bestmove {action_string}");
             }
@@ -322,7 +316,7 @@ fn print_error_trace(error: &dyn std::error::Error) {
     let trace = get_error_trace(error);
     for source in trace {
         for line in source.lines().filter(|&line| !line.is_empty()) {
-            println!("info error \"{line}\"")
+            println!("info error \"{line}\"");
         }
     }
 }

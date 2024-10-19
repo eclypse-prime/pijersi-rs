@@ -18,7 +18,7 @@ use super::index::{Index, INDEX_NULL};
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
 /// Converts a character to its corresponding piece (if it exists).
-pub fn char_to_piece(piece_char: char) -> Option<u8> {
+pub const fn char_to_piece(piece_char: char) -> Option<u8> {
     match piece_char {
         '-' => Some(CELL_EMPTY),
         'S' => Some(WHITE_SCISSORS),
@@ -34,7 +34,7 @@ pub fn char_to_piece(piece_char: char) -> Option<u8> {
 }
 
 /// Converts a piece to its corresponding character (if it exists).
-pub fn piece_to_char(piece: u8) -> Option<char> {
+pub const fn piece_to_char(piece: u8) -> Option<char> {
     match piece {
         CELL_EMPTY => Some('-'),
         WHITE_SCISSORS => Some('S'),
@@ -50,7 +50,7 @@ pub fn piece_to_char(piece: u8) -> Option<char> {
 }
 
 /// Converts a (i, j) coordinate set to an index.
-pub fn coords_to_index(i: usize, j: usize) -> usize {
+pub const fn coords_to_index(i: usize, j: usize) -> usize {
     if i % 2 == 0 {
         13 * i / 2 + j
     } else {
@@ -59,7 +59,7 @@ pub fn coords_to_index(i: usize, j: usize) -> usize {
 }
 
 /// Converts an index to a (i, j) coordinate set.
-pub fn index_to_coords(index: usize) -> (usize, usize) {
+pub const fn index_to_coords(index: usize) -> (usize, usize) {
     let mut i: usize = 2 * (index / 13);
     let mut j: usize = index % 13;
 
@@ -184,42 +184,38 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
 /// Reads a Pijersi Standard Notation string to apply its state to the cells.
 pub fn string_to_cells(cells_string: &str) -> Result<[u8; 45], ParseError> {
     let cell_lines: Vec<&str> = cells_string.split('/').collect();
-    if cell_lines.len() != 7 {
+    if cell_lines.len() == 7 {
+        let mut cursor: usize = 0;
+        let mut new_cells: [u8; 45] = [0; 45];
+        for &cell_line in &cell_lines {
+            let mut j: usize = 0;
+            while j < cell_line.chars().count() {
+                if let Some(top_char) = char_to_piece(cell_line.chars().nth(j).unwrap()) {
+                    if cell_line.chars().nth(j + 1).unwrap() == '-' {
+                        new_cells[cursor] =
+                            char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap();
+                    } else {
+                        new_cells[cursor] = char_to_piece(cell_line.chars().nth(j + 1).unwrap())
+                            .unwrap()
+                            .stack_on(top_char);
+                    }
+                    j += 2;
+                    cursor += 1;
+                } else {
+                    let jump = cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as usize;
+                    j += 1;
+                    cursor += jump;
+                }
+            }
+        }
+        Ok(new_cells)
+    } else {
         Err(ParseError {
             kind: ParseErrorKind::InvalidPosition(InvalidPositionKind::WrongLineNumber(
                 cell_lines.len(),
             )),
             value: cells_string.to_owned(),
         })
-    } else {
-        let mut cursor: usize = 0;
-        let mut new_cells: [u8; 45] = [0; 45];
-        for &cell_line in &cell_lines {
-            let mut j: usize = 0;
-            while j < cell_line.chars().count() {
-                match char_to_piece(cell_line.chars().nth(j).unwrap()) {
-                    Some(top_char) => {
-                        if cell_line.chars().nth(j + 1).unwrap() != '-' {
-                            new_cells[cursor] =
-                                char_to_piece(cell_line.chars().nth(j + 1).unwrap())
-                                    .unwrap()
-                                    .stack_on(top_char);
-                        } else {
-                            new_cells[cursor] =
-                                char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap();
-                        }
-                        j += 2;
-                        cursor += 1;
-                    }
-                    None => {
-                        let jump = cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as usize;
-                        j += 1;
-                        cursor += jump;
-                    }
-                }
-            }
-        }
-        Ok(new_cells)
     }
 }
 
@@ -303,7 +299,7 @@ pub fn cells_to_pretty_string(cells: &[u8; 45]) -> String {
     cells_pretty_print
 }
 
-/// Parses the player argument: "w" -> Ok(0u8), "b" -> Ok(1u8)
+/// Parses the player argument: `"w"` -> `Ok(0u8)`, `"b"` -> `Ok(1u8)`
 pub fn string_to_player(player: &str) -> Result<u8, ParseError> {
     match player {
         "w" => Ok(0u8),
@@ -315,7 +311,7 @@ pub fn string_to_player(player: &str) -> Result<u8, ParseError> {
     }
 }
 
-/// Converts the current player to its Pijersi Standard Notation form: 0 -> Ok("w".to_owned()), 1 -> Ok("b".to_owned())
+/// Converts the current player to its Pijersi Standard Notation form: `0` -> `Ok("w".to_owned())`, `1` -> `Ok("b".to_owned())`
 pub fn player_to_string(current_player: u8) -> Result<String, ParseError> {
     match current_player {
         0u8 => Ok("w".to_owned()),

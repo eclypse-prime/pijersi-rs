@@ -17,7 +17,7 @@ pub const MAX_SCORE: i64 = 524_288;
 /// Returns the score of a single cell given its content and index.
 ///
 /// Uses lookup tables for faster computations.
-pub fn evaluate_cell(piece: u8, index: usize) -> i64 {
+pub const fn evaluate_cell(piece: u8, index: usize) -> i64 {
     PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * 45 + index]
 }
 

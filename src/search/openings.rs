@@ -1,6 +1,6 @@
-//! This module contains the OpeningBook struct and its associated functions.
+//! This module contains the `OpeningBook` struct and its associated functions.
 //!
-//! It contains the opening book data in the form of a HashMap.
+//! It contains the opening book data in the form of a `HashMap`.
 //! The keys are strings representing the Pijersi Standard Notation of the stored position.
 //! The values are the stored actions in the native triple-index format (u64) and the expected score at the pre-calculated search depth.
 //!
@@ -26,14 +26,14 @@ pub struct Position {
 
 impl Position {
     /// Creates a new Position from a board. Copies its cells and current player.
-    pub fn new(board: &Board) -> Position {
-        Position {
+    pub fn new(board: &Board) -> Self {
+        Self {
             cells: board.cells,
             current_player: board.current_player,
         }
     }
-    fn empty() -> Position {
-        Position {
+    const fn empty() -> Self {
+        Self {
             cells: [0; 45],
             current_player: 0,
         }
@@ -41,7 +41,7 @@ impl Position {
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
-/// Represents a pre-calculated response to a given position. It is used to generate the opening book HashMap.
+/// Represents a pre-calculated response to a given position. It is used to generate the opening book `HashMap`.
 pub struct Response {
     /// The position that is used as a key
     pub position: Position,
@@ -54,15 +54,15 @@ const RESPONSE_SIZE: usize = 70;
 
 impl Response {
     /// Creates a new Response
-    pub fn new(position: Position, action: u64, score: i64) -> Response {
-        Response {
+    pub fn new(position: Position, action: u64, score: i64) -> Self {
+        Self {
             position,
             action,
             score,
         }
     }
-    fn empty() -> Response {
-        Response {
+    fn empty() -> Self {
+        Self {
             position: Position::empty(),
             action: 0,
             score: 0,
@@ -71,7 +71,7 @@ impl Response {
 }
 
 #[derive(Debug)]
-/// The OpeningBook struct containing the opening book data.
+/// The `OpeningBook` struct containing the opening book data.
 pub struct OpeningBook {
     map: HashMap<Position, (u64, i64)>,
 }
@@ -97,9 +97,9 @@ fn decode_responses(responses_bytes: &[u8]) -> Vec<Response> {
 }
 
 impl OpeningBook {
-    /// Created a new OpeningBook.
+    /// Created a new `OpeningBook`.
     /// Loads the precompiled opening book.
-    pub fn new() -> OpeningBook {
+    pub fn new() -> Self {
         let openings_bytes = decompress_to_vec(OPENINGS_BYTES_COMPRESSED).unwrap();
         assert!(RESPONSE_SIZE == serialized_size(&Response::empty()).unwrap() as usize);
         assert!(openings_bytes.len() % RESPONSE_SIZE == 0);
@@ -108,7 +108,7 @@ impl OpeningBook {
             .iter()
             .map(|&response| (response.position, (response.action, response.score)))
             .collect();
-        OpeningBook { map }
+        Self { map }
     }
 
     /// Looks for a stored move corresponding to the provided board state and returns it if it exists.

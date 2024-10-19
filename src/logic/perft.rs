@@ -40,37 +40,7 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
     let piece_start: u8 = cells[index_start];
 
     // If the piece is not a stack
-    if !piece_start.is_stack() {
-        // 1-range first action
-        for &index_mid in index_start.neighbours1() {
-            // stack, [1/2-range move] optional
-            if can_stack(cells, piece_start, index_mid) {
-                // stack, 2-range move
-                for &index_end in index_mid.neighbours2() {
-                    if can_move2(cells, piece_start, index_mid, index_end)
-                        || (index_start == ((index_mid + index_end) / 2)
-                            && can_move1(cells, piece_start, index_end))
-                    {
-                        piece_action_count += 1;
-                    }
-                }
-
-                // stack, 0/1-range move
-                for &index_end in index_mid.neighbours1() {
-                    if can_move1(cells, piece_start, index_end) || index_start == index_end {
-                        piece_action_count += 1;
-                    }
-                }
-
-                // stack only
-                piece_action_count += 1;
-            }
-            // 1-range move
-            else if can_move1(cells, piece_start, index_mid) {
-                piece_action_count += 1;
-            }
-        }
-    } else {
+    if piece_start.is_stack() {
         // 2 range first action
         for &index_mid in index_start.neighbours2() {
             if can_move2(cells, piece_start, index_start, index_mid) {
@@ -129,6 +99,36 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
             // unstack
             if can_unstack(cells, piece_start, index_mid) {
                 // unstack only
+                piece_action_count += 1;
+            }
+        }
+    } else {
+        // 1-range first action
+        for &index_mid in index_start.neighbours1() {
+            // stack, [1/2-range move] optional
+            if can_stack(cells, piece_start, index_mid) {
+                // stack, 2-range move
+                for &index_end in index_mid.neighbours2() {
+                    if can_move2(cells, piece_start, index_mid, index_end)
+                        || (index_start == ((index_mid + index_end) / 2)
+                            && can_move1(cells, piece_start, index_end))
+                    {
+                        piece_action_count += 1;
+                    }
+                }
+
+                // stack, 0/1-range move
+                for &index_end in index_mid.neighbours1() {
+                    if can_move1(cells, piece_start, index_end) || index_start == index_end {
+                        piece_action_count += 1;
+                    }
+                }
+
+                // stack only
+                piece_action_count += 1;
+            }
+            // 1-range move
+            else if can_move1(cells, piece_start, index_mid) {
                 piece_action_count += 1;
             }
         }
@@ -202,25 +202,22 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 ///
 /// At depth 0, returns an empty vector.
 pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
-    match depth {
-        0 => vec![],
-        _ => {
-            let (available_actions, n_actions) = available_player_actions(cells, current_player);
+    if depth == 0 { vec![] } else {
+        let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
-            available_actions
-                .par_iter()
-                .take(n_actions)
-                .filter(|&&action| !is_action_win(cells, action))
-                .map(|&action| {
-                    let mut new_cells = *cells;
-                    play_action(&mut new_cells, action);
-                    (
-                        action_to_string(cells, action),
-                        action,
-                        perft_iter(&new_cells, 1 - current_player, depth - 1),
-                    )
-                })
-                .collect()
-        }
+        available_actions
+            .par_iter()
+            .take(n_actions)
+            .filter(|&&action| !is_action_win(cells, action))
+            .map(|&action| {
+                let mut new_cells = *cells;
+                play_action(&mut new_cells, action);
+                (
+                    action_to_string(cells, action),
+                    action,
+                    perft_iter(&new_cells, 1 - current_player, depth - 1),
+                )
+            })
+            .collect()
     }
 }
