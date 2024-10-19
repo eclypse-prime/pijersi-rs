@@ -7,13 +7,6 @@ use super::index::Index;
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 use super::{INDEX_NULL, INDEX_WIDTH, MAX_PLAYER_ACTIONS};
 
-// TODO: put into Action?
-/// Concatenate a half action and the last index into a u64 action.
-/// The first index is stored in the 8 least significant bits.
-#[inline]
-pub fn concatenate_half_action(half_action: u64, index_end: usize) -> u64 {
-    half_action | (index_end << (2 * INDEX_WIDTH)) as u64
-}
 
 /// Returns the possible moves for a player.
 /// The result is a size `MAX_PLAYER_ACTIONS` array of u64 and the number of actions.
@@ -65,7 +58,7 @@ pub fn available_piece_actions(
                             && can_move1(cells, piece_start, index_end))
                     {
                         player_actions[index_actions] =
-                            concatenate_half_action(half_action, index_end);
+                            half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -74,7 +67,7 @@ pub fn available_piece_actions(
                 for &index_end in index_mid.neighbours1() {
                     if can_move1(cells, piece_start, index_end) || index_start == index_end {
                         player_actions[index_actions] =
-                            concatenate_half_action(half_action, index_end);
+                            half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -103,7 +96,7 @@ pub fn available_piece_actions(
                         || can_stack(cells, piece_start, index_end)
                     {
                         player_actions[index_actions] =
-                            concatenate_half_action(half_action, index_end);
+                            half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -125,7 +118,7 @@ pub fn available_piece_actions(
                         || can_stack(cells, piece_start, index_end)
                     {
                         player_actions[index_actions] =
-                            concatenate_half_action(half_action, index_end);
+                            half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -145,7 +138,7 @@ pub fn available_piece_actions(
                 for &index_end in index_mid.neighbours2() {
                     if can_move2(cells, piece_start, index_mid, index_end) {
                         player_actions[index_actions] =
-                            concatenate_half_action(half_action, index_end);
+                            half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }
@@ -154,7 +147,7 @@ pub fn available_piece_actions(
                 for &index_end in index_mid.neighbours1() {
                     if can_move1(cells, piece_start, index_end) {
                         player_actions[index_actions] =
-                            concatenate_half_action(half_action, index_end);
+                            half_action.add_last_index(index_end);
                         index_actions += 1;
                     }
                 }

@@ -1,6 +1,6 @@
 use pijersi_rs::logic::{
     actions::Action,
-    movegen::{available_piece_actions, available_player_actions, concatenate_half_action},
+    movegen::{available_piece_actions, available_player_actions},
     MAX_PLAYER_ACTIONS,
 };
 
@@ -70,7 +70,7 @@ fn test_concatenate_action() {
 
 #[test]
 fn test_half_action() {
-    assert_eq!(concatenate_half_action(8231, 26), 39 | 1712167);
+    assert_eq!(8231.add_last_index(26), 39 | 1712167);
 }
 
 #[test]
