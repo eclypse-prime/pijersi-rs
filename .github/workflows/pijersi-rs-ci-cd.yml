@@ -33,6 +33,8 @@ jobs:
         run: ./update-openings.sh
       - name: Clippy
         run: cargo clippy
+      - name: Formatting
+        run: cargo fmt --check
       - name: Build Binaries
         run: cargo build --release --verbose
       - name: Build Documentation
