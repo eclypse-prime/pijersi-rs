@@ -16,6 +16,15 @@ use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_w
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
 pub const BASE_BETA: i64 = 262_144;
 
+#[cfg(feature = "nps-count")]
+use std::sync::atomic::AtomicU64;
+#[cfg(feature = "nps-count")]
+pub static mut total_node_count: AtomicU64 = AtomicU64::new(0);
+#[cfg(feature = "nps-count")]
+pub unsafe fn increment_node_count(node_count: u64) {
+    total_node_count.fetch_add(node_count, Relaxed);
+}
+
 /// Returns the best move at a given depth
 pub fn search(
     cells: &[u8; 45],
@@ -47,6 +56,10 @@ pub fn search(
     }
 
     let scores: Vec<i64> = if depth == 1 {
+        #[cfg(feature = "nps-count")]
+        unsafe {
+            increment_node_count(n_actions as u64);
+        }
         // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
         order
@@ -175,6 +188,15 @@ pub fn search_iterative(
                 let action_string = action_to_string(cells, action);
                 if verbose {
                     println!("info depth {depth} time {duration} score {score} pv {action_string}");
+                    #[cfg(feature = "nps-count")]
+                    unsafe {
+                        println!(
+                            "info nodes {:?} nps {:?}",
+                            total_node_count.load(Relaxed),
+                            total_node_count.load(Relaxed) as f64 / (duration / 1000f64)
+                        );
+                        total_node_count.store(0, Relaxed);
+                    }
                 }
                 if score < -BASE_BETA {
                     if verbose {

@@ -10,19 +10,26 @@ use crate::logic::movegen::available_player_actions;
 use crate::piece::Piece;
 use crate::search::lookup::PIECE_SCORES;
 
+#[cfg(feature = "nps-count")]
+use super::alphabeta::increment_node_count;
+
 /// The max score (is reached on winning position)
 pub const MAX_SCORE: i64 = 524_288;
 
-#[inline]
 /// Returns the score of a single cell given its content and index.
 ///
 /// Uses lookup tables for faster computations.
+#[inline]
 pub const fn evaluate_cell(piece: u8, index: usize) -> i64 {
     PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * 45 + index]
 }
 
 /// Returns the score of a board.
 pub fn evaluate_position(cells: &[u8; 45]) -> i64 {
+    #[cfg(feature = "nps-count")]
+    unsafe {
+        increment_node_count(1);
+    }
     cells
         .iter()
         .enumerate()
@@ -88,8 +95,14 @@ pub fn evaluate_action(
     }
 
     if depth == 1 {
+        #[cfg(feature = "nps-count")]
+        let mut node_count: u64 = 1;
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(&new_cells);
         for &action in available_actions.iter().take(n_actions) {
+            #[cfg(feature = "nps-count")]
+            {
+                node_count += 1;
+            }
             score = max(
                 score,
                 -evaluate_action_terminal(
@@ -104,6 +117,10 @@ pub fn evaluate_action(
             if alpha > beta {
                 break;
             }
+        }
+        #[cfg(feature = "nps-count")]
+        unsafe {
+            increment_node_count(node_count);
         }
     } else {
         for (k, &action) in available_actions.iter().take(n_actions).enumerate() {
