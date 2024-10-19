@@ -137,7 +137,9 @@ impl UgiEngine {
                 let result = self
                     .board
                     .search_to_depth(depth, self.opening_book.as_ref());
-                let action_string = if let Some((action, _score)) = result { action_to_string(&self.board.cells, action) } else {
+                let action_string = if let Some((action, _score)) = result {
+                    action_to_string(&self.board.cells, action)
+                } else {
                     println!("info null move");
                     "------".to_owned()
                 };
@@ -145,7 +147,9 @@ impl UgiEngine {
             }
             GoArgs::Movetime { time } => {
                 let action = self.board.search_to_time(time, self.opening_book.as_ref());
-                let action_string = if let Some((action, _score)) = action { action_to_string(&self.board.cells, action) } else {
+                let action_string = if let Some((action, _score)) = action {
+                    action_to_string(&self.board.cells, action)
+                } else {
                     println!("info null move");
                     "------".to_owned()
                 };

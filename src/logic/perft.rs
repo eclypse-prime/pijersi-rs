@@ -202,7 +202,9 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 ///
 /// At depth 0, returns an empty vector.
 pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
-    if depth == 0 { vec![] } else {
+    if depth == 0 {
+        vec![]
+    } else {
         let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
         available_actions
