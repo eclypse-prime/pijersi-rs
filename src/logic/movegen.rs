@@ -2,7 +2,8 @@
 
 use crate::piece::Piece;
 
-use super::actions::{Action, Index};
+use super::actions::Action;
+use super::index::Index;
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 use super::{INDEX_NULL, INDEX_WIDTH, MAX_PLAYER_ACTIONS};
 

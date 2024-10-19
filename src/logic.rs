@@ -1,6 +1,7 @@
 //! This module contains the necessary code to implement the game logic.
 
 pub mod actions;
+pub mod index;
 pub mod lookup;
 pub mod movegen;
 pub mod perft;
@@ -21,5 +22,3 @@ pub const MAX_PLAYER_ACTIONS: usize = 512;
 
 /// Max number of half moves without capture before draw
 pub const MAX_HALF_MOVES: u64 = 20;
-
-// TODO: implement inline helper functions for common bitwise operations on pieces and actions

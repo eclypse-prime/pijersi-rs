@@ -3,7 +3,8 @@
 use std::cmp::max;
 use std::time::Instant;
 
-use crate::logic::actions::{play_action, Action, Index};
+use crate::logic::actions::{play_action, Action};
+use crate::logic::index::Index;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
 use crate::piece::Piece;

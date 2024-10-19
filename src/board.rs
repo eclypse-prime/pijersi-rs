@@ -15,7 +15,7 @@
 use std::time::{Duration, Instant};
 
 use crate::errors::{ParseError, ParseErrorKind, RulesErrorKind, RuntimeError};
-use crate::logic::actions::play_action;
+use crate::logic::actions::{play_action, Action};
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
@@ -23,7 +23,7 @@ use crate::logic::translate::{
     action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_action,
     string_to_cells, string_to_player,
 };
-use crate::logic::{INDEX_WIDTH, MAX_HALF_MOVES};
+use crate::logic::MAX_HALF_MOVES;
 use crate::piece::{
     Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
     WHITE_SCISSORS, WHITE_WISE,
@@ -153,7 +153,7 @@ impl Board {
     fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(u64, u64, i64)> {
         if let Some(opening_book) = opening_book {
             if let Some(&(action, score)) = opening_book.lookup(self) {
-                let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO implement function for this
+                let depth = action.search_depth();
                 let action_string = action_to_string(&self.cells, action);
                 if self.options.verbose {
                     println!("info book depth {depth} score {score} pv {action_string}");

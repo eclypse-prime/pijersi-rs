@@ -9,8 +9,7 @@
 use crate::piece::Piece;
 
 use super::{
-    lookup::{NEIGHBOURS1, NEIGHBOURS2},
-    INDEX_MASK, INDEX_NULL, INDEX_WIDTH,
+    index::Index, INDEX_MASK, INDEX_WIDTH
 };
 
 /// Applies a move between chosen coordinates.
@@ -95,6 +94,8 @@ pub trait Action: Copy {
     fn to_indices(self) -> (usize, usize, usize);
     /// Converts a set of three indices to an action
     fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self;
+    /// Returns the search depth stored in the action data
+    fn search_depth(self) -> u64;
 }
 
 impl Action for u64 {
@@ -113,63 +114,9 @@ impl Action for u64 {
     fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self {
         (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as u64
     }
-}
-
-// TODO: move to own submodule?
-// TODO: use is_*_home()
-/// Cell index trait for usize
-pub trait Index: Copy {
-    /// Returns true if the index if a null index (0xFF)
-    fn is_null(self) -> bool;
-    /// Returns true if the index is in the first row on white's side
-    fn is_white_home(self) -> bool;
-    /// Returns true if the index is in the first row on black's side
-    fn is_black_home(self) -> bool;
-    /// Returns an iterator to the 1-range neighbours of this index
-    fn neighbours1(self) -> impl Iterator<Item = &'static Self>
-    where
-        Self: 'static;
-    /// Returns an iterator to the 2-range neighbours of this index
-    fn neighbours2(self) -> impl Iterator<Item = &'static Self>
-    where
-        Self: 'static;
-}
-
-impl Index for usize {
-    #[inline(always)]
-    fn is_null(self) -> bool {
-        self == INDEX_NULL
-    }
 
     #[inline(always)]
-    fn is_white_home(self) -> bool {
-        self >= 39
-    }
-
-    #[inline(always)]
-    fn is_black_home(self) -> bool {
-        self <= 5
-    }
-
-    #[inline(always)]
-    fn neighbours1(self) -> impl Iterator<Item = &'static Self>
-    where
-        Self: 'static,
-    {
-        NEIGHBOURS1
-            .iter()
-            .skip(7 * self + 1)
-            .take(NEIGHBOURS1[7 * self])
-    }
-
-    #[inline(always)]
-    fn neighbours2(self) -> impl Iterator<Item = &'static Self>
-    where
-        Self: 'static,
-    {
-        NEIGHBOURS2
-            .iter()
-            .skip(7 * self + 1)
-            .take(NEIGHBOURS2[7 * self])
+    fn search_depth(self) -> u64 {
+        (self >> (3 * INDEX_WIDTH)) & 0xFF
     }
 }
