@@ -2,7 +2,7 @@
 use crate::piece::{Piece, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS};
 
 use super::{
-    actions::Action, index::Index, movegen::available_player_actions, perft::perft_iter, ACTION_MASK
+    actions::{Action, ACTION_MASK}, index::Index, movegen::available_player_actions, perft::perft_iter
 };
 
 /// Returns whether an attacker piece can capture a target piece.

@@ -1,6 +1,13 @@
 //! Implements the Index trait with helper methods for board indices.
 
-use super::{lookup::{NEIGHBOURS1, NEIGHBOURS2}, INDEX_NULL};
+use super::lookup::{NEIGHBOURS1, NEIGHBOURS2};
+
+/// Bit width of a move index
+pub const INDEX_WIDTH: usize = 8;
+/// Value of a null index contained in a move
+pub const INDEX_NULL: usize = 0xFFusize;
+/// Mask to get the first index of a move (rightmost)
+pub const INDEX_MASK: u64 = 0xFFu64;
 
 /// Cell index trait for usize
 pub trait Index: Copy {

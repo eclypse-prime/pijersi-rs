@@ -13,7 +13,7 @@ use crate::{
     },
 };
 
-use super::{index::Index, INDEX_NULL};
+use super::index::{Index, INDEX_NULL};
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
