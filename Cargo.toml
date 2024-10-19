@@ -1,6 +1,6 @@
 [package]
 name = "pijersi-rs"
-version = "1.1.0"
+version = "1.1.1"
 edition = "2021"
 authors = ["Eclypse-Prime"]
 description = "A UGI engine for the Pijersi board game."
