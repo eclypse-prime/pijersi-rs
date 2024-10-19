@@ -115,10 +115,16 @@ impl Action for u64 {
     }
 }
 
+// TODO: move to own submodule?
+// TODO: use is_*_home()
 /// Cell index trait for usize
 pub trait Index: Copy {
     /// Returns true if the index if a null index (0xFF)
     fn is_null(self) -> bool;
+    /// Returns true if the index is in the first row on white's side
+    fn is_white_home(self) -> bool;
+    /// Returns true if the index is in the first row on black's side
+    fn is_black_home(self) -> bool;
     /// Returns an iterator to the 1-range neighbours of this index
     fn neighbours1(self) -> impl Iterator<Item = &'static Self>
     where
@@ -133,6 +139,16 @@ impl Index for usize {
     #[inline(always)]
     fn is_null(self) -> bool {
         self == INDEX_NULL
+    }
+
+    #[inline(always)]
+    fn is_white_home(self) -> bool {
+        self >= 39
+    }
+
+    #[inline(always)]
+    fn is_black_home(self) -> bool {
+        self <= 5
     }
 
     #[inline(always)]

@@ -1,7 +1,12 @@
 //! Implements the rules to check if an action is valid or not.
 use crate::piece::{Piece, TYPE_PAPER, TYPE_ROCK, TYPE_SCISSORS};
 
-use super::{actions::Action, movegen::available_player_actions, perft::perft_iter, ACTION_MASK};
+use super::{
+    actions::{Action, Index},
+    movegen::available_player_actions,
+    perft::perft_iter,
+    ACTION_MASK,
+};
 
 /// Returns whether an attacker piece can capture a target piece.
 ///
@@ -103,8 +108,8 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
     let moving_piece: u8 = cells[index_start];
 
     if !moving_piece.is_wise()
-        && ((moving_piece.is_white() && index_end <= 5)
-            || (moving_piece.is_black() && index_end >= 39))
+        && ((moving_piece.is_white() && index_end.is_black_home())
+            || (moving_piece.is_black() && index_end.is_white_home()))
     {
         return true;
     }

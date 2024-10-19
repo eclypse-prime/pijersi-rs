@@ -3,7 +3,7 @@
 use std::cmp::max;
 use std::time::Instant;
 
-use crate::logic::actions::{play_action, Action};
+use crate::logic::actions::{play_action, Action, Index};
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
 use crate::piece::Piece;
@@ -53,7 +53,8 @@ pub fn evaluate_action(
     let (index_start, _index_mid, index_end) = action.to_indices();
 
     if !cells[index_start].is_wise()
-        && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))
+        && ((current_player == 1 && index_end.is_white_home())
+            || (current_player == 0 && index_end.is_black_home()))
     {
         return -MAX_SCORE;
     }
@@ -163,7 +164,8 @@ pub fn evaluate_action_terminal(
     let (index_start, index_mid, index_end) = action.to_indices();
 
     if !cells[index_start].is_wise()
-        && ((current_player == 1 && (index_end <= 5)) || (current_player == 0 && (index_end >= 39)))
+        && ((current_player == 1 && index_end.is_white_home())
+            || (current_player == 0 && index_end.is_black_home()))
     {
         return -MAX_SCORE;
     }
