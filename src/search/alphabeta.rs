@@ -190,7 +190,11 @@ pub fn search_iterative(
                     println!("info depth {depth} time {duration} score {score} pv {action_string}");
                     #[cfg(feature = "nps-count")]
                     unsafe {
-                        println!("info nodes {:?} nps {:?}", total_node_count.load(Relaxed), total_node_count.load(Relaxed) as f64/(duration / 1000f64));
+                        println!(
+                            "info nodes {:?} nps {:?}",
+                            total_node_count.load(Relaxed),
+                            total_node_count.load(Relaxed) as f64 / (duration / 1000f64)
+                        );
                         total_node_count.store(0, Relaxed);
                     }
                 }
