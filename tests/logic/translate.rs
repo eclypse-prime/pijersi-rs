@@ -1,8 +1,11 @@
 use pijersi_rs::{
-    logic::translate::{
-        action_to_indices, action_to_string, cells_to_pretty_string, cells_to_string,
-        char_to_piece, coords_to_index, index_to_coords, index_to_string, piece_to_char,
-        player_to_string, string_to_action, string_to_cells, string_to_player,
+    logic::{
+        actions::Action,
+        translate::{
+            action_to_string, cells_to_pretty_string, cells_to_string, char_to_piece,
+            coords_to_index, index_to_coords, index_to_string, piece_to_char, player_to_string,
+            string_to_action, string_to_cells, string_to_player,
+        },
     },
     piece::{
         BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, WHITE_PAPER, WHITE_ROCK,
@@ -303,6 +306,6 @@ fn test_action_to_indices() {
     ];
 
     for (input, output) in test_array {
-        assert_eq!(action_to_indices(input), output);
+        assert_eq!(input.to_indices(), output);
     }
 }

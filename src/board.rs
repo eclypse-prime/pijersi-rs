@@ -15,7 +15,7 @@
 use std::time::{Duration, Instant};
 
 use crate::errors::{ParseError, ParseErrorKind, RulesErrorKind, RuntimeError};
-use crate::logic::actions::play_action;
+use crate::logic::actions::{play_action, Action};
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
@@ -23,10 +23,10 @@ use crate::logic::translate::{
     action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_action,
     string_to_cells, string_to_player,
 };
-use crate::logic::{INDEX_WIDTH, MAX_HALF_MOVES};
+use crate::logic::MAX_HALF_MOVES;
 use crate::piece::{
-    BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, HALF_PIECE_WIDTH,
-    STACK_THRESHOLD, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
+    Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
+    WHITE_SCISSORS, WHITE_WISE,
 };
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
@@ -119,7 +119,7 @@ impl Board {
         self.cells[6] = BLACK_PAPER;
         self.cells[7] = BLACK_ROCK;
         self.cells[8] = BLACK_SCISSORS;
-        self.cells[9] = BLACK_WISE | BLACK_WISE << HALF_PIECE_WIDTH; // TODO: make Piece trait with stack function
+        self.cells[9] = BLACK_WISE.stack_on(BLACK_WISE);
         self.cells[10] = BLACK_ROCK;
         self.cells[11] = BLACK_SCISSORS;
         self.cells[12] = BLACK_PAPER;
@@ -133,7 +133,7 @@ impl Board {
         self.cells[38] = WHITE_PAPER;
         self.cells[37] = WHITE_ROCK;
         self.cells[36] = WHITE_SCISSORS;
-        self.cells[35] = WHITE_WISE | WHITE_WISE << HALF_PIECE_WIDTH; // TODO: make Piece trait with stack function
+        self.cells[35] = WHITE_WISE.stack_on(WHITE_WISE);
         self.cells[34] = WHITE_ROCK;
         self.cells[33] = WHITE_SCISSORS;
         self.cells[32] = WHITE_PAPER;
@@ -153,7 +153,7 @@ impl Board {
     fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(u64, u64, i64)> {
         if let Some(opening_book) = opening_book {
             if let Some(&(action, score)) = opening_book.lookup(self) {
-                let depth = (action >> (3 * INDEX_WIDTH)) & 0xFF; // TODO implement function for this
+                let depth = action.search_depth();
                 let action_string = action_to_string(&self.cells, action);
                 if self.options.verbose {
                     println!("info book depth {depth} score {score} pv {action_string}");
@@ -298,8 +298,8 @@ impl Board {
     pub fn count_pieces(&self) -> u64 {
         self.cells
             .iter()
-            .filter(|&&piece| piece != CELL_EMPTY)
-            .map(|&piece| if piece >= STACK_THRESHOLD { 2 } else { 1 })
+            .filter(|&&piece| !piece.is_empty())
+            .map(|&piece| if piece.is_stack() { 2 } else { 1 })
             .sum()
     }
 

@@ -6,14 +6,14 @@ use crate::{
     errors::{
         InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
     },
+    logic::actions::Action,
     piece::{
-        BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, COLOUR_MASK,
-        HALF_PIECE_WIDTH, STACK_THRESHOLD, TOP_MASK, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS,
-        WHITE_WISE,
+        Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, WHITE_PAPER,
+        WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
     },
 };
 
-use super::{movegen::concatenate_action, INDEX_MASK, INDEX_NULL, INDEX_WIDTH};
+use super::index::{Index, INDEX_NULL};
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
@@ -142,9 +142,9 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, Pa
     // Guaranteed to match regex "\w\d", no handling needed.
     let index_end: usize = string_to_index(action_captures.get(3).unwrap().as_str())?;
 
-    if cells[index_end] != CELL_EMPTY
-        && (cells[index_start] & COLOUR_MASK == cells[index_end] & COLOUR_MASK)
-        && index_mid == INDEX_NULL
+    if !cells[index_end].is_empty()
+        && cells[index_start].colour() == cells[index_end].colour()
+        && index_mid.is_null()
     {
         index_mid = index_start;
     }
@@ -152,32 +152,27 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, Pa
         index_mid = INDEX_NULL;
     }
 
-    Ok(concatenate_action(index_start, index_mid, index_end))
+    Ok(u64::from_indices(index_start, index_mid, index_end))
 }
 
 /// Converts a native triple-index move into the string (a1b1c1 style) format.
 pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
-    let index_start: usize = (action & INDEX_MASK) as usize;
-    let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
-    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+    let (index_start, index_mid, index_end) = action.to_indices();
 
-    if index_start == INDEX_NULL {
+    if index_start.is_null() {
         return String::new();
     }
 
     let action_string_start: String = index_to_string(index_start);
     let action_string_end: String = index_to_string(index_end);
 
-    let action_string_mid: String = if index_mid == INDEX_NULL {
-        if cells[index_start] >= STACK_THRESHOLD {
+    let action_string_mid: String = if index_mid.is_null() {
+        if cells[index_start].is_stack() {
             index_to_string(index_end)
         } else {
             String::new()
         }
-    } else if index_mid != INDEX_NULL
-        && index_start == index_mid
-        && cells[index_start] < STACK_THRESHOLD
-    {
+    } else if !index_mid.is_null() && index_start == index_mid && !cells[index_start].is_stack() {
         String::new()
     } else {
         index_to_string(index_mid)
@@ -206,8 +201,9 @@ pub fn string_to_cells(cells_string: &str) -> Result<[u8; 45], ParseError> {
                     Some(top_char) => {
                         if cell_line.chars().nth(j + 1).unwrap() != '-' {
                             new_cells[cursor] =
-                                char_to_piece(cell_line.chars().nth(j + 1).unwrap()).unwrap()
-                                    | (top_char << HALF_PIECE_WIDTH);
+                                char_to_piece(cell_line.chars().nth(j + 1).unwrap())
+                                    .unwrap()
+                                    .stack_on(top_char);
                         } else {
                             new_cells[cursor] =
                                 char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap();
@@ -235,18 +231,16 @@ pub fn cells_to_string(cells: &[u8; 45]) -> String {
         let mut counter: usize = 0;
         for j in 0..n_columns {
             let piece = cells[coords_to_index(i, j)];
-            if piece == CELL_EMPTY {
+            if piece.is_empty() {
                 counter += 1;
             } else {
                 if counter > 0 {
                     cells_string += &counter.to_string();
                     counter = 0;
                 }
-                if piece >= STACK_THRESHOLD {
-                    cells_string += &piece_to_char(piece >> HALF_PIECE_WIDTH)
-                        .unwrap()
-                        .to_string();
-                    cells_string += &piece_to_char(piece & TOP_MASK).unwrap().to_string();
+                if piece.is_stack() {
+                    cells_string += &piece_to_char(piece.bottom()).unwrap().to_string();
+                    cells_string += &piece_to_char(piece.top()).unwrap().to_string();
                 } else {
                     cells_string += &piece_to_char(piece).unwrap().to_string();
                     cells_string += "-";
@@ -267,8 +261,8 @@ pub fn cells_to_string(cells: &[u8; 45]) -> String {
 pub fn cells_to_pretty_string(cells: &[u8; 45]) -> String {
     let mut cells_pretty_print: String = " ".to_owned();
     for (i, &piece) in cells.iter().enumerate() {
-        let top_piece: u8 = piece & 0b1111;
-        let bottom_piece: u8 = piece >> 4;
+        let top_piece: u8 = piece.top();
+        let bottom_piece: u8 = piece.bottom();
         let char1: char = match top_piece {
             0b0000 => '.',
             0b0001 => 'S',
@@ -331,14 +325,4 @@ pub fn player_to_string(current_player: u8) -> Result<String, ParseError> {
             value: current_player.to_string(),
         }),
     }
-}
-
-/// Converts an action to its contained indices.
-/// The format is (index_start, index_mid, index_end, depth)
-#[inline]
-pub fn action_to_indices(action: u64) -> (usize, usize, usize) {
-    let index_start: usize = (action & INDEX_MASK) as usize;
-    let index_mid: usize = ((action >> INDEX_WIDTH) & INDEX_MASK) as usize;
-    let index_end: usize = ((action >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
-    (index_start, index_mid, index_end)
 }

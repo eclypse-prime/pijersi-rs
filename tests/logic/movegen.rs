@@ -1,9 +1,6 @@
 use pijersi_rs::logic::{
-    movegen::{
-        available_piece_actions, available_player_actions, concatenate_action,
-        concatenate_half_action,
-    },
-    MAX_PLAYER_ACTIONS,
+    actions::Action,
+    movegen::{available_piece_actions, available_player_actions, MAX_PLAYER_ACTIONS},
 };
 
 use crate::TEST_CELLS;
@@ -67,12 +64,12 @@ const TEST_AVAILABLE_PIECE_ACTIONS_INDEX: usize = 12;
 
 #[test]
 fn test_concatenate_action() {
-    assert_eq!(concatenate_action(39, 32, 26), 1712167);
+    assert_eq!(u64::from_indices(39, 32, 26), 1712167);
 }
 
 #[test]
 fn test_half_action() {
-    assert_eq!(concatenate_half_action(8231, 26), 39 | 1712167);
+    assert_eq!(8231.add_last_index(26), 39 | 1712167);
 }
 
 #[test]

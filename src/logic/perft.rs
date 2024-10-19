@@ -2,14 +2,10 @@
 
 use rayon::prelude::*;
 
-use crate::piece::{COLOUR_MASK, STACK_THRESHOLD};
+use crate::piece::Piece;
 
 use super::{
-    actions::play_action,
-    lookup::{NEIGHBOURS1, NEIGHBOURS2},
-    movegen::available_player_actions,
-    rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
-    translate::action_to_string,
+    actions::play_action, index::Index, movegen::available_player_actions, rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win}, translate::action_to_string
 };
 
 /// Returns the number of possible actions for a player.
@@ -20,9 +16,9 @@ fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
 
     // Calculate possible actions
     for index in 0..45 {
-        if cells[index] != 0 {
+        if !cells[index].is_empty() {
             // Choose pieces of the current player's colour
-            if (cells[index] & COLOUR_MASK) == (current_player << 1) {
+            if (cells[index].colour()) == (current_player << 1) {
                 player_action_count += count_piece_actions(cells, index);
             }
         }
@@ -40,21 +36,13 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
     let piece_start: u8 = cells[index_start];
 
     // If the piece is not a stack
-    if piece_start < STACK_THRESHOLD {
+    if !piece_start.is_stack() {
         // 1-range first action
-        for &index_mid in NEIGHBOURS1
-            .iter()
-            .skip(7 * index_start + 1)
-            .take(NEIGHBOURS1[7 * index_start])
-        {
+        for &index_mid in index_start.neighbours1() {
             // stack, [1/2-range move] optional
             if can_stack(cells, piece_start, index_mid) {
                 // stack, 2-range move
-                for &index_end in NEIGHBOURS2
-                    .iter()
-                    .skip(7 * index_mid + 1)
-                    .take(NEIGHBOURS2[7 * index_mid])
-                {
+                for &index_end in index_mid.neighbours2() {
                     if can_move2(cells, piece_start, index_mid, index_end)
                         || (index_start == ((index_mid + index_end) / 2)
                             && can_move1(cells, piece_start, index_end))
@@ -64,11 +52,7 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
                 }
 
                 // stack, 0/1-range move
-                for &index_end in NEIGHBOURS1
-                    .iter()
-                    .skip(7 * index_mid + 1)
-                    .take(NEIGHBOURS1[7 * index_mid])
-                {
+                for &index_end in index_mid.neighbours1() {
                     if can_move1(cells, piece_start, index_end) || index_start == index_end {
                         piece_action_count += 1;
                     }
@@ -84,18 +68,10 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
         }
     } else {
         // 2 range first action
-        for &index_mid in NEIGHBOURS2
-            .iter()
-            .skip(7 * index_start + 1)
-            .take(NEIGHBOURS2[7 * index_start])
-        {
+        for &index_mid in index_start.neighbours2() {
             if can_move2(cells, piece_start, index_start, index_mid) {
                 // 2-range move, stack or unstack
-                for &index_end in NEIGHBOURS1
-                    .iter()
-                    .skip(7 * index_mid + 1)
-                    .take(NEIGHBOURS1[7 * index_mid])
-                {
+                for &index_end in index_mid.neighbours1() {
                     // 2-range move, unstack or 2-range move, stack
                     if can_unstack(cells, piece_start, index_end)
                         || can_stack(cells, piece_start, index_end)
@@ -108,19 +84,11 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
             }
         }
         // 1-range first action
-        for &index_mid in NEIGHBOURS1
-            .iter()
-            .skip(7 * index_start + 1)
-            .take(NEIGHBOURS1[7 * index_start])
-        {
+        for &index_mid in index_start.neighbours1() {
             // 1-range move, [stack or unstack] optional
             if can_move1(cells, piece_start, index_mid) {
                 // 1-range move, stack or unstack
-                for &index_end in NEIGHBOURS1
-                    .iter()
-                    .skip(7 * index_mid + 1)
-                    .take(NEIGHBOURS1[7 * index_mid])
-                {
+                for &index_end in index_mid.neighbours1() {
                     // 1-range move, unstack or 1-range move, stack
                     if can_unstack(cells, piece_start, index_end)
                         || can_stack(cells, piece_start, index_end)
@@ -137,22 +105,14 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
             // stack, [1/2-range move] optional
             else if can_stack(cells, piece_start, index_mid) {
                 // stack, 2-range move
-                for &index_end in NEIGHBOURS2
-                    .iter()
-                    .skip(7 * index_mid + 1)
-                    .take(NEIGHBOURS2[7 * index_mid])
-                {
+                for &index_end in index_mid.neighbours2() {
                     if can_move2(cells, piece_start, index_mid, index_end) {
                         piece_action_count += 1;
                     }
                 }
 
                 // stack, 1-range move
-                for &index_end in NEIGHBOURS1
-                    .iter()
-                    .skip(7 * index_mid + 1)
-                    .take(NEIGHBOURS1[7 * index_mid])
-                {
+                for &index_end in index_mid.neighbours1() {
                     if can_move1(cells, piece_start, index_end) {
                         piece_action_count += 1;
                     }
