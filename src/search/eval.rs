@@ -53,11 +53,19 @@ pub fn sort_actions(
     available_actions: &mut [u64; MAX_PLAYER_ACTIONS],
     n_actions: usize,
     start_from: usize,
-) -> usize {
+) -> (usize, bool) {
     let mut index_sorted: usize = start_from;
     for i in start_from..n_actions {
         let action = available_actions[i];
-        let (_index_start, index_mid, index_end) = action.to_indices();
+        let (index_start, index_mid, index_end) = action.to_indices();
+        if !cells[index_start].is_wise()
+            && ((current_player == 0 && index_end.is_black_home())
+                || (current_player == 1 && index_end.is_white_home())
+                || ((current_player == 0 && !index_mid.is_null() && index_mid.is_black_home())
+                    || (current_player == 1 && !index_mid.is_null() && index_mid.is_white_home())))
+        {
+            return (index_sorted, true);
+        }
         if (!index_mid.is_null()
             && !cells[index_mid].is_empty()
             && cells[index_mid].colour() != current_player << 1)
@@ -68,7 +76,7 @@ pub fn sort_actions(
             index_sorted += 1;
         }
     }
-    index_sorted
+    (index_sorted, false)
 }
 
 /// Evaluates the score of a given action by searching at a given depth.
@@ -83,15 +91,6 @@ pub fn evaluate_action(
     beta: i64,
     end_time: Option<Instant>,
 ) -> i64 {
-    let (index_start, _index_mid, index_end) = action.to_indices();
-
-    if !cells[index_start].is_wise()
-        && ((current_player == 1 && index_end.is_black_home())
-            || (current_player == 0 && index_end.is_white_home()))
-    {
-        return -MAX_SCORE;
-    }
-
     let mut alpha = alpha;
 
     let mut new_cells: [u8; 45] = *cells;
@@ -149,25 +148,32 @@ pub fn evaluate_action(
             increment_node_count(node_count);
         }
     } else {
-        let _index_sorted = sort_actions(
+        let (_index_sorted, is_action_win) = sort_actions(
             &new_cells,
             current_player,
             &mut available_actions,
             n_actions,
             0,
         );
-        for (k, &action) in available_actions.iter().take(n_actions).enumerate() {
-            let eval = if k == 0 {
-                -evaluate_action(
-                    &new_cells,
-                    1 - current_player,
-                    action,
-                    depth - 1,
-                    -beta,
-                    -alpha,
-                    end_time,
-                )
-            } else {
+        if is_action_win {
+            return MAX_SCORE;
+        }
+        let eval = -evaluate_action(
+            &new_cells,
+            1 - current_player,
+            action,
+            depth - 1,
+            -beta,
+            -alpha,
+            end_time,
+        );
+        score = max(score, eval);
+        alpha = max(alpha, score);
+        if alpha > beta {
+            return score;
+        }
+        for &action in available_actions.iter().take(n_actions).skip(1) {
+            let eval = {
                 let eval_null_window = -evaluate_action(
                     &new_cells,
                     1 - current_player,
