@@ -52,21 +52,23 @@ pub fn sort_actions(
     current_player: u8,
     available_actions: &mut [u64; MAX_PLAYER_ACTIONS],
     n_actions: usize,
-) {
-    let mut i: usize = 0;
-    for k in 0..n_actions {
-        let action = available_actions[k];
+    start_from: usize,
+) -> usize {
+    let mut index_sorted: usize = start_from;
+    for i in start_from..n_actions {
+        let action = available_actions[i];
         let (_index_start, index_mid, index_end) = action.to_indices();
         if (index_mid <= 44
             && !cells[index_mid].is_empty()
             && cells[index_mid].colour() != current_player << 1)
             || (!cells[index_end].is_empty() && cells[index_end].colour() != current_player << 1)
         {
-            available_actions[k] = available_actions[i];
-            available_actions[i] = action;
-            i += 1;
+            available_actions[i] = available_actions[index_sorted];
+            available_actions[index_sorted] = action;
+            index_sorted += 1;
         }
     }
+    start_from
 }
 
 /// Evaluates the score of a given action by searching at a given depth.
@@ -147,11 +149,12 @@ pub fn evaluate_action(
             increment_node_count(node_count);
         }
     } else {
-        sort_actions(
+        let _index_sorted = sort_actions(
             &new_cells,
             current_player,
             &mut available_actions,
             n_actions,
+            0,
         );
         for (k, &action) in available_actions.iter().take(n_actions).enumerate() {
             let eval = if k == 0 {
