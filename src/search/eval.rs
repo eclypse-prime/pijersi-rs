@@ -58,7 +58,7 @@ pub fn sort_actions(
     for i in start_from..n_actions {
         let action = available_actions[i];
         let (_index_start, index_mid, index_end) = action.to_indices();
-        if (index_mid <= 44
+        if (!index_mid.is_null()
             && !cells[index_mid].is_empty()
             && cells[index_mid].colour() != current_player << 1)
             || (!cells[index_end].is_empty() && cells[index_end].colour() != current_player << 1)

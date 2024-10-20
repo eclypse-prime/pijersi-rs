@@ -175,29 +175,34 @@ pub fn search_iterative(
 ) -> Option<(u64, i64)> {
     let mut best_result: Option<(u64, i64)> = None;
     let mut last_scores: Option<Vec<i64>> = None;
+    let start_time = Instant::now();
     for depth in 1..=max_depth {
         if let Some(end_time) = end_time {
             if Instant::now() > end_time {
                 break;
             }
         }
-        let start_time = Instant::now();
         let proposed_action = search(cells, current_player, depth, end_time, &last_scores);
-        let duration: f64 = start_time.elapsed().as_micros() as f64 / 1000f64;
+        let duration = start_time.elapsed();
+        let duration_ms: u128 = duration.as_millis();
         match proposed_action {
             None => (),
             Some((action, score, scores)) => {
                 let action_string = action_to_string(cells, action);
                 if verbose {
-                    println!("info depth {depth} time {duration} score {score} pv {action_string}");
+                    print!(
+                        "info depth {depth} time {duration_ms} score {score} pv {action_string}"
+                    );
                     #[cfg(feature = "nps-count")]
                     unsafe {
-                        println!(
-                            "info nodes {:?} nps {:?}",
+                        print!(
+                            " nodes {} nps {}",
                             TOTAL_NODE_COUNT.load(Relaxed),
-                            TOTAL_NODE_COUNT.load(Relaxed) as f64 / (duration / 1000f64)
+                            TOTAL_NODE_COUNT.load(Relaxed) as u128 * 1_000_000
+                                / duration.as_micros()
                         );
                     }
+                    println!();
                 }
                 #[cfg(feature = "nps-count")]
                 unsafe {
