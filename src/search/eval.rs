@@ -68,7 +68,7 @@ pub fn sort_actions(
             index_sorted += 1;
         }
     }
-    start_from
+    index_sorted
 }
 
 /// Evaluates the score of a given action by searching at a given depth.
