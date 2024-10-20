@@ -190,13 +190,16 @@ pub fn search_iterative(
             Some((action, score, scores)) => {
                 let action_string = action_to_string(cells, action);
                 if verbose {
-                    print!("info depth {depth} time {duration_ms} score {score} pv {action_string}");
+                    print!(
+                        "info depth {depth} time {duration_ms} score {score} pv {action_string}"
+                    );
                     #[cfg(feature = "nps-count")]
                     unsafe {
                         print!(
                             " nodes {} nps {}",
                             TOTAL_NODE_COUNT.load(Relaxed),
-                            TOTAL_NODE_COUNT.load(Relaxed) as u128 * 1_000_000 / duration.as_micros()
+                            TOTAL_NODE_COUNT.load(Relaxed) as u128 * 1_000_000
+                                / duration.as_micros()
                         );
                     }
                     println!();
