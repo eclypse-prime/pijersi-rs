@@ -161,7 +161,7 @@ pub fn evaluate_action(
         let eval = -evaluate_action(
             &new_cells,
             1 - current_player,
-            action,
+            available_actions[0],
             depth - 1,
             -beta,
             -alpha,
