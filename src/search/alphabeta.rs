@@ -19,10 +19,12 @@ pub const BASE_BETA: i64 = 262_144;
 #[cfg(feature = "nps-count")]
 use std::sync::atomic::AtomicU64;
 #[cfg(feature = "nps-count")]
-pub static mut total_node_count: AtomicU64 = AtomicU64::new(0);
+/// Counts the number of evaluated nodes during a search
+pub static mut TOTAL_NODE_COUNT: AtomicU64 = AtomicU64::new(0);
 #[cfg(feature = "nps-count")]
+/// Increments the `TOTAL_NODE_COUNT` counter by the chosen amount.
 pub unsafe fn increment_node_count(node_count: u64) {
-    total_node_count.fetch_add(node_count, Relaxed);
+    TOTAL_NODE_COUNT.fetch_add(node_count, Relaxed);
 }
 
 /// Returns the best move at a given depth
@@ -192,11 +194,14 @@ pub fn search_iterative(
                     unsafe {
                         println!(
                             "info nodes {:?} nps {:?}",
-                            total_node_count.load(Relaxed),
-                            total_node_count.load(Relaxed) as f64 / (duration / 1000f64)
+                            TOTAL_NODE_COUNT.load(Relaxed),
+                            TOTAL_NODE_COUNT.load(Relaxed) as f64 / (duration / 1000f64)
                         );
-                        total_node_count.store(0, Relaxed);
                     }
+                }
+                #[cfg(feature = "nps-count")]
+                unsafe {
+                    TOTAL_NODE_COUNT.store(0, Relaxed);
                 }
                 if score < -BASE_BETA {
                     if verbose {
