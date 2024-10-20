@@ -197,8 +197,11 @@ pub fn search_iterative(
                             TOTAL_NODE_COUNT.load(Relaxed),
                             TOTAL_NODE_COUNT.load(Relaxed) as f64 / (duration / 1000f64)
                         );
-                        TOTAL_NODE_COUNT.store(0, Relaxed);
                     }
+                }
+                #[cfg(feature = "nps-count")]
+                unsafe {
+                    TOTAL_NODE_COUNT.store(0, Relaxed);
                 }
                 if score < -BASE_BETA {
                     if verbose {
