@@ -105,9 +105,10 @@ pub fn search(
 
         // Evaluate possible moves
         scores
-            .par_iter_mut()
+            .iter_mut()
             .enumerate()
             .skip(1)
+            .par_bridge()
             .for_each(|(k, score)| {
                 let action = available_actions[order[k]];
                 *score = {

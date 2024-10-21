@@ -1,7 +1,11 @@
 //! This module implements the evaluation functions: evaluates the score of a current position or evaluates the best score at a given depth.
 
 use std::cmp::max;
+use std::sync::atomic::Ordering::Relaxed;
+use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::time::Instant;
+
+use rayon::prelude::*;
 
 use crate::logic::actions::{play_action, Action};
 use crate::logic::index::Index;
@@ -172,37 +176,48 @@ pub fn evaluate_action(
         if alpha > beta {
             return score;
         }
-        for &action in available_actions.iter().take(n_actions).skip(1) {
-            let eval = {
-                let eval_null_window = -evaluate_action(
-                    &new_cells,
-                    1 - current_player,
-                    action,
-                    depth - 1,
-                    -alpha - 1,
-                    -alpha,
-                    end_time,
-                );
-                if alpha < eval_null_window && eval_null_window < beta {
-                    -evaluate_action(
-                        &new_cells,
-                        1 - current_player,
-                        action,
-                        depth - 1,
-                        -beta,
-                        -alpha,
-                        end_time,
-                    )
-                } else {
-                    eval_null_window
+        let alpha = AtomicI64::new(alpha);
+        let score_atomic = AtomicI64::new(score);
+        let cut= AtomicBool::new(false);
+        available_actions
+            .iter()
+            .take(n_actions)
+            .skip(1)
+            .par_bridge()
+            .for_each(|&action| {
+                if !cut.load(Relaxed) {
+                    let eval = {
+                        let eval_null_window = -evaluate_action(
+                            &new_cells,
+                            1 - current_player,
+                            action,
+                            depth - 1,
+                            -alpha.load(Relaxed) - 1,
+                            -alpha.load(Relaxed),
+                            end_time,
+                        );
+                        if alpha.load(Relaxed) < eval_null_window && eval_null_window < beta {
+                            -evaluate_action(
+                                &new_cells,
+                                1 - current_player,
+                                action,
+                                depth - 1,
+                                -beta,
+                                -alpha.load(Relaxed),
+                                end_time,
+                            )
+                        } else {
+                            eval_null_window
+                        }
+                    };
+                    score_atomic.fetch_max(eval, Relaxed);
+                    alpha.fetch_max(eval, Relaxed);
+                    if alpha.load(Relaxed) > beta {
+                        cut.store(true, Relaxed);
+                    }
                 }
-            };
-            score = max(score, eval);
-            alpha = max(alpha, score);
-            if alpha > beta {
-                break;
-            }
-        }
+            });
+        score = score_atomic.load(Relaxed);
     }
     score
 }
