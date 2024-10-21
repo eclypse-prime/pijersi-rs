@@ -1,5 +1,6 @@
 //! This module implements the alphabeta search that chooses the best move
 
+use std::cmp::max;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::time::Instant;
@@ -15,6 +16,8 @@ use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_w
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
 pub const BASE_BETA: i64 = 262_144;
+/// Starting alpha value for the alphabeta search (starting alpha is equal to -beta)
+pub const BASE_ALPHA: i64 = -BASE_BETA;
 
 #[cfg(feature = "nps-count")]
 use std::sync::atomic::AtomicU64;
@@ -81,68 +84,74 @@ pub fn search(
     // On depth > 1, run the classic recursive search, with the lowest depth being parallelized
     else {
         // Cutoffs will happen on winning moves
-        let alpha: AtomicI64 = AtomicI64::new(-BASE_BETA);
+        let alpha = BASE_ALPHA;
         let beta = BASE_BETA;
 
+        let mut scores: Vec<i64> = vec![0; n_actions];
+        let first_eval = -evaluate_action(
+            cells,
+            1 - current_player,
+            available_actions[order[0]],
+            depth - 1,
+            -beta,
+            -alpha,
+            end_time,
+        );
+        scores[0] = first_eval;
+
+        let alpha: AtomicI64 = AtomicI64::new(max(alpha, first_eval));
         // This will stop iteration if there is a cutoff
-        let cut: AtomicBool = AtomicBool::new(false);
+        let cut: AtomicBool = AtomicBool::new(alpha.load(Relaxed) > beta);
 
         // Evaluate possible moves
-        order
-            .par_iter()
-            .map(|&index| available_actions[index])
+        scores
+            .par_iter_mut()
             .enumerate()
-            .map(|(k, action)| {
-                if cut.load(Relaxed) {
-                    i64::MIN
-                } else {
-                    let eval = if k == 0 {
-                        -evaluate_action(
-                            cells,
-                            1 - current_player,
-                            action,
-                            depth - 1,
-                            -beta,
-                            -alpha.load(Relaxed),
-                            end_time,
-                        )
+            .skip(1)
+            .for_each(|(k, score)| {
+                let action = available_actions[order[k]];
+                *score = {
+                    if cut.load(Relaxed) {
+                        i64::MIN
                     } else {
-                        // Search with a null window
-                        let eval_null_window = -evaluate_action(
-                            cells,
-                            1 - current_player,
-                            action,
-                            depth - 1,
-                            -alpha.load(Relaxed) - 1,
-                            -alpha.load(Relaxed),
-                            end_time,
-                        );
-                        // If fail high, do the search with the full window
-                        if alpha.load(Relaxed) < eval_null_window && eval_null_window < beta {
-                            -evaluate_action(
+                        let eval = {
+                            // Search with a null window
+                            let eval_null_window = -evaluate_action(
                                 cells,
                                 1 - current_player,
                                 action,
                                 depth - 1,
-                                -beta,
+                                -alpha.load(Relaxed) - 1,
                                 -alpha.load(Relaxed),
                                 end_time,
-                            )
-                        } else {
-                            eval_null_window
+                            );
+                            // If fail high, do the search with the full window
+                            if alpha.load(Relaxed) < eval_null_window && eval_null_window < beta {
+                                -evaluate_action(
+                                    cells,
+                                    1 - current_player,
+                                    action,
+                                    depth - 1,
+                                    -beta,
+                                    -alpha.load(Relaxed),
+                                    end_time,
+                                )
+                            } else {
+                                eval_null_window
+                            }
+                        };
+
+                        alpha.fetch_max(eval, Relaxed);
+
+                        // Cutoff
+                        if alpha.load(Relaxed) > beta {
+                            cut.store(true, Relaxed);
                         }
-                    };
-
-                    alpha.fetch_max(eval, Relaxed);
-
-                    // Cutoff
-                    if alpha.load(Relaxed) > beta {
-                        cut.store(true, Relaxed);
+                        eval
                     }
-                    eval
                 }
-            })
-            .collect()
+            });
+        scores
     };
 
     if let Some(end_time) = end_time {
