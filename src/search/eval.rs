@@ -178,7 +178,7 @@ pub fn evaluate_action(
         }
         let alpha = AtomicI64::new(alpha);
         let score_atomic = AtomicI64::new(score);
-        let cut= AtomicBool::new(false);
+        let cut = AtomicBool::new(false);
         available_actions
             .iter()
             .take(n_actions)
