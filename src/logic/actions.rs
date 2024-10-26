@@ -105,7 +105,7 @@ pub trait Action: Copy {
 
 impl Action for u64 {
     // TODO: can we make this even more generic by implementing From and Into for Action and Indices?
-    #[inline(always)]
+    #[inline]
     fn to_indices(self) -> (usize, usize, usize) {
         let index_start: usize = (self & INDEX_MASK) as usize;
         let index_mid: usize = ((self >> INDEX_WIDTH) & INDEX_MASK) as usize;
@@ -113,26 +113,26 @@ impl Action for u64 {
         (index_start, index_mid, index_end)
     }
 
-    #[inline(always)]
+    #[inline]
     /// Concatenate three indices into a u64 action.
     /// The first index is stored in the 8 least significant bits.
     fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self {
         (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as Self
     }
 
-    #[inline(always)]
+    #[inline]
     fn from_indices_half(index_start: usize, index_mid: usize) -> Self {
         (index_start | (index_mid << INDEX_WIDTH)) as Self
     }
 
-    #[inline(always)]
+    #[inline]
     fn search_depth(self) -> u64 {
         (self >> (3 * INDEX_WIDTH)) & 0xFF
     }
 
     /// Concatenate a half action and the last index into a u64 action.
     /// The first index is stored in the 8 least significant bits.
-    #[inline(always)]
+    #[inline]
     fn add_last_index(self, index_end: usize) -> Self {
         self | (index_end << (2 * INDEX_WIDTH)) as Self
     }

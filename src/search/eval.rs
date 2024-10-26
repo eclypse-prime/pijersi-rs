@@ -5,6 +5,7 @@ use std::sync::atomic::Ordering::Relaxed;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::time::Instant;
 
+use arrayvec::ArrayVec;
 use rayon::prelude::*;
 
 use crate::logic::actions::{play_action, Action};
@@ -51,14 +52,15 @@ pub fn evaluate_position_with_details(cells: &[u8; 45]) -> (i64, [i64; 45]) {
 }
 
 /// Sorts the available actions based on how good they are estimated to be (in descending order -> best actions first).
+#[inline]
 pub fn sort_actions(
     cells: &[u8; 45],
     current_player: u8,
-    available_actions: &mut [u64; MAX_PLAYER_ACTIONS],
-    n_actions: usize,
+    available_actions: &mut ArrayVec<u64, MAX_PLAYER_ACTIONS>,
     start_from: usize,
 ) -> (usize, bool) {
     let mut index_sorted: usize = start_from;
+    let n_actions = available_actions.len();
     for i in start_from..n_actions {
         let action = available_actions[i];
         let (index_start, index_mid, index_end) = action.to_indices();
@@ -115,7 +117,8 @@ pub fn evaluate_action(
     }
 
     // let (available_actions, n_actions) = available_player_actions(&new_cells, current_player);
-    let (mut available_actions, n_actions) = available_player_actions(&new_cells, current_player);
+    let mut available_actions = available_player_actions(&new_cells, current_player);
+    let n_actions = available_actions.len();
 
     let mut score = i64::MIN;
 
@@ -157,7 +160,6 @@ pub fn evaluate_action(
             current_player,
             &mut available_actions,
             n_actions,
-            0,
         );
         if is_action_win {
             return MAX_SCORE;

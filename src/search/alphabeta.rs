@@ -49,7 +49,8 @@ pub fn search(
     }
 
     // Get an array of all the available moves for the current player, the last element of the array is the number of available moves
-    let (available_actions, n_actions) = available_player_actions(cells, current_player);
+    let available_actions = available_player_actions(cells, current_player);
+    let n_actions = available_actions.len();
 
     let order = match scores {
         Some(scores) => argsort(scores, true),

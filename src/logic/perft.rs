@@ -148,7 +148,8 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
         0 => 1u64,
         1 | 2 => perft_iter(cells, current_player, depth),
         _ => {
-            let (available_actions, n_actions) = available_player_actions(cells, current_player);
+            let available_actions = available_player_actions(cells, current_player);
+            let n_actions = available_actions.len();
 
             available_actions
                 .par_iter()
@@ -174,7 +175,8 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
         0 => 1u64,
         1 => count_player_actions(cells, current_player),
         _ => {
-            let (available_actions, n_actions) = available_player_actions(cells, current_player);
+            let available_actions = available_player_actions(cells, current_player);
+            let n_actions = available_actions.len();
 
             let mut new_cells: [u8; 45] = [0u8; 45];
 
@@ -205,7 +207,8 @@ pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(Str
     if depth == 0 {
         vec![]
     } else {
-        let (available_actions, n_actions) = available_player_actions(cells, current_player);
+        let available_actions = available_player_actions(cells, current_player);
+        let n_actions = available_actions.len();
 
         available_actions
             .par_iter()

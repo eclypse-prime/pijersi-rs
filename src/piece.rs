@@ -124,57 +124,57 @@ pub trait Piece: Copy {
 }
 
 impl Piece for u8 {
-    #[inline(always)]
+    #[inline]
     fn stack_on(self, bottom: Self) -> Self {
         self.top() | (bottom << HALF_PIECE_WIDTH)
     }
 
-    #[inline(always)]
+    #[inline]
     fn bottom(self) -> Self {
         self >> HALF_PIECE_WIDTH
     }
 
-    #[inline(always)]
+    #[inline]
     fn top(self) -> Self {
         self & TOP_MASK
     }
 
-    #[inline(always)]
+    #[inline]
     fn colour(self) -> Self {
         self & COLOUR_MASK
     }
 
-    #[inline(always)]
+    #[inline]
     fn r#type(self) -> Self {
         self & TYPE_MASK
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_empty(self) -> bool {
         self == CELL_EMPTY
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_stack(self) -> bool {
         self >= STACK_THRESHOLD
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_white(self) -> bool {
         self.colour() == COLOUR_WHITE
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_black(self) -> bool {
         self.colour() == COLOUR_BLACK
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_wise(self) -> bool {
         self.r#type() == TYPE_WISE
     }
 
-    #[inline(always)]
+    #[inline]
     fn set_empty(&mut self) {
         *self = CELL_EMPTY;
     }

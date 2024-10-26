@@ -28,22 +28,22 @@ pub trait Index: Copy {
 }
 
 impl Index for usize {
-    #[inline(always)]
+    #[inline]
     fn is_null(self) -> bool {
         self == INDEX_NULL
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_white_home(self) -> bool {
         self >= 39
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_black_home(self) -> bool {
         self <= 5
     }
 
-    #[inline(always)]
+    #[inline]
     fn neighbours1(self) -> impl Iterator<Item = &'static Self>
     where
         Self: 'static,
@@ -54,7 +54,7 @@ impl Index for usize {
             .take(NEIGHBOURS1[7 * self])
     }
 
-    #[inline(always)]
+    #[inline]
     fn neighbours2(self) -> impl Iterator<Item = &'static Self>
     where
         Self: 'static,
