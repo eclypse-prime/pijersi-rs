@@ -14,13 +14,15 @@ use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 /// Size of the array that stores player actions
 pub const MAX_PLAYER_ACTIONS: usize = 512;
 
+// TODO: make better debug that doesn't show the empty values
+#[derive(Debug)]
 pub struct PlayerActions {
-    data: [u64; MAX_PLAYER_ACTIONS],
-    current_index: usize,
+    pub data: [u64; MAX_PLAYER_ACTIONS],
+    pub current_index: usize,
 }
 
 impl PlayerActions {
-    fn new() -> Self {
+    pub fn new() -> Self {
         PlayerActions {
             data: [0u64; MAX_PLAYER_ACTIONS],
             current_index: 0,
@@ -48,14 +50,11 @@ impl IntoIterator for PlayerActions {
     }
 }
 
-// impl IntoParallelIterator for PlayerActions {
-//     type Item = u64;
-//     // type Iter = ParallelIterator<Item = u64>;
-
-//     fn into_par_iter(self) -> Self::Iter<> {
-//         todo!()
-//     }
-// }
+impl PartialEq for PlayerActions {
+    fn eq(&self, other: &Self) -> bool {
+        self.current_index == other.current_index && self.data == other.data
+    }
+}
 
 impl Index<usize> for PlayerActions {
     type Output = u64;
