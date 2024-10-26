@@ -153,7 +153,6 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 
             available_actions
                 .par_iter()
-                .take(n_actions)
                 .filter(|&&action| !is_action_win(cells, action))
                 .map(|&action| {
                     let mut new_cells: [u8; 45] = *cells;
@@ -182,7 +181,6 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 
             available_actions
                 .iter()
-                .take(n_actions)
                 .filter(|&&action| !is_action_win(cells, action))
                 .map(|&action| {
                     new_cells = *cells;
@@ -212,7 +210,6 @@ pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(Str
 
         available_actions
             .par_iter()
-            .take(n_actions)
             .filter(|&&action| !is_action_win(cells, action))
             .map(|&action| {
                 let mut new_cells = *cells;

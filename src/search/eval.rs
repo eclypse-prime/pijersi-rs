@@ -130,7 +130,7 @@ pub fn evaluate_action(
         #[cfg(feature = "nps-count")]
         let mut node_count: u64 = 1;
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(&new_cells);
-        for &action in available_actions.iter().take(n_actions) {
+        for &action in available_actions.iter() {
             #[cfg(feature = "nps-count")]
             {
                 node_count += 1;
@@ -183,7 +183,6 @@ pub fn evaluate_action(
         let cut = AtomicBool::new(false);
         available_actions
             .iter()
-            .take(n_actions)
             .skip(1)
             .par_bridge()
             .for_each(|&action| {

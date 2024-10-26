@@ -124,7 +124,6 @@ pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> boo
     let n_actions = available_actions.len();
     available_actions
         .iter()
-        .take(n_actions)
         .any(|&available_action| available_action == action)
 }
 
