@@ -51,7 +51,7 @@ impl IntoIterator for PlayerActions {
 // impl IntoParallelIterator for PlayerActions {
 //     type Item = u64;
 //     // type Iter = ParallelIterator<Item = u64>;
-    
+
 //     fn into_par_iter(self) -> Self::Iter<> {
 //         todo!()
 //     }
@@ -75,10 +75,7 @@ impl IndexMut<usize> for PlayerActions {
 /// Returns the possible moves for a player.
 /// The result is a size `MAX_PLAYER_ACTIONS` array of u64 and the number of actions.
 #[inline(always)]
-pub fn available_player_actions(
-    cells: &[u8; 45],
-    current_player: u8,
-) -> PlayerActions {
+pub fn available_player_actions(cells: &[u8; 45], current_player: u8) -> PlayerActions {
     let mut player_actions = PlayerActions::new();
 
     // Calculate possible player_actions
