@@ -8,7 +8,7 @@ use std::time::Instant;
 use rayon::prelude::*;
 
 use crate::logic::actions::{play_action, Action};
-use crate::logic::index::Index;
+use crate::logic::index::CellIndex;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::{available_player_actions, MAX_PLAYER_ACTIONS};
 use crate::piece::Piece;

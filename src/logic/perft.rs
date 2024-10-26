@@ -6,7 +6,7 @@ use crate::piece::Piece;
 
 use super::{
     actions::play_action,
-    index::Index,
+    index::CellIndex,
     movegen::available_player_actions,
     rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
     translate::action_to_string,

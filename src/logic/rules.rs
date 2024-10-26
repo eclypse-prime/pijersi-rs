@@ -3,7 +3,7 @@ use crate::piece::Piece;
 
 use super::{
     actions::{Action, ACTION_MASK},
-    index::Index,
+    index::CellIndex,
     movegen::available_player_actions,
     perft::perft_iter,
 };

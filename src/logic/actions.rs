@@ -8,7 +8,7 @@
 
 use crate::piece::Piece;
 
-use super::index::{Index, INDEX_MASK, INDEX_WIDTH};
+use super::index::{CellIndex, INDEX_MASK, INDEX_WIDTH};
 
 /// Mask to get the action without additional data
 pub const ACTION_MASK: u64 = 0x00FF_FFFF_u64;

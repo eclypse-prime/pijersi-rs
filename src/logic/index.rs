@@ -10,7 +10,7 @@ pub const INDEX_NULL: usize = 0xFFusize;
 pub const INDEX_MASK: u64 = 0xFFu64;
 
 /// Cell index trait for usize
-pub trait Index: Copy {
+pub trait CellIndex: Copy {
     /// Returns true if the index if a null index (0xFF)
     fn is_null(self) -> bool;
     /// Returns true if the index is in the first row on white's side
@@ -27,7 +27,7 @@ pub trait Index: Copy {
         Self: 'static;
 }
 
-impl Index for usize {
+impl CellIndex for usize {
     #[inline(always)]
     fn is_null(self) -> bool {
         self == INDEX_NULL

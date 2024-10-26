@@ -3,7 +3,7 @@
 use crate::piece::Piece;
 
 use super::actions::Action;
-use super::index::{Index, INDEX_NULL};
+use super::index::{CellIndex, INDEX_NULL};
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 
 /// Size of the array that stores player actions
