@@ -9,6 +9,34 @@ use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 /// Size of the array that stores player actions
 pub const MAX_PLAYER_ACTIONS: usize = 512;
 
+pub struct PlayerActions {
+    data: [u64; MAX_PLAYER_ACTIONS],
+    current_index: usize,
+}
+
+impl PlayerActions {
+    fn new() -> Self {
+        PlayerActions {
+            data: [0u64; MAX_PLAYER_ACTIONS],
+            current_index: 0,
+        }
+    }
+
+    #[inline]
+    fn push(&mut self, value: u64) {
+        self.data[self.current_index] = value;
+        self.current_index += 1;
+    }
+}
+
+impl std::ops::Index<usize> for PlayerActions {
+    type Output = u64;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.data[index]
+    }
+}
+
 /// Returns the possible moves for a player.
 /// The result is a size `MAX_PLAYER_ACTIONS` array of u64 and the number of actions.
 #[inline(always)]
