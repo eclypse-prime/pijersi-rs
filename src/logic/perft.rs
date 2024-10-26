@@ -148,13 +148,15 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
         0 => 1u64,
         1 | 2 => perft_iter(cells, current_player, depth),
         _ => {
-            let (available_actions, n_actions) = available_player_actions(cells, current_player);
+            let available_actions = available_player_actions(cells, current_player);
+            let n_actions = available_actions.len();
 
             available_actions
-                .par_iter()
+                .into_iter()
                 .take(n_actions)
-                .filter(|&&action| !is_action_win(cells, action))
-                .map(|&action| {
+                .par_bridge()
+                .filter(|&action| !is_action_win(cells, action))
+                .map(|action| {
                     let mut new_cells: [u8; 45] = *cells;
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
@@ -174,15 +176,16 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
         0 => 1u64,
         1 => count_player_actions(cells, current_player),
         _ => {
-            let (available_actions, n_actions) = available_player_actions(cells, current_player);
+            let available_actions = available_player_actions(cells, current_player);
+            let n_actions = available_actions.len();
 
             let mut new_cells: [u8; 45] = [0u8; 45];
 
             available_actions
-                .iter()
+                .into_iter()
                 .take(n_actions)
-                .filter(|&&action| !is_action_win(cells, action))
-                .map(|&action| {
+                .filter(|&action| !is_action_win(cells, action))
+                .map(|action| {
                     new_cells = *cells;
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
@@ -205,13 +208,15 @@ pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(Str
     if depth == 0 {
         vec![]
     } else {
-        let (available_actions, n_actions) = available_player_actions(cells, current_player);
+        let available_actions = available_player_actions(cells, current_player);
+        let n_actions = available_actions.len();
 
         available_actions
-            .par_iter()
+            .into_iter()
             .take(n_actions)
-            .filter(|&&action| !is_action_win(cells, action))
-            .map(|&action| {
+            .par_bridge()
+            .filter(|&action| !is_action_win(cells, action))
+            .map(|action| {
                 let mut new_cells = *cells;
                 play_action(&mut new_cells, action);
                 (

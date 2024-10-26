@@ -10,7 +10,7 @@ use rayon::prelude::*;
 use crate::logic::actions::{play_action, Action};
 use crate::logic::index::CellIndex;
 use crate::logic::lookup::PIECE_TO_INDEX;
-use crate::logic::movegen::{available_player_actions, MAX_PLAYER_ACTIONS};
+use crate::logic::movegen::{available_player_actions, PlayerActions, MAX_PLAYER_ACTIONS};
 use crate::piece::Piece;
 use crate::search::lookup::PIECE_SCORES;
 
@@ -54,7 +54,7 @@ pub fn evaluate_position_with_details(cells: &[u8; 45]) -> (i64, [i64; 45]) {
 pub fn sort_actions(
     cells: &[u8; 45],
     current_player: u8,
-    available_actions: &mut [u64; MAX_PLAYER_ACTIONS],
+    available_actions: &mut PlayerActions,
     n_actions: usize,
     start_from: usize,
 ) -> (usize, bool) {
@@ -115,7 +115,8 @@ pub fn evaluate_action(
     }
 
     // let (available_actions, n_actions) = available_player_actions(&new_cells, current_player);
-    let (mut available_actions, n_actions) = available_player_actions(&new_cells, current_player);
+    let mut available_actions = available_player_actions(&new_cells, current_player);
+    let n_actions = available_actions.len();
 
     let mut score = i64::MIN;
 
@@ -127,7 +128,7 @@ pub fn evaluate_action(
         #[cfg(feature = "nps-count")]
         let mut node_count: u64 = 1;
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(&new_cells);
-        for &action in available_actions.iter().take(n_actions) {
+        for action in available_actions.into_iter().take(n_actions) {
             #[cfg(feature = "nps-count")]
             {
                 node_count += 1;
@@ -180,11 +181,11 @@ pub fn evaluate_action(
         let score_atomic = AtomicI64::new(score);
         let cut = AtomicBool::new(false);
         available_actions
-            .iter()
+            .into_iter()
             .take(n_actions)
             .skip(1)
             .par_bridge()
-            .for_each(|&action| {
+            .for_each(|action| {
                 if !cut.load(Relaxed) {
                     let eval = {
                         let eval_null_window = -evaluate_action(

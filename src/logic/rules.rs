@@ -120,11 +120,10 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
 /// Returns true if the given action is legal.
 pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> bool {
     let action = action & ACTION_MASK;
-    let (available_actions, n_actions) = available_player_actions(cells, current_player);
+    let available_actions = available_player_actions(cells, current_player);
     available_actions
-        .iter()
-        .take(n_actions)
-        .any(|&available_action| available_action == action)
+        .into_iter()
+        .any(|available_action| available_action == action)
 }
 
 /// Returns true if the current position is winning for one of the players.
