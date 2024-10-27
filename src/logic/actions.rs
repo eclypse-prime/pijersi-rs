@@ -136,7 +136,7 @@ impl ActionTrait for Action {
 
     #[inline(always)]
     fn search_depth(self) -> u64 {
-        (self >> (3 * INDEX_WIDTH)) & 0xFF
+        ((self >> (3 * INDEX_WIDTH)) & 0xFF) as u64
     }
 
     /// Concatenate a half action and the last index into a `Action`.
