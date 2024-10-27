@@ -2,8 +2,8 @@
 use crate::piece::Piece;
 
 use super::{
-    actions::{ActionTrait, ACTION_MASK},
-    index::CellIndexTrait,
+    actions::{Action, ActionTrait, ACTION_MASK},
+    index::{CellIndex, CellIndexTrait},
     movegen::available_player_actions,
     perft::perft_iter,
     Cells,
@@ -25,7 +25,7 @@ pub fn can_take(attacker: u8, target: u8) -> bool {
 
 /// Returns whether the chosen 1-range move is possible.
 #[inline]
-pub fn can_move1(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
+pub fn can_move1(cells: &Cells, moving_piece: u8, index_end: CellIndex) -> bool {
     let target_piece: u8 = cells[index_end];
 
     if !target_piece.is_empty() {
@@ -42,7 +42,12 @@ pub fn can_move1(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
 
 /// Returns whether the chosen 2-range move is possible.
 #[inline]
-pub fn can_move2(cells: &Cells, moving_piece: u8, index_start: usize, index_end: usize) -> bool {
+pub fn can_move2(
+    cells: &Cells,
+    moving_piece: u8,
+    index_start: CellIndex,
+    index_end: CellIndex,
+) -> bool {
     let target_piece: u8 = cells[index_end];
 
     // If there is a piece blocking the move (cell between the start and end positions)
@@ -63,7 +68,7 @@ pub fn can_move2(cells: &Cells, moving_piece: u8, index_start: usize, index_end:
 
 /// Returns whether the chosen stack action is possible.
 #[inline]
-pub fn can_stack(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
+pub fn can_stack(cells: &Cells, moving_piece: u8, index_end: CellIndex) -> bool {
     let target_piece: u8 = cells[index_end];
 
     // If the end cell is not empty
@@ -85,7 +90,7 @@ pub fn can_stack(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
 
 /// Returns whether the chosen unstack action is possible.
 #[inline]
-pub fn can_unstack(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
+pub fn can_unstack(cells: &Cells, moving_piece: u8, index_end: CellIndex) -> bool {
     let target_piece: u8 = cells[index_end];
 
     if !target_piece.is_empty() {
@@ -104,7 +109,7 @@ pub fn can_unstack(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
 ///
 /// To win, one allied piece (except wise) must reach the last row in the opposite side.
 #[inline]
-pub fn is_action_win(cells: &Cells, action: u64) -> bool {
+pub fn is_action_win(cells: &Cells, action: Action) -> bool {
     let (index_start, _index_mid, index_end) = action.to_indices();
 
     let moving_piece: u8 = cells[index_start];
@@ -119,7 +124,7 @@ pub fn is_action_win(cells: &Cells, action: u64) -> bool {
 }
 
 /// Returns true if the given action is legal.
-pub fn is_action_legal(cells: &Cells, current_player: u8, action: u64) -> bool {
+pub fn is_action_legal(cells: &Cells, current_player: u8, action: Action) -> bool {
     let action = action & ACTION_MASK;
     let available_actions = available_player_actions(cells, current_player);
     available_actions

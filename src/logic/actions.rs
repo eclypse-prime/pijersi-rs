@@ -9,7 +9,7 @@
 use crate::piece::Piece;
 
 use super::{
-    index::{CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
+    index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
     Cells,
 };
 
@@ -20,10 +20,10 @@ pub const MAX_PLAYER_ACTIONS: usize = 512;
 pub type Action = u64;
 
 /// Mask to get the action without additional data
-pub const ACTION_MASK: u64 = 0x00FF_FFFF_u64;
+pub const ACTION_MASK: Action = 0x00FF_FFFF;
 
 /// Applies a move between chosen coordinates.
-fn do_move(cells: &mut Cells, index_start: usize, index_end: usize) {
+fn do_move(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
     if index_start != index_end {
         // Move the piece to the target cell
         cells[index_end] = cells[index_start];
@@ -34,7 +34,7 @@ fn do_move(cells: &mut Cells, index_start: usize, index_end: usize) {
 }
 
 /// Applies a stack between chosen coordinates.
-fn do_stack(cells: &mut Cells, index_start: usize, index_end: usize) {
+fn do_stack(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
     let piece_start: u8 = cells[index_start];
     let piece_end: u8 = cells[index_end];
 
@@ -46,7 +46,7 @@ fn do_stack(cells: &mut Cells, index_start: usize, index_end: usize) {
 }
 
 /// Applies an unstack between chosen coordinates.
-fn do_unstack(cells: &mut Cells, index_start: usize, index_end: usize) {
+fn do_unstack(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
     let piece_start: u8 = cells[index_start];
 
     // Leave the bottom piece in the starting cell
@@ -59,7 +59,7 @@ fn do_unstack(cells: &mut Cells, index_start: usize, index_end: usize) {
 }
 
 /// Plays the selected action.
-pub fn play_action(cells: &mut Cells, action: u64) {
+pub fn play_action(cells: &mut Cells, action: Action) {
     let (index_start, index_mid, index_end) = action.to_indices();
 
     if index_start.is_null() {
@@ -98,39 +98,39 @@ pub fn play_action(cells: &mut Cells, action: u64) {
     }
 }
 
-/// Action trait for u64
+/// `ActionTrait` trait for `Action`
 pub trait ActionTrait: Copy {
     /// Converts an action to its indices
-    fn to_indices(self) -> (usize, usize, usize);
+    fn to_indices(self) -> (CellIndex, CellIndex, CellIndex);
     /// Converts a set of three indices to an action
-    fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self;
+    fn from_indices(index_start: CellIndex, index_mid: CellIndex, index_end: CellIndex) -> Self;
     /// Converts a set of two starting indices (without the end index) to an action
-    fn from_indices_half(index_start: usize, index_mid: usize) -> Self;
+    fn from_indices_half(index_start: CellIndex, index_mid: CellIndex) -> Self;
     /// Returns the search depth stored in the action data
     fn search_depth(self) -> u64;
     /// Adds the last index of an action to itself
-    fn add_last_index(self, index_end: usize) -> Self;
+    fn add_last_index(self, index_end: CellIndex) -> Self;
 }
 
-impl ActionTrait for u64 {
+impl ActionTrait for Action {
     // TODO: can we make this even more generic by implementing From and Into for Action and Indices?
     #[inline(always)]
-    fn to_indices(self) -> (usize, usize, usize) {
-        let index_start: usize = (self & INDEX_MASK) as usize;
-        let index_mid: usize = ((self >> INDEX_WIDTH) & INDEX_MASK) as usize;
-        let index_end: usize = ((self >> (2 * INDEX_WIDTH)) & INDEX_MASK) as usize;
+    fn to_indices(self) -> (CellIndex, CellIndex, CellIndex) {
+        let index_start: CellIndex = (self & INDEX_MASK) as CellIndex;
+        let index_mid: CellIndex = ((self >> INDEX_WIDTH) & INDEX_MASK) as CellIndex;
+        let index_end: CellIndex = ((self >> (2 * INDEX_WIDTH)) & INDEX_MASK) as CellIndex;
         (index_start, index_mid, index_end)
     }
 
     #[inline(always)]
-    /// Concatenate three indices into a u64 action.
+    /// Concatenate three indices into a `Action`.
     /// The first index is stored in the 8 least significant bits.
-    fn from_indices(index_start: usize, index_mid: usize, index_end: usize) -> Self {
+    fn from_indices(index_start: CellIndex, index_mid: CellIndex, index_end: CellIndex) -> Self {
         (index_start | (index_mid << INDEX_WIDTH) | (index_end << (2 * INDEX_WIDTH))) as Self
     }
 
     #[inline(always)]
-    fn from_indices_half(index_start: usize, index_mid: usize) -> Self {
+    fn from_indices_half(index_start: CellIndex, index_mid: CellIndex) -> Self {
         (index_start | (index_mid << INDEX_WIDTH)) as Self
     }
 
@@ -139,10 +139,10 @@ impl ActionTrait for u64 {
         (self >> (3 * INDEX_WIDTH)) & 0xFF
     }
 
-    /// Concatenate a half action and the last index into a u64 action.
+    /// Concatenate a half action and the last index into a `Action`.
     /// The first index is stored in the 8 least significant bits.
     #[inline(always)]
-    fn add_last_index(self, index_end: usize) -> Self {
+    fn add_last_index(self, index_end: CellIndex) -> Self {
         self | (index_end << (2 * INDEX_WIDTH)) as Self
     }
 }
@@ -157,7 +157,7 @@ pub struct Actions {
 impl Actions {
     /// Store a new action
     #[inline]
-    pub fn push(&mut self, value: u64) {
+    pub fn push(&mut self, value: Action) {
         self.data[self.current_index] = value;
         self.current_index += 1;
     }
@@ -198,8 +198,8 @@ impl Default for Actions {
 }
 
 impl IntoIterator for Actions {
-    type Item = u64;
-    type IntoIter = std::array::IntoIter<u64, 512>;
+    type Item = Action;
+    type IntoIter = std::array::IntoIter<Action, MAX_PLAYER_ACTIONS>;
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.data.into_iter()
@@ -213,7 +213,7 @@ impl PartialEq for Actions {
 }
 
 impl std::ops::Index<usize> for Actions {
-    type Output = u64;
+    type Output = Action;
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         &self.data[index]

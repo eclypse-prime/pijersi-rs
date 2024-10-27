@@ -4,7 +4,7 @@ use std::{fmt::Display, num::ParseIntError};
 
 use thiserror::Error;
 
-use crate::logic::actions::ActionTrait;
+use crate::logic::actions::{Action, ActionTrait};
 
 /// General Pijersi errors
 #[derive(Debug, Error)]
@@ -25,7 +25,7 @@ pub enum RuntimeError {
 pub enum RulesErrorKind {
     /// Illegal action
     #[error("This action is illegal: {0} ({} {} {}).", .0.to_indices().0, .0.to_indices().1, .0.to_indices().2)]
-    IllegalAction(u64),
+    IllegalAction(Action),
 }
 
 /// Errors returned if parsing fails

@@ -14,7 +14,8 @@ use crate::{
 };
 
 use super::{
-    index::{CellIndexTrait, INDEX_NULL},
+    actions::Action,
+    index::{CellIndex, CellIndexTrait, INDEX_NULL},
     Cells, CELLS_EMPTY,
 };
 
@@ -53,7 +54,7 @@ pub const fn piece_to_char(piece: u8) -> Option<char> {
 }
 
 /// Converts a (i, j) coordinate set to an index.
-pub const fn coords_to_index(i: usize, j: usize) -> usize {
+pub const fn coords_to_index(i: CellIndex, j: CellIndex) -> CellIndex {
     if i % 2 == 0 {
         13 * i / 2 + j
     } else {
@@ -62,9 +63,9 @@ pub const fn coords_to_index(i: usize, j: usize) -> usize {
 }
 
 /// Converts an index to a (i, j) coordinate set.
-pub const fn index_to_coords(index: usize) -> (usize, usize) {
-    let mut i: usize = 2 * (index / 13);
-    let mut j: usize = index % 13;
+pub const fn index_to_coords(index: CellIndex) -> (CellIndex, CellIndex) {
+    let mut i: CellIndex = 2 * (index / 13);
+    let mut j: CellIndex = index % 13;
 
     if j > 5 {
         j -= 6;
@@ -74,13 +75,13 @@ pub const fn index_to_coords(index: usize) -> (usize, usize) {
 }
 
 /// Converts a "a1" style string coordinate into an index.
-fn string_to_index(cell_string: &str) -> Result<usize, ParseError> {
+fn string_to_index(cell_string: &str) -> Result<CellIndex, ParseError> {
     let mut iterator = cell_string.chars();
 
     // Guaranteed to match regex "\w\d", no handling needed.
     let char_i: char = iterator.next().unwrap();
     let char_j: char = iterator.next().unwrap();
-    let i: usize = match char_i {
+    let i: CellIndex = match char_i {
         'a' => 6,
         'b' => 5,
         'c' => 4,
@@ -98,7 +99,7 @@ fn string_to_index(cell_string: &str) -> Result<usize, ParseError> {
             })
         }
     };
-    let j: usize = match char_j {
+    let j: CellIndex = match char_j {
         '1' => 0,
         '2' => 1,
         '3' => 2,
@@ -120,14 +121,14 @@ fn string_to_index(cell_string: &str) -> Result<usize, ParseError> {
 }
 
 /// Converts a native index into a "a1" style string.
-pub fn index_to_string(index: usize) -> String {
-    let (i, j): (usize, usize) = index_to_coords(index);
+pub fn index_to_string(index: CellIndex) -> String {
+    let (i, j): (CellIndex, CellIndex) = index_to_coords(index);
 
     ROW_LETTERS[i].to_string() + &(j + 1).to_string()
 }
 
 /// Converts a string (a1b1c1 style) move to the native triple-index format.
-pub fn string_to_action(cells: &Cells, action_string: &str) -> Result<u64, ParseError> {
+pub fn string_to_action(cells: &Cells, action_string: &str) -> Result<Action, ParseError> {
     let action_pattern = Regex::new(r"^(\w\d)(\w\d)?(\w\d)$").unwrap();
 
     let action_captures = action_pattern.captures(action_string).ok_or(ParseError {
@@ -136,14 +137,14 @@ pub fn string_to_action(cells: &Cells, action_string: &str) -> Result<u64, Parse
     })?;
 
     // Guaranteed to match regex "\w\d", no handling needed.
-    let index_start: usize = string_to_index(action_captures.get(1).unwrap().as_str())?;
-    let mut index_mid: usize = if let Some(action_capture) = action_captures.get(2) {
+    let index_start: CellIndex = string_to_index(action_captures.get(1).unwrap().as_str())?;
+    let mut index_mid: CellIndex = if let Some(action_capture) = action_captures.get(2) {
         string_to_index(action_capture.as_str())?
     } else {
         INDEX_NULL
     };
     // Guaranteed to match regex "\w\d", no handling needed.
-    let index_end: usize = string_to_index(action_captures.get(3).unwrap().as_str())?;
+    let index_end: CellIndex = string_to_index(action_captures.get(3).unwrap().as_str())?;
 
     if !cells[index_end].is_empty()
         && cells[index_start].colour() == cells[index_end].colour()
@@ -155,11 +156,11 @@ pub fn string_to_action(cells: &Cells, action_string: &str) -> Result<u64, Parse
         index_mid = INDEX_NULL;
     }
 
-    Ok(u64::from_indices(index_start, index_mid, index_end))
+    Ok(Action::from_indices(index_start, index_mid, index_end))
 }
 
 /// Converts a native triple-index move into the string (a1b1c1 style) format.
-pub fn action_to_string(cells: &Cells, action: u64) -> String {
+pub fn action_to_string(cells: &Cells, action: Action) -> String {
     let (index_start, index_mid, index_end) = action.to_indices();
 
     if index_start.is_null() {
@@ -188,7 +189,7 @@ pub fn action_to_string(cells: &Cells, action: u64) -> String {
 pub fn string_to_cells(cells_string: &str) -> Result<Cells, ParseError> {
     let cell_lines: Vec<&str> = cells_string.split('/').collect();
     if cell_lines.len() == 7 {
-        let mut cursor: usize = 0;
+        let mut cursor: CellIndex = 0;
         let mut new_cells: Cells = CELLS_EMPTY;
         for &cell_line in &cell_lines {
             let mut j: usize = 0;
@@ -205,7 +206,7 @@ pub fn string_to_cells(cells_string: &str) -> Result<Cells, ParseError> {
                     j += 2;
                     cursor += 1;
                 } else {
-                    let jump = cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as usize;
+                    let jump = cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as CellIndex;
                     j += 1;
                     cursor += jump;
                 }

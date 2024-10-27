@@ -7,8 +7,8 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
-use crate::logic::actions::{play_action, ActionTrait, Actions};
-use crate::logic::index::CellIndexTrait;
+use crate::logic::actions::{play_action, Action, ActionTrait, Actions};
+use crate::logic::index::{CellIndex, CellIndexTrait};
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
 use crate::logic::{Cells, N_CELLS};
@@ -25,7 +25,7 @@ pub const MAX_SCORE: i64 = 524_288;
 ///
 /// Uses lookup tables for faster computations.
 #[inline]
-pub const fn evaluate_cell(piece: u8, index: usize) -> i64 {
+pub const fn evaluate_cell(piece: u8, index: CellIndex) -> i64 {
     PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * N_CELLS + index]
 }
 
@@ -90,7 +90,7 @@ pub fn sort_actions(
 pub fn evaluate_action(
     cells: &Cells,
     current_player: u8,
-    action: u64,
+    action: Action,
     depth: u64,
     alpha: i64,
     beta: i64,
@@ -231,7 +231,7 @@ pub fn evaluate_action(
 pub fn evaluate_action_terminal(
     cells: &Cells,
     current_player: u8,
-    action: u64,
+    action: Action,
     previous_score: i64,
     previous_piece_scores: &[i64; N_CELLS],
 ) -> i64 {
