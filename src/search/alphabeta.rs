@@ -8,6 +8,7 @@ use std::time::Instant;
 use rayon::prelude::*;
 
 use crate::logic::translate::action_to_string;
+use crate::logic::Cells;
 use crate::utils::{argsort, reverse_argsort};
 
 use super::super::logic::movegen::available_player_actions;
@@ -32,7 +33,7 @@ pub unsafe fn increment_node_count(node_count: u64) {
 
 /// Returns the best move at a given depth
 pub fn search(
-    cells: &[u8; 45],
+    cells: &Cells,
     current_player: u8,
     depth: u64,
     end_time: Option<Instant>,
@@ -177,7 +178,7 @@ pub fn search(
 /// The search starts at depth 1 and the depth increases until the chosen depth is reached or a winning move is found.
 /// The results at lower depths are used to sort the search order at higher depths.
 pub fn search_iterative(
-    cells: &[u8; 45],
+    cells: &Cells,
     current_player: u8,
     max_depth: u64,
     end_time: Option<Instant>,

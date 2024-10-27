@@ -8,5 +8,8 @@ pub mod perft;
 pub mod rules;
 pub mod translate;
 
+/// A board is represented as a [u8; 45] array
+pub type Cells = [u8; 45];
+
 /// Max number of half moves without capture before draw
 pub const MAX_HALF_MOVES: u64 = 20;

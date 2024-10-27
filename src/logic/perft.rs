@@ -10,12 +10,13 @@ use super::{
     movegen::available_player_actions,
     rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
     translate::action_to_string,
+    Cells,
 };
 
 /// Returns the number of possible actions for a player.
 ///
 /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the moves.
-fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
+fn count_player_actions(cells: &Cells, current_player: u8) -> u64 {
     let mut player_action_count: u64 = 0u64;
 
     // Calculate possible actions
@@ -34,7 +35,7 @@ fn count_player_actions(cells: &[u8; 45], current_player: u8) -> u64 {
 ///
 /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the moves.
 #[inline]
-fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
+fn count_piece_actions(cells: &Cells, index_start: usize) -> u64 {
     let mut piece_action_count: u64 = 0u64;
 
     let piece_start: u8 = cells[index_start];
@@ -143,7 +144,7 @@ fn count_piece_actions(cells: &[u8; 45], index_start: usize) -> u64 {
 /// Uses parallel search.
 ///
 /// At depth 0, returns 1.
-pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
+pub fn perft(cells: &Cells, current_player: u8, depth: u64) -> u64 {
     match depth {
         0 => 1u64,
         1 | 2 => perft_iter(cells, current_player, depth),
@@ -155,7 +156,7 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
                 .take(n_actions)
                 .filter(|&&action| !is_action_win(cells, action))
                 .map(|&action| {
-                    let mut new_cells: [u8; 45] = *cells;
+                    let mut new_cells: Cells = *cells;
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
                 })
@@ -169,14 +170,14 @@ pub fn perft(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 /// Recursively counts the number of leaf nodes at the chosen depth.
 ///
 /// At depth 0, returns 1.
-pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
+pub fn perft_iter(cells: &Cells, current_player: u8, depth: u64) -> u64 {
     match depth {
         0 => 1u64,
         1 => count_player_actions(cells, current_player),
         _ => {
             let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
-            let mut new_cells: [u8; 45] = [0u8; 45];
+            let mut new_cells: Cells = [0u8; 45];
 
             available_actions
                 .iter()
@@ -201,7 +202,7 @@ pub fn perft_iter(cells: &[u8; 45], current_player: u8, depth: u64) -> u64 {
 /// Separates the node count between all possible depth 1 moves and returns a vector of (`action_string`: String, action: u64, count: u64).
 ///
 /// At depth 0, returns an empty vector.
-pub fn perft_split(cells: &[u8; 45], current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
+pub fn perft_split(cells: &Cells, current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
     if depth == 0 {
         vec![]
     } else {

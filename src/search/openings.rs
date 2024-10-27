@@ -12,14 +12,14 @@ use bincode::{deserialize, serialized_size};
 use miniz_oxide::inflate::decompress_to_vec;
 use serde::{Deserialize, Serialize};
 
-use crate::board::Board;
+use crate::{board::Board, logic::Cells};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
 /// Represents a board's cells and current player. They are used to index the opening book.
 pub struct Position {
     #[serde(with = "serde_bytes")]
     /// The current cells storing the piece data as u8 (see [`crate::piece`])
-    pub cells: [u8; 45],
+    pub cells: Cells,
     /// The current player: 0 if white, 1 if black
     pub current_player: u8,
 }

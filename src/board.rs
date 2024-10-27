@@ -23,7 +23,7 @@ use crate::logic::translate::{
     action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_action,
     string_to_cells, string_to_player,
 };
-use crate::logic::MAX_HALF_MOVES;
+use crate::logic::{Cells, MAX_HALF_MOVES};
 use crate::piece::{
     Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
     WHITE_SCISSORS, WHITE_WISE,
@@ -75,7 +75,7 @@ pub struct Board {
     /// The board options
     pub options: BoardOptions,
     /// The current cells storing the piece data as u8 (see [`crate::piece`])
-    pub cells: [u8; 45],
+    pub cells: Cells,
     /// The current player: 0 if white, 1 if black
     pub current_player: u8,
     half_moves: u64,
@@ -209,7 +209,7 @@ impl Board {
     }
 
     /// Get the current board state.
-    pub fn get_state(&self) -> ([u8; 45], u8, u64, u64) {
+    pub fn get_state(&self) -> (Cells, u8, u64, u64) {
         (
             self.cells,
             self.current_player,
@@ -219,7 +219,7 @@ impl Board {
     }
 
     /// Sets the board state.
-    pub fn set_state(&mut self, cells: &[u8; 45], player: u8, half_moves: u64, full_moves: u64) {
+    pub fn set_state(&mut self, cells: &Cells, player: u8, half_moves: u64, full_moves: u64) {
         self.cells = *cells;
         self.current_player = player;
         self.half_moves = half_moves;

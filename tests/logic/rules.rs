@@ -1,7 +1,10 @@
 use pijersi_rs::{
-    logic::rules::{
-        can_move1, can_move2, can_stack, can_take, can_unstack, get_winning_player,
-        is_action_legal, is_action_win, is_position_stalemate, is_position_win,
+    logic::{
+        rules::{
+            can_move1, can_move2, can_stack, can_take, can_unstack, get_winning_player,
+            is_action_legal, is_action_win, is_position_stalemate, is_position_win,
+        },
+        Cells,
     },
     piece::{
         BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
@@ -17,7 +20,7 @@ use pijersi_rs::{
 ///  .  .  .  .  .  pr
 /// P- S- R- WW S- RP SP
 ///  R- P- S- R- .  .
-const TEST_CELLS2: [u8; 45] = [
+const TEST_CELLS2: Cells = [
     3, 7, 11, 3, 0, 11, 7, 11, 3, 255, 0, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 183, 5, 1, 9, 221, 1, 89, 81, 9, 5, 1, 9, 0, 0,
 ];
@@ -30,7 +33,7 @@ const TEST_CELLS2: [u8; 45] = [
 ///  .  .  .  .  .  .
 /// P- S- R- WW PS R- SP
 ///  R- P- S- R- .  .
-const TEST_CELLS3: [u8; 45] = [
+const TEST_CELLS3: Cells = [
     3, 7, 11, 3, 0, 11, 7, 11, 3, 255, 0, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 183, 0, 0, 0, 0,
     0, 0, 0, 5, 1, 9, 221, 21, 9, 81, 9, 5, 1, 9, 0, 0,
 ];
@@ -43,7 +46,7 @@ const TEST_CELLS3: [u8; 45] = [
 ///  .  .  .  .  .  .
 /// P- S- R- WW S- R- P-
 ///  R- P- S- R- P- S-
-const TEST_CELLS_STALEMATE: [u8; 45] = [
+const TEST_CELLS_STALEMATE: Cells = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     5, 1, 9, 221, 1, 9, 5, 9, 5, 1, 9, 5, 1,
 ];
@@ -56,7 +59,7 @@ const TEST_CELLS_STALEMATE: [u8; 45] = [
 ///  .  .  .  .  .  .
 /// P- S- R- WW PS R- SP
 ///  R- P- S- R- .  .
-const TEST_CELLS_WHITE_WIN: [u8; 45] = [
+const TEST_CELLS_WHITE_WIN: Cells = [
     3, 7, 11, 3, 1, 11, 7, 11, 3, 255, 0, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 183, 0, 0, 0, 0,
     0, 0, 0, 5, 1, 9, 221, 21, 9, 81, 9, 5, 1, 9, 0, 0,
 ];
@@ -69,7 +72,7 @@ const TEST_CELLS_WHITE_WIN: [u8; 45] = [
 ///  .  .  .  .  .  .
 /// P- S- R- WW PS R- SP
 ///  R- P- S- R- S  .
-const TEST_CELLS_BLACK_WIN: [u8; 45] = [
+const TEST_CELLS_BLACK_WIN: Cells = [
     3, 7, 11, 3, 1, 11, 7, 11, 3, 255, 0, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 183, 0, 0, 0, 0,
     0, 0, 0, 5, 1, 9, 221, 21, 9, 81, 9, 5, 1, 9, 3, 0,
 ];
