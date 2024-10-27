@@ -10,7 +10,7 @@ use super::{
     movegen::available_player_actions,
     rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
     translate::action_to_string,
-    Cells,
+    Cells, CELLS_EMPTY, N_CELLS,
 };
 
 /// Returns the number of possible actions for a player.
@@ -20,7 +20,7 @@ fn count_player_actions(cells: &Cells, current_player: u8) -> u64 {
     let mut player_action_count: u64 = 0u64;
 
     // Calculate possible actions
-    for index in 0..45 {
+    for index in 0..N_CELLS {
         if !cells[index].is_empty() {
             // Choose pieces of the current player's colour
             if (cells[index].colour()) == (current_player << 1) {
@@ -177,7 +177,7 @@ pub fn perft_iter(cells: &Cells, current_player: u8, depth: u64) -> u64 {
         _ => {
             let (available_actions, n_actions) = available_player_actions(cells, current_player);
 
-            let mut new_cells: Cells = [0u8; 45];
+            let mut new_cells: Cells = CELLS_EMPTY;
 
             available_actions
                 .iter()

@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     index::{Index, INDEX_NULL},
-    Cells,
+    Cells, CELLS_EMPTY,
 };
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
@@ -189,7 +189,7 @@ pub fn string_to_cells(cells_string: &str) -> Result<Cells, ParseError> {
     let cell_lines: Vec<&str> = cells_string.split('/').collect();
     if cell_lines.len() == 7 {
         let mut cursor: usize = 0;
-        let mut new_cells: Cells = [0; 45];
+        let mut new_cells: Cells = CELLS_EMPTY;
         for &cell_line in &cell_lines {
             let mut j: usize = 0;
             while j < cell_line.chars().count() {

@@ -4,7 +4,7 @@ use pijersi_rs::{
             can_move1, can_move2, can_stack, can_take, can_unstack, get_winning_player,
             is_action_legal, is_action_win, is_position_stalemate, is_position_win,
         },
-        Cells,
+        Cells, CELLS_EMPTY,
     },
     piece::{
         BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
@@ -169,8 +169,8 @@ fn test_is_position_stalemate() {
     assert!(!is_position_stalemate(&TEST_CELLS2, 0));
     assert!(is_position_stalemate(&TEST_CELLS_STALEMATE, 1));
     assert!(!is_position_stalemate(&TEST_CELLS_STALEMATE, 0));
-    assert!(is_position_stalemate(&[0u8; 45], 0));
-    assert!(is_position_stalemate(&[0u8; 45], 1));
+    assert!(is_position_stalemate(&CELLS_EMPTY, 0));
+    assert!(is_position_stalemate(&CELLS_EMPTY, 1));
 }
 
 #[test]

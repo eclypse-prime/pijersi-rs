@@ -23,7 +23,7 @@ use crate::logic::translate::{
     action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_action,
     string_to_cells, string_to_player,
 };
-use crate::logic::{Cells, MAX_HALF_MOVES};
+use crate::logic::{Cells, CELLS_EMPTY, MAX_HALF_MOVES};
 use crate::piece::{
     Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
     WHITE_SCISSORS, WHITE_WISE,
@@ -94,7 +94,7 @@ impl Board {
     pub fn new() -> Self {
         Self {
             options: BoardOptions::new(),
-            cells: [0u8; 45],
+            cells: CELLS_EMPTY,
             current_player: 0u8,
             half_moves: 0u64,
             full_moves: 0u64,

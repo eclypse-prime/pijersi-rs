@@ -5,7 +5,7 @@ use crate::piece::Piece;
 use super::actions::Action;
 use super::index::{Index, INDEX_NULL};
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
-use super::Cells;
+use super::{Cells, N_CELLS};
 
 /// Size of the array that stores player actions
 pub const MAX_PLAYER_ACTIONS: usize = 512;
@@ -21,7 +21,7 @@ pub fn available_player_actions(
     let mut index_actions: usize = 0;
 
     // Calculate possible player_actions
-    for index in 0..45 {
+    for index in 0..N_CELLS {
         if !cells[index].is_empty() {
             // Choose pieces of the current player's colour
             if (cells[index].colour()) == (current_player << 1) {
