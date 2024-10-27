@@ -8,13 +8,16 @@
 
 use crate::piece::Piece;
 
-use super::index::{CellIndex, INDEX_MASK, INDEX_WIDTH};
+use super::{
+    index::{CellIndex, INDEX_MASK, INDEX_WIDTH},
+    Cells,
+};
 
 /// Mask to get the action without additional data
 pub const ACTION_MASK: u64 = 0x00FF_FFFF_u64;
 
 /// Applies a move between chosen coordinates.
-fn do_move(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
+fn do_move(cells: &mut Cells, index_start: usize, index_end: usize) {
     if index_start != index_end {
         // Move the piece to the target cell
         cells[index_end] = cells[index_start];
@@ -25,7 +28,7 @@ fn do_move(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
 }
 
 /// Applies a stack between chosen coordinates.
-fn do_stack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
+fn do_stack(cells: &mut Cells, index_start: usize, index_end: usize) {
     let piece_start: u8 = cells[index_start];
     let piece_end: u8 = cells[index_end];
 
@@ -37,7 +40,7 @@ fn do_stack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
 }
 
 /// Applies an unstack between chosen coordinates.
-fn do_unstack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
+fn do_unstack(cells: &mut Cells, index_start: usize, index_end: usize) {
     let piece_start: u8 = cells[index_start];
 
     // Leave the bottom piece in the starting cell
@@ -50,7 +53,7 @@ fn do_unstack(cells: &mut [u8; 45], index_start: usize, index_end: usize) {
 }
 
 /// Plays the selected action.
-pub fn play_action(cells: &mut [u8; 45], action: u64) {
+pub fn play_action(cells: &mut Cells, action: u64) {
     let (index_start, index_mid, index_end) = action.to_indices();
 
     if index_start.is_null() {

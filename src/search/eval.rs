@@ -11,6 +11,7 @@ use crate::logic::actions::{play_action, Action};
 use crate::logic::index::CellIndex;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::{available_player_actions, PlayerActions, MAX_PLAYER_ACTIONS};
+use crate::logic::{Cells, N_CELLS};
 use crate::piece::Piece;
 use crate::search::lookup::PIECE_SCORES;
 
@@ -25,11 +26,11 @@ pub const MAX_SCORE: i64 = 524_288;
 /// Uses lookup tables for faster computations.
 #[inline]
 pub const fn evaluate_cell(piece: u8, index: usize) -> i64 {
-    PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * 45 + index]
+    PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * N_CELLS + index]
 }
 
 /// Returns the score of a board.
-pub fn evaluate_position(cells: &[u8; 45]) -> i64 {
+pub fn evaluate_position(cells: &Cells) -> i64 {
     #[cfg(feature = "nps-count")]
     unsafe {
         increment_node_count(1);
@@ -42,8 +43,8 @@ pub fn evaluate_position(cells: &[u8; 45]) -> i64 {
 }
 
 /// Returns the score of a board along with its individual cell scores.
-pub fn evaluate_position_with_details(cells: &[u8; 45]) -> (i64, [i64; 45]) {
-    let mut piece_scores: [i64; 45] = [0i64; 45];
+pub fn evaluate_position_with_details(cells: &Cells) -> (i64, [i64; N_CELLS]) {
+    let mut piece_scores: [i64; N_CELLS] = [0i64; N_CELLS];
     for (k, &cell) in cells.iter().enumerate() {
         piece_scores[k] = evaluate_cell(cell, k);
     }
@@ -52,7 +53,7 @@ pub fn evaluate_position_with_details(cells: &[u8; 45]) -> (i64, [i64; 45]) {
 
 /// Sorts the available actions based on how good they are estimated to be (in descending order -> best actions first).
 pub fn sort_actions(
-    cells: &[u8; 45],
+    cells: &Cells,
     current_player: u8,
     available_actions: &mut PlayerActions,
     n_actions: usize,
@@ -87,7 +88,7 @@ pub fn sort_actions(
 ///
 /// Recursively calculates the best score using the alphabeta search to the chosen depth.
 pub fn evaluate_action(
-    cells: &[u8; 45],
+    cells: &Cells,
     current_player: u8,
     action: u64,
     depth: u64,
@@ -97,7 +98,7 @@ pub fn evaluate_action(
 ) -> i64 {
     let mut alpha = alpha;
 
-    let mut new_cells: [u8; 45] = *cells;
+    let mut new_cells: Cells = *cells;
     play_action(&mut new_cells, action);
 
     if depth == 0 {
@@ -228,11 +229,11 @@ pub fn evaluate_action(
 ///
 /// Efficient method that only calculates the scores of the cells that would change and compares it to the current score.
 pub fn evaluate_action_terminal(
-    cells: &[u8; 45],
+    cells: &Cells,
     current_player: u8,
     action: u64,
     previous_score: i64,
-    previous_piece_scores: &[i64; 45],
+    previous_piece_scores: &[i64; N_CELLS],
 ) -> i64 {
     let (index_start, index_mid, index_end) = action.to_indices();
 
