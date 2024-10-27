@@ -7,10 +7,10 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
-use crate::logic::actions::{play_action, Action};
+use crate::logic::actions::{play_action, Action, PlayerActions};
 use crate::logic::index::CellIndex;
 use crate::logic::lookup::PIECE_TO_INDEX;
-use crate::logic::movegen::{available_player_actions, PlayerActions, MAX_PLAYER_ACTIONS};
+use crate::logic::movegen::available_player_actions;
 use crate::logic::{Cells, N_CELLS};
 use crate::piece::Piece;
 use crate::search::lookup::PIECE_SCORES;

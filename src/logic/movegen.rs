@@ -1,82 +1,19 @@
 //! Implements the move generator: returns the list of all available moves for a player at a given time.
 
-use std::array::IntoIter;
-use std::ops::{Index, IndexMut};
-
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
 use crate::piece::Piece;
 
-use super::actions::Action;
+use super::actions::{Action, PlayerActions};
 use super::index::{CellIndex, INDEX_NULL};
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 use super::{Cells, N_CELLS};
 
-/// Size of the array that stores player actions
-pub const MAX_PLAYER_ACTIONS: usize = 512;
 
-// TODO: make better debug that doesn't show the empty values
-#[derive(Debug)]
-pub struct PlayerActions {
-    pub data: [u64; MAX_PLAYER_ACTIONS],
-    pub current_index: usize,
-}
-
-impl PlayerActions {
-    pub fn new() -> Self {
-        PlayerActions {
-            data: [0u64; MAX_PLAYER_ACTIONS],
-            current_index: 0,
-        }
-    }
-
-    #[inline]
-    pub fn push(&mut self, value: u64) {
-        self.data[self.current_index] = value;
-        self.current_index += 1;
-    }
-
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.current_index
-    }
-}
-
-impl IntoIterator for PlayerActions {
-    type Item = u64;
-    type IntoIter = IntoIter<u64, 512>;
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.data.into_iter()
-    }
-}
-
-impl PartialEq for PlayerActions {
-    fn eq(&self, other: &Self) -> bool {
-        self.current_index == other.current_index && self.data == other.data
-    }
-}
-
-impl Index<usize> for PlayerActions {
-    type Output = u64;
-    #[inline]
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index]
-    }
-}
-
-impl IndexMut<usize> for PlayerActions {
-    #[inline]
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.data[index]
-    }
-}
 
 /// Returns the possible moves for a player.
 /// The result is a size `MAX_PLAYER_ACTIONS` array of u64 and the number of actions.
 #[inline(always)]
 pub fn available_player_actions(cells: &Cells, current_player: u8) -> PlayerActions {
-    let mut player_actions = PlayerActions::new();
+    let mut player_actions = PlayerActions::default();
 
     // Calculate possible player_actions
     for index in 0..N_CELLS {

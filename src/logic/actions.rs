@@ -13,6 +13,12 @@ use super::{
     Cells,
 };
 
+/// Size of the array that stores player actions
+pub const MAX_PLAYER_ACTIONS: usize = 512;
+
+/// An action is stored as a u64 value. See [`crate::logic::actions`] for the specific data format.
+pub type PlayerAction = u64;
+
 /// Mask to get the action without additional data
 pub const ACTION_MASK: u64 = 0x00FF_FFFF_u64;
 
@@ -138,5 +144,86 @@ impl Action for u64 {
     #[inline(always)]
     fn add_last_index(self, index_end: usize) -> Self {
         self | (index_end << (2 * INDEX_WIDTH)) as Self
+    }
+}
+
+
+/// This struct is a fixed-length array that stores player actions
+#[derive(Debug)]
+pub struct PlayerActions {
+    data: [PlayerAction; MAX_PLAYER_ACTIONS],
+    current_index: usize,
+}
+
+impl PlayerActions {
+    /// Store a new action
+    #[inline]
+    pub fn push(&mut self, value: u64) {
+        self.data[self.current_index] = value;
+        self.current_index += 1;
+    }
+
+    /// Return the number of stored actions
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.current_index
+    }
+
+    /// Returns whether the number of actions is zero
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+impl From<&[PlayerAction]> for PlayerActions {
+    fn from(value: &[PlayerAction]) -> Self {
+        let mut data = [0; MAX_PLAYER_ACTIONS];
+        let current_index = value.len();
+        assert!(current_index < MAX_PLAYER_ACTIONS);
+        data[..current_index].copy_from_slice(value);
+        PlayerActions {
+            data,
+            current_index,
+        }
+    }
+}
+
+impl Default for PlayerActions {
+    fn default() -> Self {
+        PlayerActions {
+            data: [0; MAX_PLAYER_ACTIONS],
+            current_index: 0,
+        }
+    }
+}
+
+impl IntoIterator for PlayerActions {
+    type Item = u64;
+    type IntoIter = std::array::IntoIter<u64, 512>;
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.into_iter()
+    }
+}
+
+impl PartialEq for PlayerActions {
+    fn eq(&self, other: &Self) -> bool {
+        self.current_index == other.current_index && self.data == other.data
+    }
+}
+
+impl std::ops::Index<usize> for PlayerActions {
+    type Output = u64;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.data[index]
+    }
+}
+
+impl std::ops::IndexMut<usize> for PlayerActions {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.data[index]
     }
 }
