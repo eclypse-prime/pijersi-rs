@@ -1,8 +1,6 @@
 use pijersi_rs::logic::{
     actions::Action,
-    movegen::{
-        available_piece_actions, available_player_actions, PlayerActions, MAX_PLAYER_ACTIONS,
-    },
+    movegen::{available_piece_actions, available_player_actions, PlayerActions},
 };
 
 use crate::TEST_CELLS;
