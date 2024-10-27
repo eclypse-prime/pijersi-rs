@@ -15,7 +15,7 @@
 use std::time::{Duration, Instant};
 
 use crate::errors::{ParseError, ParseErrorKind, RulesErrorKind, RuntimeError};
-use crate::logic::actions::{play_action, Action};
+use crate::logic::actions::{play_action, Action, ActionTrait};
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };
@@ -150,7 +150,7 @@ impl Board {
     }
 
     /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
-    fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(u64, u64, i64)> {
+    fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(Action, u64, i64)> {
         if let Some(opening_book) = opening_book {
             if let Some(&(action, score)) = opening_book.lookup(self) {
                 let depth = action.search_depth();
@@ -169,7 +169,7 @@ impl Board {
         &self,
         depth: u64,
         opening_book: Option<&OpeningBook>,
-    ) -> Option<(u64, i64)> {
+    ) -> Option<(Action, i64)> {
         if self.options.use_book {
             if let Some((action, book_depth, score)) = self.search_book(opening_book) {
                 // TODO: start searching from the book move's depth and use it to sort the search order
@@ -192,7 +192,7 @@ impl Board {
         &self,
         movetime: u64,
         opening_book: Option<&OpeningBook>,
-    ) -> Option<(u64, i64)> {
+    ) -> Option<(Action, i64)> {
         if self.options.use_book {
             if let Some((action, _depth, score)) = self.search_book(opening_book) {
                 // TODO: start searching from the book move's depth and use it to sort the search order
@@ -264,15 +264,15 @@ impl Board {
         }
     }
 
-    /// Plays the chosen action provided in string representation.z
+    /// Plays the chosen action provided in string representation.
     pub fn play_from_string(&mut self, action_string: &str) -> Result<(), RuntimeError> {
         let action = string_to_action(&self.cells, action_string)?;
         self.play(action)?;
         Ok(())
     }
 
-    /// Plays the chosen action provided in u64 representation.
-    pub fn play(&mut self, action: u64) -> Result<(), RulesErrorKind> {
+    /// Plays the chosen action provided in `Action` representation.
+    pub fn play(&mut self, action: Action) -> Result<(), RulesErrorKind> {
         if is_action_legal(&self.cells, self.current_player, action) {
             play_action(&mut self.cells, action);
             if self.current_player == 1 {

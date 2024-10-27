@@ -1,6 +1,6 @@
 use pijersi_rs::{
     logic::{
-        actions::Action,
+        actions::ActionTrait,
         translate::{
             action_to_string, cells_to_pretty_string, cells_to_string, char_to_piece,
             coords_to_index, index_to_coords, index_to_string, piece_to_char, player_to_string,

@@ -7,6 +7,7 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
+use crate::logic::actions::Action;
 use crate::logic::translate::action_to_string;
 use crate::logic::Cells;
 use crate::utils::{argsort, reverse_argsort};
@@ -38,7 +39,7 @@ pub fn search(
     depth: u64,
     end_time: Option<Instant>,
     scores: &Option<Vec<i64>>,
-) -> Option<(u64, i64, Vec<i64>)> {
+) -> Option<(Action, i64, Vec<i64>)> {
     if depth == 0 {
         return None;
     }
@@ -50,7 +51,8 @@ pub fn search(
     }
 
     // Get an array of all the available moves for the current player, the last element of the array is the number of available moves
-    let (available_actions, n_actions) = available_player_actions(cells, current_player);
+    let available_actions = available_player_actions(cells, current_player);
+    let n_actions = available_actions.len();
 
     let order = match scores {
         Some(scores) => argsort(scores, true),
@@ -183,8 +185,8 @@ pub fn search_iterative(
     max_depth: u64,
     end_time: Option<Instant>,
     verbose: bool,
-) -> Option<(u64, i64)> {
-    let mut best_result: Option<(u64, i64)> = None;
+) -> Option<(Action, i64)> {
+    let mut best_result: Option<(Action, i64)> = None;
     let mut last_scores: Option<Vec<i64>> = None;
     let start_time = Instant::now();
     for depth in 1..=max_depth {

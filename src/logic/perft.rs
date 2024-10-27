@@ -5,8 +5,8 @@ use rayon::prelude::*;
 use crate::piece::Piece;
 
 use super::{
-    actions::play_action,
-    index::Index,
+    actions::{play_action, Action},
+    index::{CellIndex, CellIndexTrait},
     movegen::available_player_actions,
     rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
     translate::action_to_string,
@@ -35,7 +35,7 @@ fn count_player_actions(cells: &Cells, current_player: u8) -> u64 {
 ///
 /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the moves.
 #[inline]
-fn count_piece_actions(cells: &Cells, index_start: usize) -> u64 {
+fn count_piece_actions(cells: &Cells, index_start: CellIndex) -> u64 {
     let mut piece_action_count: u64 = 0u64;
 
     let piece_start: u8 = cells[index_start];
@@ -149,13 +149,15 @@ pub fn perft(cells: &Cells, current_player: u8, depth: u64) -> u64 {
         0 => 1u64,
         1 | 2 => perft_iter(cells, current_player, depth),
         _ => {
-            let (available_actions, n_actions) = available_player_actions(cells, current_player);
+            let available_actions = available_player_actions(cells, current_player);
+            let n_actions = available_actions.len();
 
             available_actions
-                .par_iter()
+                .into_iter()
                 .take(n_actions)
-                .filter(|&&action| !is_action_win(cells, action))
-                .map(|&action| {
+                .par_bridge()
+                .filter(|&action| !is_action_win(cells, action))
+                .map(|action| {
                     let mut new_cells: Cells = *cells;
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
@@ -175,15 +177,16 @@ pub fn perft_iter(cells: &Cells, current_player: u8, depth: u64) -> u64 {
         0 => 1u64,
         1 => count_player_actions(cells, current_player),
         _ => {
-            let (available_actions, n_actions) = available_player_actions(cells, current_player);
+            let available_actions = available_player_actions(cells, current_player);
+            let n_actions = available_actions.len();
 
             let mut new_cells: Cells = CELLS_EMPTY;
 
             available_actions
-                .iter()
+                .into_iter()
                 .take(n_actions)
-                .filter(|&&action| !is_action_win(cells, action))
-                .map(|&action| {
+                .filter(|&action| !is_action_win(cells, action))
+                .map(|action| {
                     new_cells = *cells;
                     play_action(&mut new_cells, action);
                     perft_iter(&new_cells, 1 - current_player, depth - 1)
@@ -199,20 +202,22 @@ pub fn perft_iter(cells: &Cells, current_player: u8, depth: u64) -> u64 {
 ///
 /// Uses parallel search.
 ///
-/// Separates the node count between all possible depth 1 moves and returns a vector of (`action_string`: String, action: u64, count: u64).
+/// Separates the node count between all possible depth 1 moves and returns a vector of `(action_string: String, action: Action, count: u64)`.
 ///
 /// At depth 0, returns an empty vector.
-pub fn perft_split(cells: &Cells, current_player: u8, depth: u64) -> Vec<(String, u64, u64)> {
+pub fn perft_split(cells: &Cells, current_player: u8, depth: u64) -> Vec<(String, Action, u64)> {
     if depth == 0 {
         vec![]
     } else {
-        let (available_actions, n_actions) = available_player_actions(cells, current_player);
+        let available_actions = available_player_actions(cells, current_player);
+        let n_actions = available_actions.len();
 
         available_actions
-            .par_iter()
+            .into_iter()
             .take(n_actions)
-            .filter(|&&action| !is_action_win(cells, action))
-            .map(|&action| {
+            .par_bridge()
+            .filter(|&action| !is_action_win(cells, action))
+            .map(|action| {
                 let mut new_cells = *cells;
                 play_action(&mut new_cells, action);
                 (

@@ -2,7 +2,7 @@
 //!
 //! It contains the opening book data in the form of a `HashMap`.
 //! The keys are strings representing the Pijersi Standard Notation of the stored position.
-//! The values are the stored actions in the native triple-index format (u64) and the expected score at the pre-calculated search depth.
+//! The values are the stored actions in the native triple-index format (`Action`) and the expected score at the pre-calculated search depth.
 //!
 //! The stored actions contain search depth values (see [`crate::logic::actions`]).
 
@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     board::Board,
-    logic::{Cells, CELLS_EMPTY},
+    logic::{actions::Action, Cells, CELLS_EMPTY},
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
@@ -49,7 +49,7 @@ pub struct Response {
     /// The position that is used as a key
     pub position: Position,
     /// The pre-calculated response
-    pub action: u64,
+    pub action: Action,
     /// The predicted score of the response
     pub score: i64,
 }
@@ -57,7 +57,7 @@ const RESPONSE_SIZE: usize = 70;
 
 impl Response {
     /// Creates a new Response
-    pub fn new(position: Position, action: u64, score: i64) -> Self {
+    pub fn new(position: Position, action: Action, score: i64) -> Self {
         Self {
             position,
             action,
@@ -76,7 +76,7 @@ impl Response {
 #[derive(Debug)]
 /// The `OpeningBook` struct containing the opening book data.
 pub struct OpeningBook {
-    map: HashMap<Position, (u64, i64)>,
+    map: HashMap<Position, (Action, i64)>,
 }
 
 const OPENINGS_BYTES_COMPRESSED: &[u8] = include_bytes!("../../data/openings");
@@ -107,7 +107,7 @@ impl OpeningBook {
         assert!(RESPONSE_SIZE == serialized_size(&Response::empty()).unwrap() as usize);
         assert!(openings_bytes.len() % RESPONSE_SIZE == 0);
         let responses = decode_responses(&openings_bytes);
-        let map: HashMap<Position, (u64, i64)> = responses
+        let map: HashMap<Position, (Action, i64)> = responses
             .iter()
             .map(|&response| (response.position, (response.action, response.score)))
             .collect();
@@ -115,7 +115,7 @@ impl OpeningBook {
     }
 
     /// Looks for a stored move corresponding to the provided board state and returns it if it exists.
-    pub fn lookup(&self, board: &Board) -> Option<&(u64, i64)> {
+    pub fn lookup(&self, board: &Board) -> Option<&(Action, i64)> {
         self.map.get(&Position::new(board))
     }
 }
