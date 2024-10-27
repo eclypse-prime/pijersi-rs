@@ -6,7 +6,7 @@ use crate::{
     errors::{
         InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
     },
-    logic::actions::Action,
+    logic::actions::ActionTrait,
     piece::{
         Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, WHITE_PAPER,
         WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
@@ -14,7 +14,7 @@ use crate::{
 };
 
 use super::{
-    index::{CellIndex, INDEX_NULL},
+    index::{CellIndexTrait, INDEX_NULL},
     Cells, CELLS_EMPTY,
 };
 

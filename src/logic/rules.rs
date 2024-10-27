@@ -2,8 +2,8 @@
 use crate::piece::Piece;
 
 use super::{
-    actions::{Action, ACTION_MASK},
-    index::CellIndex,
+    actions::{ActionTrait, ACTION_MASK},
+    index::CellIndexTrait,
     movegen::available_player_actions,
     perft::perft_iter,
     Cells,

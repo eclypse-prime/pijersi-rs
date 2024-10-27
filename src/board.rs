@@ -15,7 +15,7 @@
 use std::time::{Duration, Instant};
 
 use crate::errors::{ParseError, ParseErrorKind, RulesErrorKind, RuntimeError};
-use crate::logic::actions::{play_action, Action};
+use crate::logic::actions::{play_action, ActionTrait};
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
 };

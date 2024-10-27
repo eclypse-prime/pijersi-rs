@@ -1,11 +1,11 @@
 use pijersi_rs::logic::{
-    actions::{Action, PlayerAction, PlayerActions},
+    actions::{Action, ActionTrait, Actions},
     movegen::{available_piece_actions, available_player_actions},
 };
 
 use crate::TEST_CELLS;
 
-const TEST_AVAILABLE_PLAYER_ACTIONS: &[PlayerAction] = &[
+const TEST_AVAILABLE_PLAYER_ACTIONS: &[Action] = &[
     1769248u64, 1253664, 1384736, 1712416, 1777952, 2105632, 2170912, 2107168, 2564128, 1769249,
     1834785, 1318945, 1712161, 2170913, 2105633, 1319457, 1450529, 1778209, 1843745, 2171425,
     2236705, 1779489, 2172705, 2564385, 1714209, 2172961, 2629921, 1834786, 1900322, 1253666,
@@ -27,9 +27,10 @@ const TEST_AVAILABLE_PLAYER_ACTIONS: &[PlayerAction] = &[
     2435883, 2894379, 2828843, 2763563, 2948907,
 ];
 
-const TEST_AVAILABLE_PIECE_ACTIONS: &[PlayerAction]= &[
-        1318951, 1712167, 2564135, 2107175, 1253671, 1384743, 1712423, 1777959, 2564391, 2172711,
-        2566183, 2631463];
+const TEST_AVAILABLE_PIECE_ACTIONS: &[Action] = &[
+    1318951, 1712167, 2564135, 2107175, 1253671, 1384743, 1712423, 1777959, 2564391, 2172711,
+    2566183, 2631463,
+];
 
 #[test]
 fn test_concatenate_action() {
@@ -45,13 +46,13 @@ fn test_half_action() {
 fn test_available_player_actions() {
     assert_eq!(
         available_player_actions(&TEST_CELLS, 0u8),
-        PlayerActions::from(TEST_AVAILABLE_PLAYER_ACTIONS)
+        Actions::from(TEST_AVAILABLE_PLAYER_ACTIONS)
     )
 }
 
 #[test]
 fn test_available_piece_actions() {
-    let mut player_actions: PlayerActions = PlayerActions::default();
+    let mut player_actions: Actions = Actions::default();
     available_piece_actions(&TEST_CELLS, 39, &mut player_actions);
-    assert_eq!(player_actions, PlayerActions::from(TEST_AVAILABLE_PIECE_ACTIONS));
+    assert_eq!(player_actions, Actions::from(TEST_AVAILABLE_PIECE_ACTIONS));
 }

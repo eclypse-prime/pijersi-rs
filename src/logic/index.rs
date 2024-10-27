@@ -2,6 +2,9 @@
 
 use super::lookup::{NEIGHBOURS1, NEIGHBOURS2};
 
+/// A cell index is represented as a usize.
+pub type CellIndex = usize;
+
 /// Bit width of a move index
 pub const INDEX_WIDTH: usize = 8;
 /// Value of a null index contained in a move
@@ -10,7 +13,7 @@ pub const INDEX_NULL: usize = 0xFFusize;
 pub const INDEX_MASK: u64 = 0xFFu64;
 
 /// Cell index trait for usize
-pub trait CellIndex: Copy {
+pub trait CellIndexTrait: Copy {
     /// Returns true if the index if a null index (0xFF)
     fn is_null(self) -> bool;
     /// Returns true if the index is in the first row on white's side
@@ -27,7 +30,7 @@ pub trait CellIndex: Copy {
         Self: 'static;
 }
 
-impl CellIndex for usize {
+impl CellIndexTrait for usize {
     #[inline(always)]
     fn is_null(self) -> bool {
         self == INDEX_NULL

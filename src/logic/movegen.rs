@@ -2,18 +2,16 @@
 
 use crate::piece::Piece;
 
-use super::actions::{Action, PlayerActions};
-use super::index::{CellIndex, INDEX_NULL};
+use super::actions::{ActionTrait, Actions};
+use super::index::{CellIndexTrait, INDEX_NULL};
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 use super::{Cells, N_CELLS};
-
-
 
 /// Returns the possible moves for a player.
 /// The result is a size `MAX_PLAYER_ACTIONS` array of u64 and the number of actions.
 #[inline(always)]
-pub fn available_player_actions(cells: &Cells, current_player: u8) -> PlayerActions {
-    let mut player_actions = PlayerActions::default();
+pub fn available_player_actions(cells: &Cells, current_player: u8) -> Actions {
+    let mut player_actions = Actions::default();
 
     // Calculate possible player_actions
     for index in 0..N_CELLS {
@@ -31,11 +29,7 @@ pub fn available_player_actions(cells: &Cells, current_player: u8) -> PlayerActi
 /// The result is stored in a size `MAX_PLAYER_ACTIONS`. The function returns the last used index.
 /// This array is passed in parameter and modified by this function.
 #[inline]
-pub fn available_piece_actions(
-    cells: &Cells,
-    index_start: usize,
-    player_actions: &mut PlayerActions,
-) {
+pub fn available_piece_actions(cells: &Cells, index_start: usize, player_actions: &mut Actions) {
     let piece_start: u8 = cells[index_start];
 
     // If the piece is not a stack

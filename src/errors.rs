@@ -4,7 +4,7 @@ use std::{fmt::Display, num::ParseIntError};
 
 use thiserror::Error;
 
-use crate::logic::actions::Action;
+use crate::logic::actions::ActionTrait;
 
 /// General Pijersi errors
 #[derive(Debug, Error)]

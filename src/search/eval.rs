@@ -7,8 +7,8 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
-use crate::logic::actions::{play_action, Action, PlayerActions};
-use crate::logic::index::CellIndex;
+use crate::logic::actions::{play_action, ActionTrait, Actions};
+use crate::logic::index::CellIndexTrait;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
 use crate::logic::{Cells, N_CELLS};
@@ -55,7 +55,7 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (i64, [i64; N_CELLS]) {
 pub fn sort_actions(
     cells: &Cells,
     current_player: u8,
-    available_actions: &mut PlayerActions,
+    available_actions: &mut Actions,
     n_actions: usize,
     start_from: usize,
 ) -> (usize, bool) {

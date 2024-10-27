@@ -9,7 +9,7 @@
 use crate::piece::Piece;
 
 use super::{
-    index::{CellIndex, INDEX_MASK, INDEX_WIDTH},
+    index::{CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
     Cells,
 };
 
@@ -17,7 +17,7 @@ use super::{
 pub const MAX_PLAYER_ACTIONS: usize = 512;
 
 /// An action is stored as a u64 value. See [`crate::logic::actions`] for the specific data format.
-pub type PlayerAction = u64;
+pub type Action = u64;
 
 /// Mask to get the action without additional data
 pub const ACTION_MASK: u64 = 0x00FF_FFFF_u64;
@@ -99,7 +99,7 @@ pub fn play_action(cells: &mut Cells, action: u64) {
 }
 
 /// Action trait for u64
-pub trait Action: Copy {
+pub trait ActionTrait: Copy {
     /// Converts an action to its indices
     fn to_indices(self) -> (usize, usize, usize);
     /// Converts a set of three indices to an action
@@ -112,7 +112,7 @@ pub trait Action: Copy {
     fn add_last_index(self, index_end: usize) -> Self;
 }
 
-impl Action for u64 {
+impl ActionTrait for u64 {
     // TODO: can we make this even more generic by implementing From and Into for Action and Indices?
     #[inline(always)]
     fn to_indices(self) -> (usize, usize, usize) {
@@ -147,15 +147,14 @@ impl Action for u64 {
     }
 }
 
-
 /// This struct is a fixed-length array that stores player actions
 #[derive(Debug)]
-pub struct PlayerActions {
-    data: [PlayerAction; MAX_PLAYER_ACTIONS],
+pub struct Actions {
+    data: [Action; MAX_PLAYER_ACTIONS],
     current_index: usize,
 }
 
-impl PlayerActions {
+impl Actions {
     /// Store a new action
     #[inline]
     pub fn push(&mut self, value: u64) {
@@ -176,29 +175,29 @@ impl PlayerActions {
     }
 }
 
-impl From<&[PlayerAction]> for PlayerActions {
-    fn from(value: &[PlayerAction]) -> Self {
+impl From<&[Action]> for Actions {
+    fn from(value: &[Action]) -> Self {
         let mut data = [0; MAX_PLAYER_ACTIONS];
         let current_index = value.len();
         assert!(current_index < MAX_PLAYER_ACTIONS);
         data[..current_index].copy_from_slice(value);
-        PlayerActions {
+        Actions {
             data,
             current_index,
         }
     }
 }
 
-impl Default for PlayerActions {
+impl Default for Actions {
     fn default() -> Self {
-        PlayerActions {
+        Actions {
             data: [0; MAX_PLAYER_ACTIONS],
             current_index: 0,
         }
     }
 }
 
-impl IntoIterator for PlayerActions {
+impl IntoIterator for Actions {
     type Item = u64;
     type IntoIter = std::array::IntoIter<u64, 512>;
     #[inline]
@@ -207,13 +206,13 @@ impl IntoIterator for PlayerActions {
     }
 }
 
-impl PartialEq for PlayerActions {
+impl PartialEq for Actions {
     fn eq(&self, other: &Self) -> bool {
         self.current_index == other.current_index && self.data == other.data
     }
 }
 
-impl std::ops::Index<usize> for PlayerActions {
+impl std::ops::Index<usize> for Actions {
     type Output = u64;
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
@@ -221,7 +220,7 @@ impl std::ops::Index<usize> for PlayerActions {
     }
 }
 
-impl std::ops::IndexMut<usize> for PlayerActions {
+impl std::ops::IndexMut<usize> for Actions {
     #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.data[index]
