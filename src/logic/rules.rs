@@ -6,6 +6,7 @@ use super::{
     index::Index,
     movegen::available_player_actions,
     perft::perft_iter,
+    Cells,
 };
 
 /// Returns whether an attacker piece can capture a target piece.
@@ -24,7 +25,7 @@ pub fn can_take(attacker: u8, target: u8) -> bool {
 
 /// Returns whether the chosen 1-range move is possible.
 #[inline]
-pub fn can_move1(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
+pub fn can_move1(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
 
     if !target_piece.is_empty() {
@@ -41,7 +42,7 @@ pub fn can_move1(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
 
 /// Returns whether the chosen 2-range move is possible.
 #[inline]
-pub fn can_move2(cells: &[u8; 45], moving_piece: u8, index_start: usize, index_end: usize) -> bool {
+pub fn can_move2(cells: &Cells, moving_piece: u8, index_start: usize, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
 
     // If there is a piece blocking the move (cell between the start and end positions)
@@ -62,7 +63,7 @@ pub fn can_move2(cells: &[u8; 45], moving_piece: u8, index_start: usize, index_e
 
 /// Returns whether the chosen stack action is possible.
 #[inline]
-pub fn can_stack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
+pub fn can_stack(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
 
     // If the end cell is not empty
@@ -84,7 +85,7 @@ pub fn can_stack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
 
 /// Returns whether the chosen unstack action is possible.
 #[inline]
-pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool {
+pub fn can_unstack(cells: &Cells, moving_piece: u8, index_end: usize) -> bool {
     let target_piece: u8 = cells[index_end];
 
     if !target_piece.is_empty() {
@@ -103,7 +104,7 @@ pub fn can_unstack(cells: &[u8; 45], moving_piece: u8, index_end: usize) -> bool
 ///
 /// To win, one allied piece (except wise) must reach the last row in the opposite side.
 #[inline]
-pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
+pub fn is_action_win(cells: &Cells, action: u64) -> bool {
     let (index_start, _index_mid, index_end) = action.to_indices();
 
     let moving_piece: u8 = cells[index_start];
@@ -118,7 +119,7 @@ pub fn is_action_win(cells: &[u8; 45], action: u64) -> bool {
 }
 
 /// Returns true if the given action is legal.
-pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> bool {
+pub fn is_action_legal(cells: &Cells, current_player: u8, action: u64) -> bool {
     let action = action & ACTION_MASK;
     let (available_actions, n_actions) = available_player_actions(cells, current_player);
     available_actions
@@ -128,7 +129,7 @@ pub fn is_action_legal(cells: &[u8; 45], current_player: u8, action: u64) -> boo
 }
 
 /// Returns true if the current position is winning for one of the players.
-pub fn is_position_win(cells: &[u8; 45]) -> bool {
+pub fn is_position_win(cells: &Cells) -> bool {
     for &piece in cells.iter().take(6) {
         if !piece.is_empty() && piece.is_white() && !piece.is_wise() {
             return true;
@@ -145,12 +146,12 @@ pub fn is_position_win(cells: &[u8; 45]) -> bool {
 /// Returns true if the current position is a stalemate for one of the players.
 ///
 /// This means one of the two players has no legal move left.
-pub fn is_position_stalemate(cells: &[u8; 45], current_player: u8) -> bool {
+pub fn is_position_stalemate(cells: &Cells, current_player: u8) -> bool {
     perft_iter(cells, current_player, 1) == 0
 }
 
 /// Returns the winning player if there is one.
-pub fn get_winning_player(cells: &[u8; 45]) -> Option<u8> {
+pub fn get_winning_player(cells: &Cells) -> Option<u8> {
     for &piece in cells.iter().take(6) {
         if !piece.is_empty() && piece.is_white() && !piece.is_wise() {
             return Some(0);

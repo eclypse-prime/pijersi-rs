@@ -13,7 +13,10 @@ use crate::{
     },
 };
 
-use super::index::{Index, INDEX_NULL};
+use super::{
+    index::{Index, INDEX_NULL},
+    Cells, CELLS_EMPTY,
+};
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
@@ -124,7 +127,7 @@ pub fn index_to_string(index: usize) -> String {
 }
 
 /// Converts a string (a1b1c1 style) move to the native triple-index format.
-pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, ParseError> {
+pub fn string_to_action(cells: &Cells, action_string: &str) -> Result<u64, ParseError> {
     let action_pattern = Regex::new(r"^(\w\d)(\w\d)?(\w\d)$").unwrap();
 
     let action_captures = action_pattern.captures(action_string).ok_or(ParseError {
@@ -156,7 +159,7 @@ pub fn string_to_action(cells: &[u8; 45], action_string: &str) -> Result<u64, Pa
 }
 
 /// Converts a native triple-index move into the string (a1b1c1 style) format.
-pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
+pub fn action_to_string(cells: &Cells, action: u64) -> String {
     let (index_start, index_mid, index_end) = action.to_indices();
 
     if index_start.is_null() {
@@ -182,11 +185,11 @@ pub fn action_to_string(cells: &[u8; 45], action: u64) -> String {
 }
 
 /// Reads a Pijersi Standard Notation string to apply its state to the cells.
-pub fn string_to_cells(cells_string: &str) -> Result<[u8; 45], ParseError> {
+pub fn string_to_cells(cells_string: &str) -> Result<Cells, ParseError> {
     let cell_lines: Vec<&str> = cells_string.split('/').collect();
     if cell_lines.len() == 7 {
         let mut cursor: usize = 0;
-        let mut new_cells: [u8; 45] = [0; 45];
+        let mut new_cells: Cells = CELLS_EMPTY;
         for &cell_line in &cell_lines {
             let mut j: usize = 0;
             while j < cell_line.chars().count() {
@@ -220,7 +223,7 @@ pub fn string_to_cells(cells_string: &str) -> Result<[u8; 45], ParseError> {
 }
 
 /// Converts the cells state to a Pijersi Standard Notation string.
-pub fn cells_to_string(cells: &[u8; 45]) -> String {
+pub fn cells_to_string(cells: &Cells) -> String {
     let mut cells_string = String::new();
     for i in 0..7usize {
         let n_columns: usize = if i % 2 == 0 { 6 } else { 7 };
@@ -254,7 +257,7 @@ pub fn cells_to_string(cells: &[u8; 45]) -> String {
 }
 
 /// Converts the cells to a pretty-formatted string.
-pub fn cells_to_pretty_string(cells: &[u8; 45]) -> String {
+pub fn cells_to_pretty_string(cells: &Cells) -> String {
     let mut cells_pretty_print: String = " ".to_owned();
     for (i, &piece) in cells.iter().enumerate() {
         let top_piece: u8 = piece.top();
