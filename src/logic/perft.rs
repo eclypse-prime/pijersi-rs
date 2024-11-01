@@ -16,6 +16,7 @@ use super::{
 /// Returns the number of possible actions for a player.
 ///
 /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the moves.
+#[inline(always)]
 fn count_player_actions(cells: &Cells, current_player: u8) -> u64 {
     let mut player_action_count: u64 = 0u64;
 
@@ -172,6 +173,7 @@ pub fn perft(cells: &Cells, current_player: u8, depth: u64) -> u64 {
 /// Recursively counts the number of leaf nodes at the chosen depth.
 ///
 /// At depth 0, returns 1.
+#[inline]
 pub fn perft_iter(cells: &Cells, current_player: u8, depth: u64) -> u64 {
     match depth {
         0 => 1u64,

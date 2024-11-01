@@ -32,7 +32,7 @@ pub trait CellIndexTrait: Copy {
 impl CellIndexTrait for usize {
     #[inline(always)]
     fn is_null(self) -> bool {
-        self == INDEX_NULL
+        self > 44
     }
 
     #[inline(always)]
