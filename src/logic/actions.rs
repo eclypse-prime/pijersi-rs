@@ -232,7 +232,7 @@ impl IndexMut<usize> for Actions {
     }
 }
 
-impl Index::<Range<usize>> for Actions {
+impl Index<Range<usize>> for Actions {
     type Output = [Action];
     #[inline]
     fn index(&self, index: Range<usize>) -> &Self::Output {
@@ -240,22 +240,21 @@ impl Index::<Range<usize>> for Actions {
     }
 }
 
-impl IndexMut::<Range<usize>> for Actions {
+impl IndexMut<Range<usize>> for Actions {
     #[inline]
     fn index_mut(&mut self, index: Range<usize>) -> &mut Self::Output {
         &mut self.data[index]
     }
 }
 
-
-impl Index::<RangeFull> for Actions {
+impl Index<RangeFull> for Actions {
     type Output = [Action];
     fn index(&self, index: RangeFull) -> &Self::Output {
         &self.data[index]
     }
 }
 
-impl IndexMut::<RangeFull> for Actions {
+impl IndexMut<RangeFull> for Actions {
     fn index_mut(&mut self, index: RangeFull) -> &mut Self::Output {
         &mut self.data[index]
     }

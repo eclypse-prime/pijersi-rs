@@ -53,12 +53,8 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (i64, [i64; N_CELLS]) {
 
 /// Sorts the available actions based on how good they are estimated to be (in descending order -> best actions first).
 #[inline]
-pub fn sort_actions(
-    cells: &Cells,
-    current_player: u8,
-    available_actions: &mut Actions,
-) -> bool {
-    let n_actions= available_actions.len();
+pub fn sort_actions(cells: &Cells, current_player: u8, available_actions: &mut Actions) -> bool {
+    let n_actions = available_actions.len();
     let mut index_sorted = 0;
     for i in 0..n_actions {
         let action = available_actions[i];
@@ -154,11 +150,7 @@ pub fn evaluate_action(
             increment_node_count(node_count);
         }
     } else {
-        let is_action_win = sort_actions(
-            &new_cells,
-            current_player,
-            &mut available_actions,
-        );
+        let is_action_win = sort_actions(&new_cells, current_player, &mut available_actions);
         if is_action_win {
             return MAX_SCORE;
         }
@@ -229,7 +221,9 @@ pub fn evaluate_action(
                                 -alpha_atomic.load(Relaxed),
                                 end_time,
                             );
-                            if alpha_atomic.load(Relaxed) < eval_null_window && eval_null_window < beta {
+                            if alpha_atomic.load(Relaxed) < eval_null_window
+                                && eval_null_window < beta
+                            {
                                 -evaluate_action(
                                     &new_cells,
                                     1 - current_player,
