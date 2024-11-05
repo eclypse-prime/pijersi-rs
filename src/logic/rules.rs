@@ -134,12 +134,12 @@ pub fn is_action_legal(cells: &Cells, current_player: u8, action: Action) -> boo
 
 /// Returns true if the current position is winning for one of the players.
 pub fn is_position_win(cells: &Cells) -> bool {
-    for &piece in cells.iter().take(6) {
+    for &piece in cells[0..6].iter() {
         if !piece.is_empty() && piece.is_white() && !piece.is_wise() {
             return true;
         }
     }
-    for &piece in cells.iter().skip(39).take(6) {
+    for &piece in cells[39..45].iter() {
         if !piece.is_empty() && piece.is_black() && !piece.is_wise() {
             return true;
         }
@@ -156,12 +156,12 @@ pub fn is_position_stalemate(cells: &Cells, current_player: u8) -> bool {
 
 /// Returns the winning player if there is one.
 pub fn get_winning_player(cells: &Cells) -> Option<u8> {
-    for &piece in cells.iter().take(6) {
+    for &piece in cells[0..6].iter() {
         if !piece.is_empty() && piece.is_white() && !piece.is_wise() {
             return Some(0);
         }
     }
-    for &piece in cells.iter().skip(39).take(6) {
+    for &piece in cells[39..45].iter() {
         if !piece.is_empty() && piece.is_black() && !piece.is_wise() {
             return Some(1);
         }

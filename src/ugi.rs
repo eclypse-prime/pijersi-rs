@@ -165,8 +165,10 @@ impl UgiEngine {
             GoArgs::Perft { depth } => {
                 let start_time = Instant::now();
                 let count = perft(&self.board.cells, self.board.current_player, depth);
-                let duration: f64 = start_time.elapsed().as_micros() as f64 / 1000f64;
-                println!("info perft depth {depth} result {count} time {duration}");
+                let duration = start_time.elapsed();
+                let nps = count as u128 * 1_000_000_000 / duration.as_nanos();
+                let duration_ms = duration.as_millis();
+                println!("info perft depth {depth} result {count} time {duration_ms} nps {nps}");
             }
         }
     }

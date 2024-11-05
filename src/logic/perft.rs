@@ -16,6 +16,7 @@ use super::{
 /// Returns the number of possible actions for a player.
 ///
 /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the moves.
+#[inline]
 fn count_player_actions(cells: &Cells, current_player: u8) -> u64 {
     let mut player_action_count: u64 = 0u64;
 
@@ -150,11 +151,9 @@ pub fn perft(cells: &Cells, current_player: u8, depth: u64) -> u64 {
         1 | 2 => perft_iter(cells, current_player, depth),
         _ => {
             let available_actions = available_player_actions(cells, current_player);
-            let n_actions = available_actions.len();
 
             available_actions
                 .into_iter()
-                .take(n_actions)
                 .par_bridge()
                 .filter(|&action| !is_action_win(cells, action))
                 .map(|action| {
@@ -172,19 +171,18 @@ pub fn perft(cells: &Cells, current_player: u8, depth: u64) -> u64 {
 /// Recursively counts the number of leaf nodes at the chosen depth.
 ///
 /// At depth 0, returns 1.
+#[inline]
 pub fn perft_iter(cells: &Cells, current_player: u8, depth: u64) -> u64 {
     match depth {
         0 => 1u64,
         1 => count_player_actions(cells, current_player),
         _ => {
             let available_actions = available_player_actions(cells, current_player);
-            let n_actions = available_actions.len();
 
             let mut new_cells: Cells = CELLS_EMPTY;
 
             available_actions
                 .into_iter()
-                .take(n_actions)
                 .filter(|&action| !is_action_win(cells, action))
                 .map(|action| {
                     new_cells = *cells;
@@ -210,11 +208,9 @@ pub fn perft_split(cells: &Cells, current_player: u8, depth: u64) -> Vec<(String
         vec![]
     } else {
         let available_actions = available_player_actions(cells, current_player);
-        let n_actions = available_actions.len();
 
         available_actions
             .into_iter()
-            .take(n_actions)
             .par_bridge()
             .filter(|&action| !is_action_win(cells, action))
             .map(|action| {

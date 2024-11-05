@@ -52,15 +52,11 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (i64, [i64; N_CELLS]) {
 }
 
 /// Sorts the available actions based on how good they are estimated to be (in descending order -> best actions first).
-pub fn sort_actions(
-    cells: &Cells,
-    current_player: u8,
-    available_actions: &mut Actions,
-    n_actions: usize,
-    start_from: usize,
-) -> (usize, bool) {
-    let mut index_sorted: usize = start_from;
-    for i in start_from..n_actions {
+#[inline]
+pub fn sort_actions(cells: &Cells, current_player: u8, available_actions: &mut Actions) -> bool {
+    let n_actions = available_actions.len();
+    let mut index_sorted = 0;
+    for i in 0..n_actions {
         let action = available_actions[i];
         let (index_start, index_mid, index_end) = action.to_indices();
         if !cells[index_start].is_wise()
@@ -69,7 +65,7 @@ pub fn sort_actions(
                 || ((current_player == 0 && !index_mid.is_null() && index_mid.is_black_home())
                     || (current_player == 1 && !index_mid.is_null() && index_mid.is_white_home())))
         {
-            return (index_sorted, true);
+            return true;
         }
         if (!index_mid.is_null()
             && !cells[index_mid].is_empty()
@@ -81,7 +77,7 @@ pub fn sort_actions(
             index_sorted += 1;
         }
     }
-    (index_sorted, false)
+    false
 }
 
 /// Evaluates the score of a given action by searching at a given depth.
@@ -119,17 +115,17 @@ pub fn evaluate_action(
     let mut available_actions = available_player_actions(&new_cells, current_player);
     let n_actions = available_actions.len();
 
-    let mut score = i64::MIN;
-
     if n_actions == 0 {
-        return score;
+        return i64::MIN;
     }
+
+    let mut score = i64::MIN;
 
     if depth == 1 {
         #[cfg(feature = "nps-count")]
         let mut node_count: u64 = 1;
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(&new_cells);
-        for action in available_actions.into_iter().take(n_actions) {
+        for action in available_actions.into_iter() {
             #[cfg(feature = "nps-count")]
             {
                 node_count += 1;
@@ -154,13 +150,7 @@ pub fn evaluate_action(
             increment_node_count(node_count);
         }
     } else {
-        let (_index_sorted, is_action_win) = sort_actions(
-            &new_cells,
-            current_player,
-            &mut available_actions,
-            n_actions,
-            0,
-        );
+        let is_action_win = sort_actions(&new_cells, current_player, &mut available_actions);
         if is_action_win {
             return MAX_SCORE;
         }
@@ -178,48 +168,83 @@ pub fn evaluate_action(
         if alpha > beta {
             return score;
         }
-        let alpha = AtomicI64::new(alpha);
-        let score_atomic = AtomicI64::new(score);
-        let cut = AtomicBool::new(false);
-        available_actions
-            .into_iter()
-            .take(n_actions)
-            .skip(1)
-            .par_bridge()
-            .for_each(|action| {
-                if !cut.load(Relaxed) {
-                    let eval = {
-                        let eval_null_window = -evaluate_action(
+        if depth == 2 {
+            for action in available_actions.into_iter().skip(1) {
+                let eval = {
+                    let eval_null_window = -evaluate_action(
+                        &new_cells,
+                        1 - current_player,
+                        action,
+                        depth - 1,
+                        -alpha - 1,
+                        -alpha,
+                        end_time,
+                    );
+                    if alpha < eval_null_window && eval_null_window < beta {
+                        -evaluate_action(
                             &new_cells,
                             1 - current_player,
                             action,
                             depth - 1,
-                            -alpha.load(Relaxed) - 1,
-                            -alpha.load(Relaxed),
+                            -beta,
+                            -alpha,
                             end_time,
-                        );
-                        if alpha.load(Relaxed) < eval_null_window && eval_null_window < beta {
-                            -evaluate_action(
+                        )
+                    } else {
+                        eval_null_window
+                    }
+                };
+                score = max(score, eval);
+                alpha = max(alpha, score);
+                if alpha > beta {
+                    break;
+                }
+            }
+        } else {
+            let alpha_atomic = AtomicI64::new(alpha);
+            let score_atomic = AtomicI64::new(score);
+            let cut_atomic = AtomicBool::new(false);
+            available_actions
+                .into_iter()
+                .skip(1)
+                .par_bridge()
+                .for_each(|action| {
+                    if !cut_atomic.load(Relaxed) {
+                        let eval = {
+                            let eval_null_window = -evaluate_action(
                                 &new_cells,
                                 1 - current_player,
                                 action,
                                 depth - 1,
-                                -beta,
-                                -alpha.load(Relaxed),
+                                -alpha_atomic.load(Relaxed) - 1,
+                                -alpha_atomic.load(Relaxed),
                                 end_time,
-                            )
-                        } else {
-                            eval_null_window
+                            );
+                            if alpha_atomic.load(Relaxed) < eval_null_window
+                                && eval_null_window < beta
+                            {
+                                -evaluate_action(
+                                    &new_cells,
+                                    1 - current_player,
+                                    action,
+                                    depth - 1,
+                                    -beta,
+                                    -alpha_atomic.load(Relaxed),
+                                    end_time,
+                                )
+                            } else {
+                                eval_null_window
+                            }
+                        };
+                        score_atomic.fetch_max(eval, Relaxed);
+                        alpha_atomic.fetch_max(eval, Relaxed);
+                        if alpha_atomic.load(Relaxed) > beta {
+                            cut_atomic.store(true, Relaxed);
                         }
-                    };
-                    score_atomic.fetch_max(eval, Relaxed);
-                    alpha.fetch_max(eval, Relaxed);
-                    if alpha.load(Relaxed) > beta {
-                        cut.store(true, Relaxed);
                     }
-                }
-            });
-        score = score_atomic.load(Relaxed);
+                });
+            score = score_atomic.load(Relaxed);
+        }
     }
     score
 }

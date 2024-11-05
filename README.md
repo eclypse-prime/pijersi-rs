@@ -40,14 +40,14 @@ The project is adapted from the C++ implementation: [GitHub](https://github.com/
 
 ### Perft results
 
-Ran on 32 threads Ryzen 9 7945HX.
+Ran on 32 threads Ryzen 9 7945HX. Times measured with the `criterion` crate up to depth 4, averaged over 5 runs for depth 5.
 
-| Depth | Leaf nodes         | Time (ms) |
+| Depth | Leaf nodes         | Time      |
 |-------|--------------------|-----------|
-| 0     | 1                  | ?         |
-| 1     | 186                | ?    |
-| 2     | 34,054             | ?     |
-| 3     | 6,410,472          | ?     |
-| 4     | 1,181,445,032      | ?   |
-| 5     | 220,561,140,835    | ?  |
-| 6     | 40,310,812,241,663 | ?  |
+| 0     | 1                  | N/A       |
+| 1     | 186                | 223.85 ns |
+| 2     | 34,054             | 46.062 µs |
+| 3     | 6,410,472          | 1.6864 ms |
+| 4     | 1,181,445,032      | 131.13 ms |
+| 5     | 220,561,140,835    | 24286 ms  |
+| 6     | 40,310,812,241,663 | 4594.2 s  |

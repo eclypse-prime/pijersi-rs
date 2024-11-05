@@ -6,6 +6,8 @@
 //! |-------|-------|------------------|-------------|--------------|-------------|
 //! | Width | 32    | 8                | 8           | 8            | 8           |
 
+use std::ops::{Index, IndexMut, Range, RangeFull};
+
 use crate::piece::Piece;
 
 use super::{
@@ -136,7 +138,10 @@ impl ActionTrait for Action {
 
     #[inline(always)]
     fn search_depth(self) -> u64 {
-        (self >> (3 * INDEX_WIDTH)) & 0xFF
+        #[allow(clippy::unnecessary_cast)]
+        {
+            ((self >> (3 * INDEX_WIDTH)) & 0xFF) as u64
+        }
     }
 
     /// Concatenate a half action and the last index into a `Action`.
@@ -199,10 +204,10 @@ impl Default for Actions {
 
 impl IntoIterator for Actions {
     type Item = Action;
-    type IntoIter = std::array::IntoIter<Action, MAX_PLAYER_ACTIONS>;
+    type IntoIter = std::iter::Take<std::array::IntoIter<Action, MAX_PLAYER_ACTIONS>>;
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.data.into_iter()
+        self.data.into_iter().take(self.current_index)
     }
 }
 
@@ -212,7 +217,7 @@ impl PartialEq for Actions {
     }
 }
 
-impl std::ops::Index<usize> for Actions {
+impl Index<usize> for Actions {
     type Output = Action;
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
@@ -220,9 +225,39 @@ impl std::ops::Index<usize> for Actions {
     }
 }
 
-impl std::ops::IndexMut<usize> for Actions {
+impl IndexMut<usize> for Actions {
     #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.data[index]
+    }
+}
+
+impl Index<Range<usize>> for Actions {
+    type Output = [Action];
+    #[inline]
+    fn index(&self, index: Range<usize>) -> &Self::Output {
+        &self.data[index]
+    }
+}
+
+impl IndexMut<Range<usize>> for Actions {
+    #[inline]
+    fn index_mut(&mut self, index: Range<usize>) -> &mut Self::Output {
+        &mut self.data[index]
+    }
+}
+
+impl Index<RangeFull> for Actions {
+    type Output = [Action];
+    #[inline]
+    fn index(&self, index: RangeFull) -> &Self::Output {
+        &self.data[index]
+    }
+}
+
+impl IndexMut<RangeFull> for Actions {
+    #[inline]
+    fn index_mut(&mut self, index: RangeFull) -> &mut Self::Output {
         &mut self.data[index]
     }
 }

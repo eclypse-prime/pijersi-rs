@@ -211,8 +211,8 @@ pub fn search_iterative(
                         print!(
                             " nodes {} nps {}",
                             TOTAL_NODE_COUNT.load(Relaxed),
-                            TOTAL_NODE_COUNT.load(Relaxed) as u128 * 1_000_000
-                                / duration.as_micros()
+                            TOTAL_NODE_COUNT.load(Relaxed) as u128 * 1_000_000_000
+                                / duration.as_nanos()
                         );
                     }
                     println!();
