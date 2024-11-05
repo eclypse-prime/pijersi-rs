@@ -125,7 +125,7 @@ pub fn evaluate_action(
         #[cfg(feature = "nps-count")]
         let mut node_count: u64 = 1;
         let (previous_score, previous_piece_scores) = evaluate_position_with_details(&new_cells);
-        for action in available_actions.into_iter().take(n_actions) {
+        for action in available_actions.into_iter() {
             #[cfg(feature = "nps-count")]
             {
                 node_count += 1;
@@ -169,7 +169,7 @@ pub fn evaluate_action(
             return score;
         }
         if depth == 2 {
-            for action in available_actions.into_iter().take(n_actions).skip(1) {
+            for action in available_actions.into_iter().skip(1) {
                 let eval = {
                     let eval_null_window = -evaluate_action(
                         &new_cells,
@@ -206,7 +206,6 @@ pub fn evaluate_action(
             let cut_atomic = AtomicBool::new(false);
             available_actions
                 .into_iter()
-                .take(n_actions)
                 .skip(1)
                 .par_bridge()
                 .for_each(|action| {

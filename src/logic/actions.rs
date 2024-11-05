@@ -204,10 +204,10 @@ impl Default for Actions {
 
 impl IntoIterator for Actions {
     type Item = Action;
-    type IntoIter = std::array::IntoIter<Action, MAX_PLAYER_ACTIONS>;
+    type IntoIter = std::iter::Take<std::array::IntoIter<Action, MAX_PLAYER_ACTIONS>>;
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.data.into_iter()
+        self.data.into_iter().take(self.current_index)
     }
 }
 
@@ -249,12 +249,14 @@ impl IndexMut<Range<usize>> for Actions {
 
 impl Index<RangeFull> for Actions {
     type Output = [Action];
+    #[inline]
     fn index(&self, index: RangeFull) -> &Self::Output {
         &self.data[index]
     }
 }
 
 impl IndexMut<RangeFull> for Actions {
+    #[inline]
     fn index_mut(&mut self, index: RangeFull) -> &mut Self::Output {
         &mut self.data[index]
     }
