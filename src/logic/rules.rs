@@ -5,7 +5,7 @@ use super::{
     actions::{Action, ActionTrait, ACTION_MASK},
     index::{CellIndex, CellIndexTrait},
     movegen::available_player_actions,
-    perft::perft_iter,
+    perft::count_player_actions,
     Cells,
 };
 
@@ -151,7 +151,7 @@ pub fn is_position_win(cells: &Cells) -> bool {
 ///
 /// This means one of the two players has no legal move left.
 pub fn is_position_stalemate(cells: &Cells, current_player: u8) -> bool {
-    perft_iter(cells, current_player, 1) == 0
+    count_player_actions(cells, current_player, 1) == 0
 }
 
 /// Returns the winning player if there is one.
