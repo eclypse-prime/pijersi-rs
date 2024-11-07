@@ -6,11 +6,11 @@ use super::index::CellIndex;
 
 /// An array associating a cell index to the indices of its 1-range neighbours.
 ///
-/// The array is composed of 45 segments of length 7.
+/// The array is composed of 45 slices of length up to 6.
 ///
 /// The first element of each segment is the number of neighbours of the corresponding cell.
 ///
-/// The rest of the elements are the indices of the neighbouring cells. Unused values are set to `CellIndex::MAX`.
+/// The elements are the indices of the neighbouring cells.
 pub const NEIGHBOURS1: [&[CellIndex]; 45] = [
     &[1, 6, 7],
     &[0, 2, 7, 8],
@@ -60,11 +60,9 @@ pub const NEIGHBOURS1: [&[CellIndex]; 45] = [
 ];
 /// An array associating a cell index to the indices of its 2-range neighbours.
 ///
-/// The array is composed of 45 segments of length 7.
+/// The array is composed of 45 slices of length up to 6.
 ///
-/// The first element of each segment is the number of neighbours of the corresponding cell.
-///
-/// The rest of the elements are the indices of the neighbouring cells. Unused values are set to `CellIndex::MAX`.
+/// The elements are the indices of the neighbouring cells.
 pub const NEIGHBOURS2: [&[CellIndex]; 45] = [
     &[2, 14],
     &[3, 13, 15],
