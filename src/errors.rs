@@ -5,9 +5,9 @@ use std::{fmt::Display, num::ParseIntError};
 use thiserror::Error;
 
 use crate::logic::{
-        actions::{Action, ActionTrait},
-        Player,
-    };
+    actions::{Action, ActionTrait},
+    Player,
+};
 
 /// General Pijersi errors
 #[derive(Debug, Error)]
