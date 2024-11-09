@@ -4,7 +4,10 @@ use std::{fmt::Display, num::ParseIntError};
 
 use thiserror::Error;
 
-use crate::logic::actions::{Action, ActionTrait};
+use crate::logic::{
+    actions::{Action, ActionTrait},
+    Player,
+};
 
 /// General Pijersi errors
 #[derive(Debug, Error)]
@@ -96,7 +99,7 @@ pub enum InvalidPlayerKind {
     StrToPlayer(String),
     /// Player to string
     #[error("Got {0}, expected 0 or 1.")]
-    PlayerToStr(u8),
+    PlayerToStr(Player),
 }
 
 impl Display for InvalidCoordinatesKind {

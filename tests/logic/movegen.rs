@@ -45,7 +45,7 @@ fn test_half_action() {
 #[test]
 fn test_available_player_actions() {
     assert_eq!(
-        available_player_actions(&TEST_CELLS, 0u8),
+        available_player_actions(&TEST_CELLS, 0),
         Actions::from(TEST_AVAILABLE_PLAYER_ACTIONS)
     )
 }

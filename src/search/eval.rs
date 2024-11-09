@@ -11,8 +11,8 @@ use crate::logic::actions::{play_action, Action, ActionTrait, Actions};
 use crate::logic::index::{CellIndex, CellIndexTrait};
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
-use crate::logic::{Cells, N_CELLS};
-use crate::piece::Piece;
+use crate::logic::{Cells, Player, N_CELLS};
+use crate::piece::{Piece, PieceTrait};
 use crate::search::lookup::PIECE_SCORES;
 
 #[cfg(feature = "nps-count")]
@@ -25,7 +25,7 @@ pub const MAX_SCORE: i64 = 524_288;
 ///
 /// Uses lookup tables for faster computations.
 #[inline]
-pub const fn evaluate_cell(piece: u8, index: CellIndex) -> i64 {
+pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> i64 {
     PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * N_CELLS + index]
 }
 
@@ -53,7 +53,11 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (i64, [i64; N_CELLS]) {
 
 /// Sorts the available actions based on how good they are estimated to be (in descending order -> best actions first).
 #[inline]
-pub fn sort_actions(cells: &Cells, current_player: u8, available_actions: &mut Actions) -> bool {
+pub fn sort_actions(
+    cells: &Cells,
+    current_player: Player,
+    available_actions: &mut Actions,
+) -> bool {
     let n_actions = available_actions.len();
     let mut index_sorted = 0;
     for i in 0..n_actions {
@@ -85,7 +89,7 @@ pub fn sort_actions(cells: &Cells, current_player: u8, available_actions: &mut A
 /// Recursively calculates the best score using the alphabeta search to the chosen depth.
 pub fn evaluate_action(
     cells: &Cells,
-    current_player: u8,
+    current_player: Player,
     action: Action,
     depth: u64,
     alpha: i64,
@@ -255,7 +259,7 @@ pub fn evaluate_action(
 /// Efficient method that only calculates the scores of the cells that would change and compares it to the current score.
 pub fn evaluate_action_terminal(
     cells: &Cells,
-    current_player: u8,
+    current_player: Player,
     action: Action,
     previous_score: i64,
     previous_piece_scores: &[i64; N_CELLS],
@@ -279,9 +283,9 @@ pub fn evaluate_action_terminal(
         current_score -= previous_piece_scores[index_end];
         current_score += evaluate_cell(cells[index_start], index_end);
     } else {
-        let mut start_piece: u8 = cells[index_start];
-        let mut mid_piece: u8 = cells[index_mid];
-        let mut end_piece: u8 = cells[index_end];
+        let mut start_piece: Piece = cells[index_start];
+        let mut mid_piece: Piece = cells[index_mid];
+        let mut end_piece: Piece = cells[index_end];
         // The piece at the mid coordinates is an ally : stack and action
         if !mid_piece.is_empty()
             && mid_piece.colour() == start_piece.colour()

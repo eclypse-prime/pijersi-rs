@@ -1,6 +1,6 @@
 //! This module contains the Board struct and methods to represent a Pijersi board and play games.
 //!
-//! A board is represented as a [u8; 45] array.
+//! A board is represented as a `[Piece; 45]` array.
 //!
 //! Its cells are indexed as such:
 //! ```not_rust
@@ -23,9 +23,9 @@ use crate::logic::translate::{
     action_to_string, cells_to_pretty_string, cells_to_string, player_to_string, string_to_action,
     string_to_cells, string_to_player,
 };
-use crate::logic::{Cells, CELLS_EMPTY, MAX_HALF_MOVES};
+use crate::logic::{Cells, Player, CELLS_EMPTY, MAX_HALF_MOVES};
 use crate::piece::{
-    Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
+    PieceTrait, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, WHITE_PAPER, WHITE_ROCK,
     WHITE_SCISSORS, WHITE_WISE,
 };
 use crate::search::alphabeta::search_iterative;
@@ -74,10 +74,10 @@ impl BoardOptions {
 pub struct Board {
     /// The board options
     pub options: BoardOptions,
-    /// The current cells storing the piece data as u8 (see [`crate::piece`])
+    /// The current cells storing the piece data as `Piece` (see [`crate::piece`])
     pub cells: Cells,
     /// The current player: 0 if white, 1 if black
-    pub current_player: u8,
+    pub current_player: Player,
     half_moves: u64,
     full_moves: u64,
     last_piece_count: u64,
@@ -95,7 +95,7 @@ impl Board {
         Self {
             options: BoardOptions::new(),
             cells: CELLS_EMPTY,
-            current_player: 0u8,
+            current_player: 0,
             half_moves: 0u64,
             full_moves: 0u64,
             last_piece_count: 0u64,
@@ -209,7 +209,7 @@ impl Board {
     }
 
     /// Get the current board state.
-    pub fn get_state(&self) -> (Cells, u8, u64, u64) {
+    pub fn get_state(&self) -> (Cells, Player, u64, u64) {
         (
             self.cells,
             self.current_player,
@@ -219,7 +219,7 @@ impl Board {
     }
 
     /// Sets the board state.
-    pub fn set_state(&mut self, cells: &Cells, player: u8, half_moves: u64, full_moves: u64) {
+    pub fn set_state(&mut self, cells: &Cells, player: Player, half_moves: u64, full_moves: u64) {
         self.cells = *cells;
         self.current_player = player;
         self.half_moves = half_moves;
@@ -314,7 +314,7 @@ impl Board {
     }
 
     /// Returns the winner of the game if there is one.
-    pub fn get_winner(&self) -> Option<u8> {
+    pub fn get_winner(&self) -> Option<Player> {
         get_winning_player(&self.cells)
     }
 }

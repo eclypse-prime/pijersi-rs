@@ -9,7 +9,7 @@ use rayon::prelude::*;
 
 use crate::logic::actions::Action;
 use crate::logic::translate::action_to_string;
-use crate::logic::Cells;
+use crate::logic::{Cells, Player};
 use crate::utils::{argsort, reverse_argsort};
 
 use super::super::logic::movegen::available_player_actions;
@@ -35,7 +35,7 @@ pub unsafe fn increment_node_count(node_count: u64) {
 /// Returns the best move at a given depth
 pub fn search(
     cells: &Cells,
-    current_player: u8,
+    current_player: Player,
     depth: u64,
     end_time: Option<Instant>,
     scores: &Option<Vec<i64>>,
@@ -181,7 +181,7 @@ pub fn search(
 /// The results at lower depths are used to sort the search order at higher depths.
 pub fn search_iterative(
     cells: &Cells,
-    current_player: u8,
+    current_player: Player,
     max_depth: u64,
     end_time: Option<Instant>,
     verbose: bool,

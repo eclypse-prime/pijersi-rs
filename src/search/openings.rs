@@ -14,21 +14,21 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     board::Board,
-    logic::{actions::Action, Cells, CELLS_EMPTY},
+    logic::{actions::Action, Cells, Player, CELLS_EMPTY},
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
 /// Represents a board's cells and current player. They are used to index the opening book.
 pub struct Position {
     #[serde(with = "serde_bytes")]
-    /// The current cells storing the piece data as u8 (see [`crate::piece`])
+    /// The current cells storing the piece data as `Piece` (see [`crate::piece`])
     pub cells: Cells,
     /// The current player: 0 if white, 1 if black
-    pub current_player: u8,
+    pub current_player: Player,
 }
 
 impl Position {
-    /// Creates a new Position from a board. Copies its cells and current player.
+    /// Creates a new `Position` from a board. Copies its cells and current player.
     pub fn new(board: &Board) -> Self {
         Self {
             cells: board.cells,

@@ -8,7 +8,7 @@
 
 use std::ops::{Index, IndexMut, Range, RangeFull};
 
-use crate::piece::Piece;
+use crate::piece::{Piece, PieceTrait};
 
 use super::{
     index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
@@ -37,8 +37,8 @@ fn do_move(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
 
 /// Applies a stack between chosen coordinates.
 fn do_stack(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
-    let piece_start: u8 = cells[index_start];
-    let piece_end: u8 = cells[index_end];
+    let piece_start: Piece = cells[index_start];
+    let piece_end: Piece = cells[index_end];
 
     // If the moving piece is already on top of a stack, leave the bottom piece in the starting cell
     cells[index_start] = piece_start.bottom();
@@ -49,7 +49,7 @@ fn do_stack(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
 
 /// Applies an unstack between chosen coordinates.
 fn do_unstack(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
-    let piece_start: u8 = cells[index_start];
+    let piece_start: Piece = cells[index_start];
 
     // Leave the bottom piece in the starting cell
     cells[index_start] = piece_start.bottom();
@@ -68,7 +68,7 @@ pub fn play_action(cells: &mut Cells, action: Action) {
         return;
     }
 
-    let piece_start: u8 = cells[index_start];
+    let piece_start: Piece = cells[index_start];
 
     if !piece_start.is_empty() {
         // If there is no intermediate move
@@ -76,8 +76,8 @@ pub fn play_action(cells: &mut Cells, action: Action) {
             // Simple move
             do_move(cells, index_start, index_end);
         } else {
-            let piece_mid: u8 = cells[index_mid];
-            let piece_end: u8 = cells[index_end];
+            let piece_mid: Piece = cells[index_mid];
+            let piece_end: Piece = cells[index_end];
             // The piece at the mid coordinates is an ally : stack and move
             if !piece_mid.is_empty()
                 && piece_mid.colour() == piece_start.colour()

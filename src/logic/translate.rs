@@ -8,21 +8,21 @@ use crate::{
     },
     logic::actions::ActionTrait,
     piece::{
-        Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, WHITE_PAPER,
-        WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
+        Piece, PieceTrait, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY,
+        WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
     },
 };
 
 use super::{
     actions::Action,
     index::{CellIndex, CellIndexTrait, INDEX_NULL},
-    Cells, CELLS_EMPTY,
+    Cells, Player, CELLS_EMPTY,
 };
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
 
 /// Converts a character to its corresponding piece (if it exists).
-pub const fn char_to_piece(piece_char: char) -> Option<u8> {
+pub const fn char_to_piece(piece_char: char) -> Option<Piece> {
     match piece_char {
         '-' => Some(CELL_EMPTY),
         'S' => Some(WHITE_SCISSORS),
@@ -38,7 +38,7 @@ pub const fn char_to_piece(piece_char: char) -> Option<u8> {
 }
 
 /// Converts a piece to its corresponding character (if it exists).
-pub const fn piece_to_char(piece: u8) -> Option<char> {
+pub const fn piece_to_char(piece: Piece) -> Option<char> {
     match piece {
         CELL_EMPTY => Some('-'),
         WHITE_SCISSORS => Some('S'),
@@ -261,8 +261,8 @@ pub fn cells_to_string(cells: &Cells) -> String {
 pub fn cells_to_pretty_string(cells: &Cells) -> String {
     let mut cells_pretty_print: String = " ".to_owned();
     for (i, &piece) in cells.iter().enumerate() {
-        let top_piece: u8 = piece.top();
-        let bottom_piece: u8 = piece.bottom();
+        let top_piece: Piece = piece.top();
+        let bottom_piece: Piece = piece.bottom();
         let char1: char = match top_piece {
             0b0000 => '.',
             0b0001 => 'S',
@@ -303,11 +303,11 @@ pub fn cells_to_pretty_string(cells: &Cells) -> String {
     cells_pretty_print
 }
 
-/// Parses the player argument: `"w"` -> `Ok(0u8)`, `"b"` -> `Ok(1u8)`
-pub fn string_to_player(player: &str) -> Result<u8, ParseError> {
+/// Parses the player argument: `"w"` -> `Ok(0)`, `"b"` -> `Ok(1)`
+pub fn string_to_player(player: &str) -> Result<Player, ParseError> {
     match player {
-        "w" => Ok(0u8),
-        "b" => Ok(1u8),
+        "w" => Ok(0),
+        "b" => Ok(1),
         _ => Err(ParseError {
             kind: ParseErrorKind::InvalidPlayer(InvalidPlayerKind::StrToPlayer(player.to_owned())),
             value: player.to_owned(),
@@ -316,10 +316,10 @@ pub fn string_to_player(player: &str) -> Result<u8, ParseError> {
 }
 
 /// Converts the current player to its Pijersi Standard Notation form: `0` -> `Ok("w".to_owned())`, `1` -> `Ok("b".to_owned())`
-pub fn player_to_string(current_player: u8) -> Result<String, ParseError> {
+pub fn player_to_string(current_player: Player) -> Result<String, ParseError> {
     match current_player {
-        0u8 => Ok("w".to_owned()),
-        1u8 => Ok("b".to_owned()),
+        0 => Ok("w".to_owned()),
+        1 => Ok("b".to_owned()),
         _ => Err(ParseError {
             kind: ParseErrorKind::InvalidPlayer(InvalidPlayerKind::PlayerToStr(current_player)),
             value: current_player.to_string(),
