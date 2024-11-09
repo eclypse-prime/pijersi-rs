@@ -174,7 +174,12 @@ pub fn evaluate_action(
                 if let Some(transposition_table) = transposition_table {
                     let new_cells_hash = new_cells.hash();
                     let mut transposition_table = transposition_table.lock().unwrap();
-                    transposition_table.insert(new_cells_hash, MAX_SCORE as i32, depth, current_player);
+                    transposition_table.insert(
+                        new_cells_hash,
+                        MAX_SCORE as i32,
+                        depth,
+                        current_player,
+                    );
                 }
             }
             return MAX_SCORE;
