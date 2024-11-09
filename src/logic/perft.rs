@@ -2,7 +2,7 @@
 
 use rayon::prelude::*;
 
-use crate::piece::Piece;
+use crate::piece::{Piece, PieceTrait};
 
 use super::{
     actions::{play_action, Action, ActionTrait},
@@ -10,14 +10,14 @@ use super::{
     movegen::available_player_actions,
     rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
     translate::action_to_string,
-    Cells,
+    Cells, Player,
 };
 
 /// Returns the number of possible actions for a player at a given position.
 ///
 /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the actions.
 #[inline(always)]
-fn count_player_actions_terminal(cells: &Cells, current_player: u8) -> u64 {
+fn count_player_actions_terminal(cells: &Cells, current_player: Player) -> u64 {
     cells
         .iter()
         .enumerate()
@@ -33,7 +33,7 @@ fn count_player_actions_terminal(cells: &Cells, current_player: u8) -> u64 {
 fn count_piece_actions_terminal(cells: &Cells, index_start: CellIndex) -> u64 {
     let mut piece_action_count: u64 = 0u64;
 
-    let piece_start: u8 = cells[index_start];
+    let piece_start: Piece = cells[index_start];
 
     // If the piece is not a stack
     if piece_start.is_stack() {
@@ -139,7 +139,7 @@ fn count_piece_actions_terminal(cells: &Cells, index_start: CellIndex) -> u64 {
 /// Uses parallel search.
 ///
 /// At depth 0, returns 1.
-pub fn perft(cells: &Cells, current_player: u8, depth: u64) -> u64 {
+pub fn perft(cells: &Cells, current_player: Player, depth: u64) -> u64 {
     match depth {
         0 => 1u64,
         1 | 2 => count_player_actions(cells, current_player, depth),
@@ -162,7 +162,7 @@ pub fn perft(cells: &Cells, current_player: u8, depth: u64) -> u64 {
 
 /// Returns the number of leaf nodes (possible actions) for a player at a given depth and position after an action.
 #[inline]
-fn count_after_action(cells: &Cells, action: Action, current_player: u8, depth: u64) -> u64 {
+fn count_after_action(cells: &Cells, action: Action, current_player: Player, depth: u64) -> u64 {
     if is_action_win(cells, action) {
         0
     } else {
@@ -178,7 +178,7 @@ fn count_after_action(cells: &Cells, action: Action, current_player: u8, depth: 
 ///
 /// At depth 0, returns 1.
 #[inline(always)]
-pub fn count_player_actions(cells: &Cells, current_player: u8, depth: u64) -> u64 {
+pub fn count_player_actions(cells: &Cells, current_player: Player, depth: u64) -> u64 {
     match depth {
         0 => 1u64,
         1 => count_player_actions_terminal(cells, current_player),
@@ -198,12 +198,12 @@ pub fn count_player_actions(cells: &Cells, current_player: u8, depth: u64) -> u6
 fn count_piece_actions(
     cells: &Cells,
     index_start: CellIndex,
-    current_player: u8,
+    current_player: Player,
     depth: u64,
 ) -> u64 {
     let mut piece_action_count: u64 = 0u64;
 
-    let piece_start: u8 = cells[index_start];
+    let piece_start: Piece = cells[index_start];
 
     // If the piece is not a stack
     if piece_start.is_stack() {
@@ -379,7 +379,11 @@ fn count_piece_actions(
 /// Separates the node count between all possible depth 1 actions and returns a vector of `(action_string: String, action: Action, count: u64)`.
 ///
 /// At depth 0, returns an empty vector.
-pub fn perft_split(cells: &Cells, current_player: u8, depth: u64) -> Vec<(String, Action, u64)> {
+pub fn perft_split(
+    cells: &Cells,
+    current_player: Player,
+    depth: u64,
+) -> Vec<(String, Action, u64)> {
     if depth == 0 {
         vec![]
     } else {

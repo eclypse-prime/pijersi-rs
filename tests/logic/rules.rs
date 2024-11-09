@@ -177,8 +177,8 @@ fn test_is_position_stalemate() {
 fn test_get_winning_player() {
     let test_array = [
         (TEST_CELLS2, None),
-        (TEST_CELLS_WHITE_WIN, Some(0u8)),
-        (TEST_CELLS_BLACK_WIN, Some(0u8)),
+        (TEST_CELLS_WHITE_WIN, Some(0)),
+        (TEST_CELLS_BLACK_WIN, Some(0)),
     ];
 
     for (input, output) in test_array {

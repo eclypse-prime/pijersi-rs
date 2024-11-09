@@ -9,36 +9,39 @@
 //! C is 1 bit representing the color
 //! P is 1 bit set to 1 as long as there is a piece
 
+/// A piece is represented as a u8.
+pub type Piece = u8;
+
 /// Bit width of a half piece
 pub const HALF_PIECE_WIDTH: usize = 4;
 
 /// Mandaory bit on pieces
-pub const PIECE_BIT: u8 = 0b0001u8;
+pub const PIECE_BIT: Piece = 0b0001;
 /// Mask to get the piece colour
-pub const COLOUR_MASK: u8 = 0b0010u8;
+pub const COLOUR_MASK: Piece = 0b0010;
 /// Mask to get the piece type
-pub const TYPE_MASK: u8 = 0b1100u8;
+pub const TYPE_MASK: Piece = 0b1100;
 /// Mask to get the top piece
-pub const TOP_MASK: u8 = 0b1111u8;
+pub const TOP_MASK: Piece = 0b1111;
 
 /// Empty cell value
-pub const CELL_EMPTY: u8 = 0x00u8;
+pub const CELL_EMPTY: Piece = 0x00;
 /// Cell value above which the cell contained inside is a stack
-const STACK_THRESHOLD: u8 = 16u8;
+const STACK_THRESHOLD: Piece = 16;
 
 /// White piece after applying the colour mask
-pub const COLOUR_WHITE: u8 = 0b0000u8;
+pub const COLOUR_WHITE: Piece = 0b0000;
 /// Black piece after applying the colour mask
-pub const COLOUR_BLACK: u8 = 0b0010u8;
+pub const COLOUR_BLACK: Piece = 0b0010;
 
 /// Scissors piece after applying the type mask
-pub const TYPE_SCISSORS: u8 = 0b0000u8;
+pub const TYPE_SCISSORS: Piece = 0b0000;
 /// Paper piece after applying the type mask
-pub const TYPE_PAPER: u8 = 0b0100u8;
+pub const TYPE_PAPER: Piece = 0b0100;
 /// Rock piece after applying the type mask
-pub const TYPE_ROCK: u8 = 0b1000u8;
+pub const TYPE_ROCK: Piece = 0b1000;
 /// Wise piece after applying the type mask
-pub const TYPE_WISE: u8 = 0b1100u8;
+pub const TYPE_WISE: Piece = 0b1100;
 
 /// Represents the colour of a piece
 pub enum PieceColour {
@@ -61,12 +64,12 @@ pub enum PieceType {
 }
 
 /// Creates a uint representation piece from a `PieceColour` and `PieceType`.
-pub const fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> u8 {
-    let colour_part: u8 = match piece_colour {
+pub const fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -> Piece {
+    let colour_part: Piece = match piece_colour {
         PieceColour::White => COLOUR_WHITE,
         PieceColour::Black => COLOUR_BLACK,
     };
-    let type_part: u8 = match piece_type {
+    let type_part: Piece = match piece_type {
         PieceType::Scissors => TYPE_SCISSORS,
         PieceType::Paper => TYPE_PAPER,
         PieceType::Rock => TYPE_ROCK,
@@ -76,24 +79,24 @@ pub const fn piece_to_uint(piece_colour: &PieceColour, piece_type: &PieceType) -
 }
 
 /// White Scissors
-pub const WHITE_SCISSORS: u8 = piece_to_uint(&PieceColour::White, &PieceType::Scissors);
+pub const WHITE_SCISSORS: Piece = piece_to_uint(&PieceColour::White, &PieceType::Scissors);
 /// White Paper
-pub const WHITE_PAPER: u8 = piece_to_uint(&PieceColour::White, &PieceType::Paper);
+pub const WHITE_PAPER: Piece = piece_to_uint(&PieceColour::White, &PieceType::Paper);
 /// White Rock
-pub const WHITE_ROCK: u8 = piece_to_uint(&PieceColour::White, &PieceType::Rock);
+pub const WHITE_ROCK: Piece = piece_to_uint(&PieceColour::White, &PieceType::Rock);
 /// White Wise
-pub const WHITE_WISE: u8 = piece_to_uint(&PieceColour::White, &PieceType::Wise);
+pub const WHITE_WISE: Piece = piece_to_uint(&PieceColour::White, &PieceType::Wise);
 /// Black Scissors
-pub const BLACK_SCISSORS: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Scissors);
+pub const BLACK_SCISSORS: Piece = piece_to_uint(&PieceColour::Black, &PieceType::Scissors);
 /// Black Paper
-pub const BLACK_PAPER: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Paper);
+pub const BLACK_PAPER: Piece = piece_to_uint(&PieceColour::Black, &PieceType::Paper);
 /// Black Rock
-pub const BLACK_ROCK: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Rock);
+pub const BLACK_ROCK: Piece = piece_to_uint(&PieceColour::Black, &PieceType::Rock);
 /// Black Wise
-pub const BLACK_WISE: u8 = piece_to_uint(&PieceColour::Black, &PieceType::Wise);
+pub const BLACK_WISE: Piece = piece_to_uint(&PieceColour::Black, &PieceType::Wise);
 
-/// Piece trait for u8
-pub trait Piece: Copy {
+/// PieceTrait trait for Piece
+pub trait PieceTrait: Copy {
     /// Stack the piece on the provided bottom piece
     fn stack_on(self, bottom: Self) -> Self;
 
@@ -123,7 +126,7 @@ pub trait Piece: Copy {
     fn set_empty(&mut self);
 }
 
-impl Piece for u8 {
+impl PieceTrait for Piece {
     #[inline(always)]
     fn stack_on(self, bottom: Self) -> Self {
         self.top() | (bottom << HALF_PIECE_WIDTH)

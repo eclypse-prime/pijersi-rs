@@ -8,8 +8,8 @@ use pijersi_rs::{
         },
     },
     piece::{
-        BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, WHITE_PAPER, WHITE_ROCK,
-        WHITE_SCISSORS, WHITE_WISE,
+        Piece, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY, WHITE_PAPER,
+        WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
     },
 };
 
@@ -47,7 +47,7 @@ fn test_piece_to_char() {
         (BLACK_PAPER, Some('p')),
         (BLACK_ROCK, Some('r')),
         (BLACK_WISE, Some('w')),
-        (u8::MAX, None),
+        (Piece::MAX, None),
     ];
 
     for (input, output) in test_array {
@@ -281,16 +281,16 @@ fn test_cells_to_pretty_string() {
 
 #[test]
 fn test_string_to_player() {
-    assert_eq!(string_to_player("w").unwrap(), 0u8);
-    assert_eq!(string_to_player("b").unwrap(), 1u8);
+    assert_eq!(string_to_player("w").unwrap(), 0);
+    assert_eq!(string_to_player("b").unwrap(), 1);
     assert!(string_to_player("?").is_err());
 }
 
 #[test]
 fn test_player_to_string() {
-    assert_eq!(player_to_string(0u8).unwrap(), "w");
-    assert_eq!(player_to_string(1u8).unwrap(), "b");
-    assert!(player_to_string(255u8).is_err());
+    assert_eq!(player_to_string(0).unwrap(), "w");
+    assert_eq!(player_to_string(1).unwrap(), "b");
+    assert!(player_to_string(255).is_err());
 }
 
 #[test]

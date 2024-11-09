@@ -1,16 +1,16 @@
 //! Implements the move generator: returns the list of all available moves for a player at a given time.
 
-use crate::piece::Piece;
+use crate::piece::{Piece, PieceTrait};
 
 use super::actions::{Action, ActionTrait, Actions};
 use super::index::{CellIndex, CellIndexTrait, INDEX_NULL};
 use super::rules::{can_move1, can_move2, can_stack, can_unstack};
-use super::{Cells, N_CELLS};
+use super::{Cells, Player, N_CELLS};
 
 /// Returns the possible moves for a player.
 /// The result is a `Actions` struct (fixed-length vector).
 #[inline(always)]
-pub fn available_player_actions(cells: &Cells, current_player: u8) -> Actions {
+pub fn available_player_actions(cells: &Cells, current_player: Player) -> Actions {
     let mut player_actions = Actions::default();
 
     // Calculate possible player_actions
@@ -34,7 +34,7 @@ pub fn available_piece_actions(
     index_start: CellIndex,
     player_actions: &mut Actions,
 ) {
-    let piece_start: u8 = cells[index_start];
+    let piece_start: Piece = cells[index_start];
 
     // If the piece is not a stack
     if piece_start.is_stack() {
