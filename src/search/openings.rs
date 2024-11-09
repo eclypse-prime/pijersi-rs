@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 use crate::{
     board::Board,
     logic::{actions::Action, Cells, Player, CELLS_EMPTY},
-    piece::Piece,
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]

@@ -4,13 +4,10 @@ use std::{fmt::Display, num::ParseIntError};
 
 use thiserror::Error;
 
-use crate::{
-    logic::{
+use crate::logic::{
         actions::{Action, ActionTrait},
         Player,
-    },
-    piece::Piece,
-};
+    };
 
 /// General Pijersi errors
 #[derive(Debug, Error)]
