@@ -3,36 +3,57 @@
 //! The transposition table stores previously searched positions at a given depth.
 
 use crate::logic::{
-    actions::{Action, ActionTrait, ACTION_MASK},
-    index::INDEX_WIDTH,
+    actions::{Action, ActionTrait},
+    index::CellIndex,
 };
 
-const KEY_BIT_WIDTH: usize = 27;
+const KEY_BIT_WIDTH: usize = 24;
 const SEARCH_TABLE_SIZE: usize = 2 << KEY_BIT_WIDTH;
 const SEARCH_TABLE_MASK: usize = (2 << (KEY_BIT_WIDTH)) - 1;
 
 #[derive(Clone, Copy, Default)]
 struct SearchEntry {
-    score: i32,
+    // score: i32,
     depth: u8,
     player: u8,
+    key: usize,
+    index_start: u8,
+    index_mid: u8,
+    index_end: u8,
 }
 
 impl SearchEntry {
     #[inline]
-    fn new(score: i32, depth: u64, player: u8) -> Self {
+    // fn new(score: i32, depth: u64, player: u8, key: usize, action: Action) -> Self {
+    fn new(depth: u64, player: u8, key: usize, action: Action) -> Self {
+        let (index_start, index_mid, index_end) = action.to_indices();
         SearchEntry {
-            score: score as i32,
+            //         score,
             depth: depth as u8,
             player,
+            key,
+            index_start: index_start as u8,
+            index_mid: index_mid as u8,
+            index_end: index_end as u8,
         }
     }
     #[inline]
-    fn unpack(self) -> (i32, u64, u8) {
-        (self.score, self.depth as u64, self.player)
+    // fn unpack(self) -> (i32, u64, u8, Action) {
+    fn unpack(self) -> (u64, u8, Action) {
+        (
+            self.depth as u64,
+            self.player,
+            Action::from_indices(
+                self.index_start as CellIndex,
+                self.index_mid as CellIndex,
+                self.index_end as CellIndex,
+            ),
+        )
+        // (self.score, self.depth as u64, self.player, Action::from_indices(self.index_start as CellIndex, self.index_mid as CellIndex, self.index_end as CellIndex))
     }
 }
 
+/// Search transposition table
 pub struct SearchTable {
     data: Vec<SearchEntry>,
 }
@@ -47,12 +68,20 @@ impl Default for SearchTable {
 
 impl SearchTable {
     #[inline]
-    pub fn insert(&mut self, hash: usize, score: i32, depth: u64, player: u8) {
-        self.data[hash & SEARCH_TABLE_MASK] = SearchEntry::new(score, depth, player);
+    /// Inserts an entry corresponding to its position hash in the transposition table.
+    pub fn insert(&mut self, hash: usize, depth: u64, player: u8, action: Action) {
+        self.data[hash & SEARCH_TABLE_MASK] = SearchEntry::new(depth, player, hash, action);
+        // self.data[hash & SEARCH_TABLE_MASK] = SearchEntry::new(score, depth, player, hash, action);
     }
     #[inline]
-    pub fn read(&mut self, hash: usize) -> Option<(i32, u64, u8)> {
+    /// Reads the transposition table and returns the entry corresponding to the position hash if there is one.
+    pub fn read(&mut self, hash: usize) -> Option<(u64, u8, Action)> {
+        // pub fn read(&mut self, hash: usize) -> Option<(i32, u64, u8, Action)> {
         let entry = self.data[hash & SEARCH_TABLE_MASK];
-        Some(entry.unpack())
+        if entry.key == hash {
+            Some(entry.unpack())
+        } else {
+            None
+        }
     }
 }

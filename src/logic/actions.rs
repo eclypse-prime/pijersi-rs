@@ -1,10 +1,10 @@
 //! Implements the actions a player can choose (move, stack, unstack...).
 //!
-//! An action is stored as a u64 value. Its contents are divided into the following sections:
+//! An action is stored as a u32 value. Its contents are divided into the following sections:
 //!
-//! | Data  | Empty | Depth (optional) | Third index | Second index | First index |
-//! |-------|-------|------------------|-------------|--------------|-------------|
-//! | Width | 32    | 8                | 8           | 8            | 8           |
+//! | Data  | Depth (optional) | Third index | Second index | First index |
+//! |-------|------------------|-------------|--------------|-------------|
+//! | Width | 8                | 8           | 8            | 8           |
 
 use std::ops::{Index, IndexMut, Range, RangeFull};
 
@@ -18,8 +18,8 @@ use super::{
 /// Size of the array that stores player actions
 pub const MAX_PLAYER_ACTIONS: usize = 512;
 
-/// An action is stored as a u64 value. See [`crate::logic::actions`] for the specific data format.
-pub type Action = u64;
+/// An action is stored as a u32 value. See [`crate::logic::actions`] for the specific data format.
+pub type Action = u32;
 
 /// Mask to get the action without additional data
 pub const ACTION_MASK: Action = 0x00FF_FFFF;

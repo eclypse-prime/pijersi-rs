@@ -2,7 +2,7 @@
 
 use std::cmp::max;
 use std::sync::atomic::Ordering::Relaxed;
-use std::sync::atomic::{AtomicBool, AtomicI32};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32};
 use std::sync::Mutex;
 use std::time::Instant;
 
@@ -59,11 +59,23 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (i32, [i32; N_CELLS]) {
 pub fn sort_actions(
     cells: &Cells,
     current_player: Player,
+    table_action: Option<Action>,
     available_actions: &mut Actions,
-) -> bool {
+) -> Option<Action> {
     let n_actions = available_actions.len();
     let mut index_sorted = 0;
-    for i in 0..n_actions {
+    if let Some(table_action) = table_action {
+        for i in 0..n_actions {
+            if table_action == available_actions[i] {
+                available_actions[i] = available_actions[index_sorted];
+                available_actions[index_sorted] = table_action;
+                index_sorted += 1;
+                break;
+            }
+        }
+    }
+    let index_start = index_sorted;
+    for i in index_start..n_actions {
         let action = available_actions[i];
         let (index_start, index_mid, index_end) = action.to_indices();
         if !cells[index_start].is_wise()
@@ -72,7 +84,7 @@ pub fn sort_actions(
                 || ((current_player == 0 && !index_mid.is_null() && index_mid.is_black_home())
                     || (current_player == 1 && !index_mid.is_null() && index_mid.is_white_home())))
         {
-            return true;
+            return Some(action);
         }
         if (!index_mid.is_null()
             && !cells[index_mid].is_empty()
@@ -84,7 +96,7 @@ pub fn sort_actions(
             index_sorted += 1;
         }
     }
-    false
+    None
 }
 
 /// Evaluates the score of a given action by searching at a given depth.
@@ -100,8 +112,6 @@ pub fn evaluate_action(
     end_time: Option<Instant>,
     transposition_table: Option<&Mutex<SearchTable>>,
 ) -> i32 {
-    let mut alpha = alpha;
-
     let mut new_cells: Cells = *cells;
     play_action(&mut new_cells, action);
 
@@ -128,6 +138,7 @@ pub fn evaluate_action(
 
     let mut score = i32::MIN;
 
+    let mut alpha = alpha;
     if depth == 1 {
         #[cfg(feature = "nps-count")]
         let mut node_count: u64 = 1;
@@ -157,29 +168,50 @@ pub fn evaluate_action(
             increment_node_count(node_count);
         }
     } else {
-        if depth >= 3 {
+        let table_action = if depth >= 2 {
             if let Some(transposition_table) = transposition_table {
                 let new_cells_hash = new_cells.hash();
                 let mut transposition_table = transposition_table.lock().unwrap();
-                let (table_score, table_depth, table_player) =
-                    transposition_table.read(new_cells_hash).unwrap();
-                if table_depth == depth && table_player == current_player {
-                    return table_score as i32;
+                // if let Some((_table_score, _table_depth, table_player, table_action)) =
+                if let Some((_table_depth, table_player, table_action)) =
+                    transposition_table.read(new_cells_hash)
+                {
+                    if table_player == current_player {
+                        // if table_depth == depth {
+                        //     return table_score;
+                        // } else {
+                        Some(table_action)
+                        // }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
                 }
+            } else {
+                None
             }
-        }
-        let is_action_win = sort_actions(&new_cells, current_player, &mut available_actions);
-        if is_action_win {
-            if depth >= 3 {
+        } else {
+            None
+        };
+        let winning_action = sort_actions(
+            &new_cells,
+            current_player,
+            table_action,
+            &mut available_actions,
+        );
+        if let Some(winning_action) = winning_action {
+            if depth >= 2 {
                 if let Some(transposition_table) = transposition_table {
                     let new_cells_hash = new_cells.hash();
                     let mut transposition_table = transposition_table.lock().unwrap();
                     transposition_table.insert(
                         new_cells_hash,
-                        MAX_SCORE as i32,
                         depth,
                         current_player,
+                        winning_action,
                     );
+                    // transposition_table.insert(new_cells_hash, MAX_SCORE, depth, current_player, winning_action);
                 }
             }
             return MAX_SCORE;
@@ -197,11 +229,17 @@ pub fn evaluate_action(
         score = max(score, eval);
         alpha = max(alpha, score);
         if alpha > beta {
-            if depth >= 3 {
+            if depth >= 2 {
                 if let Some(transposition_table) = transposition_table {
                     let new_cells_hash = new_cells.hash();
                     let mut transposition_table = transposition_table.lock().unwrap();
-                    transposition_table.insert(new_cells_hash, score as i32, depth, current_player);
+                    transposition_table.insert(
+                        new_cells_hash,
+                        depth,
+                        current_player,
+                        available_actions[0],
+                    );
+                    // transposition_table.insert(new_cells_hash, score, depth, current_player, available_actions[0]);
                 }
             }
             return score;
@@ -243,6 +281,7 @@ pub fn evaluate_action(
         } else {
             let alpha_atomic = AtomicI32::new(alpha);
             let score_atomic = AtomicI32::new(score);
+            let best_action_atomic = AtomicU32::new(available_actions[0]);
             let cut_atomic = AtomicBool::new(false);
             available_actions
                 .into_iter()
@@ -278,7 +317,10 @@ pub fn evaluate_action(
                                 eval_null_window
                             }
                         };
-                        score_atomic.fetch_max(eval, Relaxed);
+                        if eval > score_atomic.load(Relaxed) {
+                            score_atomic.store(eval, Relaxed);
+                            best_action_atomic.store(action, Relaxed);
+                        }
                         alpha_atomic.fetch_max(eval, Relaxed);
                         if alpha_atomic.load(Relaxed) > beta {
                             cut_atomic.store(true, Relaxed);
@@ -289,7 +331,13 @@ pub fn evaluate_action(
             if let Some(transposition_table) = transposition_table {
                 let new_cells_hash = new_cells.hash();
                 let mut transposition_table = transposition_table.lock().unwrap();
-                transposition_table.insert(new_cells_hash, score as i32, depth, current_player);
+                // transposition_table.insert(new_cells_hash, score, depth, current_player, best_action_atomic.load(Relaxed));
+                transposition_table.insert(
+                    new_cells_hash,
+                    depth,
+                    current_player,
+                    best_action_atomic.load(Relaxed),
+                );
             }
         }
     }
