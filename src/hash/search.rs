@@ -7,7 +7,7 @@ use crate::logic::{
     index::INDEX_WIDTH,
 };
 
-const KEY_BIT_WIDTH: usize = 29;
+const KEY_BIT_WIDTH: usize = 27;
 const SEARCH_TABLE_SIZE: usize = 2 << KEY_BIT_WIDTH;
 const SEARCH_TABLE_MASK: usize = (2 << (KEY_BIT_WIDTH)) - 1;
 
@@ -20,7 +20,7 @@ struct SearchEntry {
 
 impl SearchEntry {
     #[inline]
-    fn new(score: i64, depth: u64, player: u8) -> Self {
+    fn new(score: i32, depth: u64, player: u8) -> Self {
         SearchEntry {
             score: score as i32,
             depth: depth as u8,
@@ -28,8 +28,8 @@ impl SearchEntry {
         }
     }
     #[inline]
-    fn unpack(self) -> (i64, u64, u8) {
-        (self.score as i64, self.depth as u64, self.player)
+    fn unpack(self) -> (i32, u64, u8) {
+        (self.score, self.depth as u64, self.player)
     }
 }
 
@@ -47,12 +47,12 @@ impl Default for SearchTable {
 
 impl SearchTable {
     #[inline]
-    pub fn insert(&mut self, hash: usize, score: i64, depth: u64, player: u8) {
+    pub fn insert(&mut self, hash: usize, score: i32, depth: u64, player: u8) {
         self.data[hash & SEARCH_TABLE_MASK] = SearchEntry::new(score, depth, player);
     }
     #[inline]
-    pub fn read(&mut self, hash: usize) -> (i64, u64, u8) {
+    pub fn read(&mut self, hash: usize) -> Option<(i32, u64, u8)> {
         let entry = self.data[hash & SEARCH_TABLE_MASK];
-        entry.unpack()
+        Some(entry.unpack())
     }
 }

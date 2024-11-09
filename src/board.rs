@@ -152,7 +152,7 @@ impl Board {
     }
 
     /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
-    fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(Action, u64, i64)> {
+    fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(Action, u64, i32)> {
         if let Some(opening_book) = opening_book {
             if let Some(&(action, score)) = opening_book.lookup(self) {
                 let depth = action.search_depth();
@@ -160,7 +160,7 @@ impl Board {
                 if self.options.verbose {
                     println!("info book depth {depth} score {score} pv {action_string}");
                 }
-                return Some((action, depth, score));
+                return Some((action, depth, score as i32));
             }
         }
         None
@@ -172,7 +172,7 @@ impl Board {
         depth: u64,
         opening_book: Option<&OpeningBook>,
         transposition_table: Option<&Mutex<SearchTable>>,
-    ) -> Option<(Action, i64)> {
+    ) -> Option<(Action, i32)> {
         if self.options.use_book {
             if let Some((action, book_depth, score)) = self.search_book(opening_book) {
                 // TODO: start searching from the book move's depth and use it to sort the search order
@@ -197,7 +197,7 @@ impl Board {
         movetime: u64,
         opening_book: Option<&OpeningBook>,
         transposition_table: Option<&Mutex<SearchTable>>,
-    ) -> Option<(Action, i64)> {
+    ) -> Option<(Action, i32)> {
         if self.options.use_book {
             if let Some((action, _depth, score)) = self.search_book(opening_book) {
                 // TODO: start searching from the book move's depth and use it to sort the search order

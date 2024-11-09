@@ -2,7 +2,7 @@
 
 use std::cmp::max;
 use std::sync::atomic::Ordering::Relaxed;
-use std::sync::atomic::{AtomicBool, AtomicI64};
+use std::sync::atomic::{AtomicBool, AtomicI32};
 use std::sync::Mutex;
 use std::time::Instant;
 
@@ -22,18 +22,18 @@ use crate::search::lookup::PIECE_SCORES;
 use super::alphabeta::increment_node_count;
 
 /// The max score (is reached on winning position)
-pub const MAX_SCORE: i64 = 524_288;
+pub const MAX_SCORE: i32 = 524_288;
 
 /// Returns the score of a single cell given its content and index.
 ///
 /// Uses lookup tables for faster computations.
 #[inline]
-pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> i64 {
+pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> i32 {
     PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * N_CELLS + index]
 }
 
 /// Returns the score of a board.
-pub fn evaluate_position(cells: &Cells) -> i64 {
+pub fn evaluate_position(cells: &Cells) -> i32 {
     #[cfg(feature = "nps-count")]
     unsafe {
         increment_node_count(1);
@@ -46,8 +46,8 @@ pub fn evaluate_position(cells: &Cells) -> i64 {
 }
 
 /// Returns the score of a board along with its individual cell scores.
-pub fn evaluate_position_with_details(cells: &Cells) -> (i64, [i64; N_CELLS]) {
-    let mut piece_scores: [i64; N_CELLS] = [0i64; N_CELLS];
+pub fn evaluate_position_with_details(cells: &Cells) -> (i32, [i32; N_CELLS]) {
+    let mut piece_scores: [i32; N_CELLS] = [0i32; N_CELLS];
     for (k, &cell) in cells.iter().enumerate() {
         piece_scores[k] = evaluate_cell(cell, k);
     }
@@ -95,11 +95,11 @@ pub fn evaluate_action(
     current_player: Player,
     action: Action,
     depth: u64,
-    alpha: i64,
-    beta: i64,
+    alpha: i32,
+    beta: i32,
     end_time: Option<Instant>,
     transposition_table: Option<&Mutex<SearchTable>>,
-) -> i64 {
+) -> i32 {
     let mut alpha = alpha;
 
     let mut new_cells: Cells = *cells;
@@ -115,7 +115,7 @@ pub fn evaluate_action(
 
     if let Some(end_time) = end_time {
         if Instant::now() > end_time {
-            return i64::MIN;
+            return i32::MIN;
         }
     }
 
@@ -123,10 +123,10 @@ pub fn evaluate_action(
     let n_actions = available_actions.len();
 
     if n_actions == 0 {
-        return i64::MIN;
+        return i32::MIN;
     }
 
-    let mut score = i64::MIN;
+    let mut score = i32::MIN;
 
     if depth == 1 {
         #[cfg(feature = "nps-count")]
@@ -162,9 +162,9 @@ pub fn evaluate_action(
                 let new_cells_hash = new_cells.hash();
                 let mut transposition_table = transposition_table.lock().unwrap();
                 let (table_score, table_depth, table_player) =
-                    transposition_table.read(new_cells_hash);
+                    transposition_table.read(new_cells_hash).unwrap();
                 if table_depth == depth && table_player == current_player {
-                    return table_score;
+                    return table_score as i32;
                 }
             }
         }
@@ -174,7 +174,7 @@ pub fn evaluate_action(
                 if let Some(transposition_table) = transposition_table {
                     let new_cells_hash = new_cells.hash();
                     let mut transposition_table = transposition_table.lock().unwrap();
-                    transposition_table.insert(new_cells_hash, MAX_SCORE, depth, current_player);
+                    transposition_table.insert(new_cells_hash, MAX_SCORE as i32, depth, current_player);
                 }
             }
             return MAX_SCORE;
@@ -196,7 +196,7 @@ pub fn evaluate_action(
                 if let Some(transposition_table) = transposition_table {
                     let new_cells_hash = new_cells.hash();
                     let mut transposition_table = transposition_table.lock().unwrap();
-                    transposition_table.insert(new_cells_hash, score, depth, current_player);
+                    transposition_table.insert(new_cells_hash, score as i32, depth, current_player);
                 }
             }
             return score;
@@ -236,8 +236,8 @@ pub fn evaluate_action(
                 }
             }
         } else {
-            let alpha_atomic = AtomicI64::new(alpha);
-            let score_atomic = AtomicI64::new(score);
+            let alpha_atomic = AtomicI32::new(alpha);
+            let score_atomic = AtomicI32::new(score);
             let cut_atomic = AtomicBool::new(false);
             available_actions
                 .into_iter()
@@ -284,7 +284,7 @@ pub fn evaluate_action(
             if let Some(transposition_table) = transposition_table {
                 let new_cells_hash = new_cells.hash();
                 let mut transposition_table = transposition_table.lock().unwrap();
-                transposition_table.insert(new_cells_hash, score, depth, current_player);
+                transposition_table.insert(new_cells_hash, score as i32, depth, current_player);
             }
         }
     }
@@ -299,9 +299,9 @@ pub fn evaluate_action_terminal(
     cells: &Cells,
     current_player: Player,
     action: Action,
-    previous_score: i64,
-    previous_piece_scores: &[i64; N_CELLS],
-) -> i64 {
+    previous_score: i32,
+    previous_piece_scores: &[i32; N_CELLS],
+) -> i32 {
     let (index_start, index_mid, index_end) = action.to_indices();
 
     if !cells[index_start].is_wise()
