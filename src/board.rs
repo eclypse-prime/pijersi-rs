@@ -12,9 +12,11 @@
 //! 32  33  34  35  36  37  38
 //!   39  40  41  42  43  44
 //! ```
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use crate::errors::{ParseError, ParseErrorKind, RulesErrorKind, RuntimeError};
+use crate::hash::search::SearchTable;
 use crate::logic::actions::{play_action, Action, ActionTrait};
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
@@ -57,7 +59,7 @@ impl BoardOptions {
     /// ```
     pub const fn new() -> Self {
         Self {
-            use_book: true,
+            use_book: false,
             verbose: true,
         }
     }
@@ -169,6 +171,7 @@ impl Board {
         &self,
         depth: u64,
         opening_book: Option<&OpeningBook>,
+        transposition_table: Option<&Mutex<SearchTable>>,
     ) -> Option<(Action, i64)> {
         if self.options.use_book {
             if let Some((action, book_depth, score)) = self.search_book(opening_book) {
@@ -184,6 +187,7 @@ impl Board {
             depth,
             None,
             self.options.verbose,
+            transposition_table,
         )
     }
 
@@ -192,6 +196,7 @@ impl Board {
         &self,
         movetime: u64,
         opening_book: Option<&OpeningBook>,
+        transposition_table: Option<&Mutex<SearchTable>>,
     ) -> Option<(Action, i64)> {
         if self.options.use_book {
             if let Some((action, _depth, score)) = self.search_book(opening_book) {
@@ -205,6 +210,7 @@ impl Board {
             u64::MAX,
             Some(Instant::now() + Duration::from_millis(movetime)),
             self.options.verbose,
+            transposition_table,
         )
     }
 

@@ -4,11 +4,12 @@
 
 use clap::{Args, Parser, Subcommand};
 use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
-use std::{process::exit, time::Instant};
+use std::{process::exit, sync::Mutex, time::Instant};
 
 use crate::{
     board::Board,
     errors::{get_error_trace, RuntimeError, UgiErrorKind},
+    hash::search::SearchTable,
     logic::{
         perft::perft,
         rules::is_action_legal,
@@ -89,6 +90,7 @@ enum SetoptionArgs {
 pub struct UgiEngine {
     board: Board,
     opening_book: Option<OpeningBook>,
+    transposition_table: Option<Mutex<SearchTable>>,
 }
 
 impl Default for UgiEngine {
@@ -103,6 +105,7 @@ impl UgiEngine {
         let mut new_self = Self {
             board: Board::default(),
             opening_book: None,
+            transposition_table: None,
         };
         new_self.board.init();
         new_self
@@ -119,6 +122,7 @@ impl UgiEngine {
 
     fn isready(&mut self) {
         self.opening_book = Some(OpeningBook::new());
+        self.transposition_table = Some(Mutex::new(SearchTable::default()));
         println!("readyok");
     }
 
@@ -134,9 +138,11 @@ impl UgiEngine {
     fn go(&mut self, go_args: GoArgs) {
         match go_args {
             GoArgs::Depth { depth } => {
-                let result = self
-                    .board
-                    .search_to_depth(depth, self.opening_book.as_ref());
+                let result = self.board.search_to_depth(
+                    depth,
+                    self.opening_book.as_ref(),
+                    self.transposition_table.as_ref(),
+                );
                 let action_string = if let Some((action, _score)) = result {
                     action_to_string(&self.board.cells, action)
                 } else {
@@ -146,7 +152,11 @@ impl UgiEngine {
                 println!("bestmove {action_string}");
             }
             GoArgs::Movetime { time } => {
-                let action = self.board.search_to_time(time, self.opening_book.as_ref());
+                let action = self.board.search_to_time(
+                    time,
+                    self.opening_book.as_ref(),
+                    self.transposition_table.as_ref(),
+                );
                 let action_string = if let Some((action, _score)) = action {
                     action_to_string(&self.board.cells, action)
                 } else {

@@ -37,6 +37,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 -BASE_BETA,
                 BASE_BETA,
                 None,
+                None,
             ))
         })
     });
@@ -49,6 +50,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 2,
                 -BASE_BETA,
                 BASE_BETA,
+                None,
                 None,
             ))
         })
@@ -63,6 +65,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 -BASE_BETA,
                 BASE_BETA,
                 None,
+                None,
             ))
         })
     });
@@ -76,6 +79,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 -BASE_BETA,
                 BASE_BETA,
                 None,
+                None,
             ))
         })
     });
@@ -86,16 +90,16 @@ fn bench_search(c: &mut Criterion) {
     board.init();
     board.options.verbose = false;
     c.bench_function("search 1", |b| {
-        b.iter(|| black_box(board.search_to_depth(1, None)))
+        b.iter(|| black_box(board.search_to_depth(1, None, None)))
     });
     c.bench_function("search 2", |b| {
-        b.iter(|| black_box(board.search_to_depth(2, None)))
+        b.iter(|| black_box(board.search_to_depth(2, None, None)))
     });
     c.bench_function("search 3", |b| {
-        b.iter(|| black_box(board.search_to_depth(3, None)))
+        b.iter(|| black_box(board.search_to_depth(3, None, None)))
     });
     c.bench_function("search 4", |b| {
-        b.iter(|| black_box(board.search_to_depth(4, None)))
+        b.iter(|| black_box(board.search_to_depth(4, None, None)))
     });
 }
 

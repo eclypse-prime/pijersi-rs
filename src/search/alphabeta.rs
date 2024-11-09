@@ -3,10 +3,12 @@
 use std::cmp::max;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::atomic::{AtomicBool, AtomicI64};
+use std::sync::Mutex;
 use std::time::Instant;
 
 use rayon::prelude::*;
 
+use crate::hash::search::SearchTable;
 use crate::logic::actions::Action;
 use crate::logic::translate::action_to_string;
 use crate::logic::{Cells, Player};
@@ -39,6 +41,7 @@ pub fn search(
     depth: u64,
     end_time: Option<Instant>,
     scores: &Option<Vec<i64>>,
+    transposition_table: Option<&Mutex<SearchTable>>,
 ) -> Option<(Action, i64, Vec<i64>)> {
     if depth == 0 {
         return None;
@@ -99,6 +102,7 @@ pub fn search(
             -beta,
             -alpha,
             end_time,
+            transposition_table,
         );
         scores[0] = first_eval;
 
@@ -128,6 +132,7 @@ pub fn search(
                                 -alpha.load(Relaxed) - 1,
                                 -alpha.load(Relaxed),
                                 end_time,
+                                transposition_table,
                             );
                             // If fail high, do the search with the full window
                             if alpha.load(Relaxed) < eval_null_window && eval_null_window < beta {
@@ -139,6 +144,7 @@ pub fn search(
                                     -beta,
                                     -alpha.load(Relaxed),
                                     end_time,
+                                    transposition_table,
                                 )
                             } else {
                                 eval_null_window
@@ -185,6 +191,7 @@ pub fn search_iterative(
     max_depth: u64,
     end_time: Option<Instant>,
     verbose: bool,
+    transposition_table: Option<&Mutex<SearchTable>>,
 ) -> Option<(Action, i64)> {
     let mut best_result: Option<(Action, i64)> = None;
     let mut last_scores: Option<Vec<i64>> = None;
@@ -195,7 +202,14 @@ pub fn search_iterative(
                 break;
             }
         }
-        let proposed_action = search(cells, current_player, depth, end_time, &last_scores);
+        let proposed_action = search(
+            cells,
+            current_player,
+            depth,
+            end_time,
+            &last_scores,
+            transposition_table,
+        );
         let duration = start_time.elapsed();
         let duration_ms: u128 = duration.as_millis();
         match proposed_action {

@@ -2,3 +2,4 @@
 
 pub mod lookup;
 pub mod position;
+pub mod search;
