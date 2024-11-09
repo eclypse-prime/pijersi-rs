@@ -3,7 +3,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use pijersi_rs::board::Board;
 use pijersi_rs::logic::perft::perft;
 use pijersi_rs::logic::translate::string_to_action;
-use pijersi_rs::search::alphabeta::BASE_BETA;
+use pijersi_rs::search::alphabeta::{BASE_ALPHA, BASE_BETA};
 use pijersi_rs::search::eval::evaluate_action;
 
 fn bench_perft(c: &mut Criterion) {
@@ -34,8 +34,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 1 - board.current_player,
                 action,
                 1,
-                -BASE_BETA,
-                BASE_BETA,
+                (BASE_ALPHA, BASE_BETA),
                 None,
                 None,
             ))
@@ -48,8 +47,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 1 - board.current_player,
                 action,
                 2,
-                -BASE_BETA,
-                BASE_BETA,
+                (BASE_ALPHA, BASE_BETA),
                 None,
                 None,
             ))
@@ -62,8 +60,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 1 - board.current_player,
                 action,
                 3,
-                -BASE_BETA,
-                BASE_BETA,
+                (BASE_ALPHA, BASE_BETA),
                 None,
                 None,
             ))
@@ -76,8 +73,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 1 - board.current_player,
                 action,
                 4,
-                -BASE_BETA,
-                BASE_BETA,
+                (BASE_ALPHA, BASE_BETA),
                 None,
                 None,
             ))

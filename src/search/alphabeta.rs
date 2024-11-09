@@ -99,8 +99,7 @@ pub fn search(
             1 - current_player,
             available_actions[order[0]],
             depth - 1,
-            -beta,
-            -alpha,
+            (-beta, -alpha),
             end_time,
             transposition_table,
         );
@@ -129,8 +128,7 @@ pub fn search(
                                 1 - current_player,
                                 action,
                                 depth - 1,
-                                -alpha.load(Relaxed) - 1,
-                                -alpha.load(Relaxed),
+                                (-alpha.load(Relaxed) - 1, -alpha.load(Relaxed)),
                                 end_time,
                                 transposition_table,
                             );
@@ -141,8 +139,7 @@ pub fn search(
                                     1 - current_player,
                                     action,
                                     depth - 1,
-                                    -beta,
-                                    -alpha.load(Relaxed),
+                                    (-beta, -alpha.load(Relaxed)),
                                     end_time,
                                     transposition_table,
                                 )
@@ -235,7 +232,7 @@ pub fn search_iterative(
                 unsafe {
                     TOTAL_NODE_COUNT.store(0, Relaxed);
                 }
-                if score < -BASE_BETA {
+                if score < BASE_ALPHA {
                     if verbose {
                         println!("info loss in {}", depth / 2);
                     }
