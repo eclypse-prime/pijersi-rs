@@ -2,10 +2,14 @@
 //!
 //! The transposition table stores previously searched positions at a given depth.
 
-use crate::{logic::{
-    actions::{Action, ActionTrait},
-    index::CellIndex, Player,
-}, search::Score};
+use crate::{
+    logic::{
+        actions::{Action, ActionTrait},
+        index::CellIndex,
+        Player,
+    },
+    search::Score,
+};
 
 const KEY_BIT_WIDTH: usize = 24;
 const SEARCH_TABLE_SIZE: usize = 2 << KEY_BIT_WIDTH;
