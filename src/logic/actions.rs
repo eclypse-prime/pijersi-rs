@@ -153,7 +153,7 @@ impl ActionTrait for Action {
 }
 
 /// This struct is a fixed-length array that stores player actions
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Actions {
     data: [Action; MAX_PLAYER_ACTIONS],
     current_index: usize,

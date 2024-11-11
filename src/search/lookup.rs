@@ -1,7 +1,9 @@
 //! This module implements the lookup tables used for faster computations in the evaluation functions.
 
+use super::Score;
+
 /// Associates a piece's type index and cell index to its score, `index = piece_index*45 + cell_index`
-pub const PIECE_SCORES: [i32; 1575] = [
+pub const PIECE_SCORES: [Score; 1575] = [
     76790, 76790, 76790, 76790, 76790, 76790, 260, 260, 260, 260, 260, 260, 260, 250, 250, 250,
     250, 250, 250, 220, 220, 220, 220, 220, 220, 220, 210, 210, 210, 210, 210, 210, 190, 190, 190,
     190, 190, 190, 190, 116, 116, 116, 116, 116, 116, 76790, 76790, 76790, 76790, 76790, 76790,

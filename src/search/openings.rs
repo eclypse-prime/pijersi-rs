@@ -52,7 +52,7 @@ pub struct Response {
     pub action: u64,
     /// The predicted score of the response
     pub score: i64,
-    // TODO: rewrite everything with action: u32 and score: i32
+    // TODO: rewrite everything with action: u32 and score: Score
 }
 const RESPONSE_SIZE: usize = 70;
 

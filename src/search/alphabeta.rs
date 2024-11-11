@@ -17,11 +17,12 @@ use crate::utils::{argsort, reverse_argsort};
 use super::super::logic::movegen::available_player_actions;
 
 use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_with_details};
+use super::Score;
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
-pub const BASE_BETA: i32 = 262_144;
+pub const BASE_BETA: Score = 262_144;
 /// Starting alpha value for the alphabeta search (starting alpha is equal to -beta)
-pub const BASE_ALPHA: i32 = -BASE_BETA;
+pub const BASE_ALPHA: Score = -BASE_BETA;
 
 #[cfg(feature = "nps-count")]
 use std::sync::atomic::AtomicU64;
@@ -40,9 +41,9 @@ pub fn search(
     current_player: Player,
     depth: u64,
     end_time: Option<Instant>,
-    scores: &Option<Vec<i32>>,
+    scores: &Option<Vec<Score>>,
     transposition_table: Option<&Mutex<SearchTable>>,
-) -> Option<(Action, i32, Vec<i32>)> {
+) -> Option<(Action, Score, Vec<Score>)> {
     if depth == 0 {
         return None;
     }
@@ -66,7 +67,7 @@ pub fn search(
         return None;
     }
 
-    let scores: Vec<i32> = if depth == 1 {
+    let scores: Vec<Score> = if depth == 1 {
         #[cfg(feature = "nps-count")]
         unsafe {
             increment_node_count(n_actions as u64);
@@ -93,7 +94,7 @@ pub fn search(
         let alpha = BASE_ALPHA;
         let beta = BASE_BETA;
 
-        let mut scores: Vec<i32> = vec![0; n_actions];
+        let mut scores: Vec<Score> = vec![0; n_actions];
         let first_eval = -evaluate_action(
             cells,
             1 - current_player,
@@ -119,7 +120,7 @@ pub fn search(
                 let action = available_actions[order[k]];
                 *score = {
                     if cut.load(Relaxed) {
-                        i32::MIN
+                        Score::MIN
                     } else {
                         let eval = {
                             // Search with a null window
@@ -167,7 +168,7 @@ pub fn search(
         }
     }
 
-    let scores: Vec<i32> = reverse_argsort(&scores, &order);
+    let scores: Vec<Score> = reverse_argsort(&scores, &order);
 
     scores
         .iter()
@@ -189,9 +190,9 @@ pub fn search_iterative(
     end_time: Option<Instant>,
     verbose: bool,
     transposition_table: Option<&Mutex<SearchTable>>,
-) -> Option<(Action, i32)> {
-    let mut best_result: Option<(Action, i32)> = None;
-    let mut last_scores: Option<Vec<i32>> = None;
+) -> Option<(Action, Score)> {
+    let mut best_result: Option<(Action, Score)> = None;
+    let mut last_scores: Option<Vec<Score>> = None;
     let start_time = Instant::now();
     for depth in 1..=max_depth {
         if let Some(end_time) = end_time {
