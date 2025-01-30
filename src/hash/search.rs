@@ -2,13 +2,10 @@
 //!
 //! The transposition table stores previously searched positions at a given depth.
 
-use crate::{
-    logic::{
-        actions::{Action, ActionTrait},
-        index::CellIndex,
-        Player,
-    },
-    search::Score,
+use crate::logic::{
+    actions::{Action, ActionTrait},
+    index::CellIndex,
+    Player,
 };
 
 const KEY_BIT_WIDTH: usize = 24;
@@ -17,7 +14,6 @@ const SEARCH_TABLE_MASK: usize = (2 << (KEY_BIT_WIDTH)) - 1;
 
 #[derive(Clone, Copy, Default)]
 struct SearchEntry {
-    score: Score,
     depth: u8,
     player: u8,
     key: usize,
@@ -28,10 +24,9 @@ struct SearchEntry {
 
 impl SearchEntry {
     #[inline]
-    fn new(score: Score, depth: u64, player: Player, key: usize, action: Action) -> Self {
+    fn new(depth: u64, player: Player, key: usize, action: Action) -> Self {
         let (index_start, index_mid, index_end) = action.to_indices();
         SearchEntry {
-            score,
             depth: depth as u8,
             player,
             key,
@@ -41,9 +36,8 @@ impl SearchEntry {
         }
     }
     #[inline]
-    fn unpack(self) -> (Score, u64, u8, Action) {
+    fn unpack(self) -> (u64, u8, Action) {
         (
-            self.score,
             self.depth as u64,
             self.player,
             Action::from_indices(
@@ -52,7 +46,6 @@ impl SearchEntry {
                 self.index_end as CellIndex,
             ),
         )
-        // (self.score, self.depth as u64, self.player, Action::from_indices(self.index_start as CellIndex, self.index_mid as CellIndex, self.index_end as CellIndex))
     }
 }
 
@@ -72,13 +65,12 @@ impl Default for SearchTable {
 impl SearchTable {
     #[inline]
     /// Inserts an entry corresponding to its position hash in the transposition table.
-    pub fn insert(&mut self, hash: usize, score: Score, depth: u64, player: u8, action: Action) {
-        self.data[hash & SEARCH_TABLE_MASK] = SearchEntry::new(score, depth, player, hash, action);
-        // self.data[hash & SEARCH_TABLE_MASK] = SearchEntry::new(score, depth, player, hash, action);
+    pub fn insert(&mut self, hash: usize, depth: u64, player: u8, action: Action) {
+        self.data[hash & SEARCH_TABLE_MASK] = SearchEntry::new(depth, player, hash, action);
     }
     #[inline]
     /// Reads the transposition table and returns the entry corresponding to the position hash if there is one.
-    pub fn read(&mut self, hash: usize) -> Option<(Score, u64, u8, Action)> {
+    pub fn read(&mut self, hash: usize) -> Option<(u64, u8, Action)> {
         let entry = self.data[hash & SEARCH_TABLE_MASK];
         if entry.key == hash {
             Some(entry.unpack())

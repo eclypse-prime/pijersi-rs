@@ -59,21 +59,15 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (Score, [Score; N_CELLS]
 fn read_transposition_table(
     cells_hash: usize,
     current_player: Player,
-    depth: u64,
     transposition_table: Option<&Mutex<SearchTable>>,
-) -> Option<(Score, Action, u64)> {
+) -> Option<(Action, u64)> {
     if let Some(transposition_table) = transposition_table {
         let mut transposition_table = transposition_table.lock().unwrap();
-        // if let Some((_table_score, _table_depth, table_player, table_action)) =
-        if let Some((table_score, table_depth, table_player, table_action)) =
+        if let Some((table_depth, table_player, table_action)) =
             transposition_table.read(cells_hash)
         {
             if table_player == current_player {
-                if depth == table_depth {
-                    Some((table_score, table_action, table_depth))
-                } else {
-                    Some((Score::MIN, table_action, table_depth))
-                }
+                Some((table_action, table_depth))
             } else {
                 None
             }
@@ -89,7 +83,6 @@ fn read_transposition_table(
 fn write_transposition_table(
     cells_hash: usize,
     current_player: Player,
-    score: Score,
     action: Action,
     depth: u64,
     table_depth: Option<u64>,
@@ -99,11 +92,11 @@ fn write_transposition_table(
         if let Some(table_depth) = table_depth {
             if depth > table_depth {
                 let mut transposition_table = transposition_table.lock().unwrap();
-                transposition_table.insert(cells_hash, score, depth, current_player, action);
+                transposition_table.insert(cells_hash, depth, current_player, action);
             }
         } else {
             let mut transposition_table = transposition_table.lock().unwrap();
-            transposition_table.insert(cells_hash, score, depth, current_player, action);
+            transposition_table.insert(cells_hash, depth, current_player, action);
         }
     }
 }
@@ -120,14 +113,10 @@ pub fn sort_actions(
     let mut index_sorted = 0;
     if let Some(table_action) = table_action {
         for i in 0..n_actions {
-            if table_action == available_actions[i] {
-                let action_i = available_actions[i];
-                let action_0 = available_actions[0];
+            if available_actions[i] == table_action {
                 available_actions[i] = available_actions[0];
                 available_actions[0] = table_action;
                 index_sorted = 1;
-                assert_eq!(available_actions[i], action_0);
-                assert_eq!(available_actions[0], action_i);
                 break;
             }
         }
@@ -182,7 +171,7 @@ pub fn evaluate_action(
 
     if let Some(end_time) = end_time {
         if Instant::now() > end_time {
-            return Score::MIN;
+            return -MAX_SCORE;
         }
     }
 
@@ -190,10 +179,10 @@ pub fn evaluate_action(
     let n_actions = available_actions.len();
 
     if n_actions == 0 {
-        return Score::MIN;
+        return -MAX_SCORE;
     }
 
-    let mut score = Score::MIN;
+    let mut score = -MAX_SCORE;
 
     let mut alpha = alpha;
     if depth == 1 {
@@ -226,22 +215,11 @@ pub fn evaluate_action(
         }
     } else {
         let new_cells_hash = new_cells.hash();
-        let (table_score, table_action, table_depth) = match read_transposition_table(
-            new_cells_hash,
-            current_player,
-            depth,
-            transposition_table,
-        ) {
-            Some((table_score, table_action, table_depth)) => {
-                (Some(table_score), Some(table_action), Some(table_depth))
-            }
-            None => (None, None, None),
-        };
-        // if let (Some(table_depth), Some(table_score)) = (table_depth, table_score) {
-        //     if table_depth == depth {
-        //         return table_score;
-        //     }
-        // }
+        let (table_action, table_depth) =
+            match read_transposition_table(new_cells_hash, current_player, transposition_table) {
+                Some((table_action, table_depth)) => (Some(table_action), Some(table_depth)),
+                None => (None, None),
+            };
         let winning_action = sort_actions(
             &new_cells,
             current_player,
@@ -252,7 +230,6 @@ pub fn evaluate_action(
             write_transposition_table(
                 new_cells_hash,
                 current_player,
-                MAX_SCORE,
                 winning_action,
                 depth,
                 table_depth,
@@ -274,7 +251,6 @@ pub fn evaluate_action(
             write_transposition_table(
                 new_cells_hash,
                 current_player,
-                eval,
                 available_actions[0],
                 depth,
                 table_depth,
@@ -322,7 +298,6 @@ pub fn evaluate_action(
             write_transposition_table(
                 new_cells_hash,
                 current_player,
-                score,
                 best_action,
                 depth,
                 table_depth,
@@ -379,7 +354,6 @@ pub fn evaluate_action(
             write_transposition_table(
                 new_cells_hash,
                 current_player,
-                score,
                 best_action_atomic.load(Relaxed),
                 depth,
                 table_depth,
