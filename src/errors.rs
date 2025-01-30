@@ -27,7 +27,7 @@ pub enum RuntimeError {
 #[derive(Debug, Error)]
 pub enum RulesErrorKind {
     /// Illegal action
-    #[error("This action is illegal: {0} ({} {} {}).", .0.to_indices().0, .0.to_indices().1, .0.to_indices().2)]
+    #[error("This action is illegal: {} ({} {} {}).", .0, .0.to_indices().0, .0.to_indices().1, .0.to_indices().2)]
     IllegalAction(Action),
 }
 
@@ -49,7 +49,6 @@ pub enum ParseErrorKind {
     #[error("Invalid action string. Expected \"a1b1c1\" or \"a1b1\" format.")]
     InvalidAction,
     /// Invalid position
-
     #[error("Invalid position string. See documentation at https://github.com/eclypse-prime/pijersi-rs/blob/main/UGI.md.")]
     InvalidPosition(#[from] InvalidPositionKind),
     /// Invalid PSN string
