@@ -106,9 +106,9 @@ pub fn search(
         );
         scores[0] = first_eval;
 
-        let alpha: AtomicI32 = AtomicI32::new(max(alpha, first_eval));
+        let alpha_atomic: AtomicI32 = AtomicI32::new(max(alpha, first_eval));
         // This will stop iteration if there is a cutoff
-        let cut: AtomicBool = AtomicBool::new(alpha.load(Relaxed) > beta);
+        let atomic_cut: AtomicBool = AtomicBool::new(alpha_atomic.load(Relaxed) > beta);
 
         // Evaluate possible moves
         scores
@@ -119,28 +119,29 @@ pub fn search(
             .for_each(|(k, score)| {
                 let action = available_actions[order[k]];
                 *score = {
-                    if cut.load(Relaxed) {
+                    if atomic_cut.load(Relaxed) {
                         Score::MIN
                     } else {
                         let eval = {
+                            let alpha = alpha_atomic.load(Relaxed);
                             // Search with a null window
                             let eval_null_window = -evaluate_action(
                                 cells,
                                 1 - current_player,
                                 action,
                                 depth - 1,
-                                (-alpha.load(Relaxed) - 1, -alpha.load(Relaxed)),
+                                (-alpha - 1, -alpha),
                                 end_time,
                                 transposition_table,
                             );
                             // If fail high, do the search with the full window
-                            if alpha.load(Relaxed) < eval_null_window && eval_null_window < beta {
+                            if alpha < eval_null_window && eval_null_window < beta {
                                 -evaluate_action(
                                     cells,
                                     1 - current_player,
                                     action,
                                     depth - 1,
-                                    (-beta, -alpha.load(Relaxed)),
+                                    (-beta, -alpha),
                                     end_time,
                                     transposition_table,
                                 )
@@ -149,11 +150,11 @@ pub fn search(
                             }
                         };
 
-                        alpha.fetch_max(eval, Relaxed);
+                        alpha_atomic.fetch_max(eval, Relaxed);
 
                         // Cutoff
-                        if alpha.load(Relaxed) > beta {
-                            cut.store(true, Relaxed);
+                        if eval > beta {
+                            atomic_cut.store(true, Relaxed);
                         }
                         eval
                     }
@@ -170,14 +171,17 @@ pub fn search(
 
     let scores: Vec<Score> = reverse_argsort(&scores, &order);
 
-    scores
+
+    let res = scores
         .iter()
         .enumerate()
         .rev()
         .max_by_key(|(_index, &score)| score)
         .map(|(index, &score)| (available_actions[index], score))
-        .map(|(action, score)| (action, score, scores))
-}
+        .map(|(action, score)| (action, score, scores));
+
+    res
+    }
 
 /// Returns the best move by searching up to the chosen depth.
 ///
