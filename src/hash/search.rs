@@ -78,4 +78,11 @@ impl SearchTable {
             None
         }
     }
+    #[inline]
+    /// Empties the transposition table
+    pub fn empty(&mut self) {
+        for i in 0..SEARCH_TABLE_SIZE {
+            self.data[i] = Default::default();
+        }
+    }
 }
