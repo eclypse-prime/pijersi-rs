@@ -114,8 +114,7 @@ pub fn sort_actions(
     if let Some(table_action) = table_action {
         for i in 0..n_actions {
             if available_actions[i] == table_action {
-                available_actions[i] = available_actions[0];
-                available_actions[0] = table_action;
+                available_actions[..].swap(i, 0);
                 index_sorted = 1;
                 break;
             }

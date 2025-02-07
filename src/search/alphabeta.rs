@@ -16,7 +16,7 @@ use crate::utils::{argsort, reverse_argsort};
 
 use super::super::logic::movegen::available_player_actions;
 
-use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_with_details};
+use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_with_details, MAX_SCORE};
 use super::Score;
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
@@ -67,100 +67,136 @@ pub fn search(
         return None;
     }
 
-    let scores: Vec<Score> = if depth == 1 {
-        #[cfg(feature = "nps-count")]
-        unsafe {
-            increment_node_count(n_actions as u64);
+    let scores: Vec<Score> = match depth {
+        0 => return None,
+        1 => {
+            #[cfg(feature = "nps-count")]
+            unsafe {
+                increment_node_count(n_actions as u64);
+            }
+            // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
+            let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
+            order
+                .iter()
+                .map(|&index| available_actions[index])
+                .map(|action| {
+                    -evaluate_action_terminal(
+                        cells,
+                        1 - current_player,
+                        action,
+                        previous_score,
+                        &previous_piece_scores,
+                    )
+                })
+                .collect()
         }
-        // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
-        let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
-        order
-            .iter()
-            .map(|&index| available_actions[index])
-            .map(|action| {
-                -evaluate_action_terminal(
+        2 => {
+            // On depth 2, run the classic recursive search sequentially
+
+            // Cutoffs will happen on winning moves
+            let mut alpha = BASE_ALPHA;
+            let beta = BASE_BETA;
+
+            let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
+
+            // Evaluate possible moves
+            for k in 0..n_actions {
+                let action = available_actions[order[k]];
+                let eval = -evaluate_action(
                     cells,
                     1 - current_player,
                     action,
-                    previous_score,
-                    &previous_piece_scores,
-                )
-            })
-            .collect()
-    }
-    // On depth > 1, run the classic recursive search, with the lowest depth being parallelized
-    else {
-        // Cutoffs will happen on winning moves
-        let alpha = BASE_ALPHA;
-        let beta = BASE_BETA;
+                    depth - 1,
+                    (-beta, -alpha),
+                    end_time,
+                    transposition_table,
+                );
 
-        let mut scores: Vec<Score> = vec![0; n_actions];
-        let first_eval = -evaluate_action(
-            cells,
-            1 - current_player,
-            available_actions[order[0]],
-            depth - 1,
-            (-beta, -alpha),
-            end_time,
-            transposition_table,
-        );
-        scores[0] = first_eval;
+                alpha = max(alpha, eval);
+                scores[k] = eval;
 
-        let alpha_atomic: AtomicI32 = AtomicI32::new(max(alpha, first_eval));
-        // This will stop iteration if there is a cutoff
-        let atomic_cut: AtomicBool = AtomicBool::new(alpha_atomic.load(Relaxed) > beta);
+                // Cutoff
+                if eval > beta {
+                    break;
+                }
+            }
+            scores
+        }
+        _ => {
+            // On depth > 2, run the classic recursive search sequentially with parallel search
 
-        // Evaluate possible moves
-        scores
-            .iter_mut()
-            .enumerate()
-            .skip(1)
-            .par_bridge()
-            .for_each(|(k, score)| {
-                let action = available_actions[order[k]];
-                *score = {
-                    if atomic_cut.load(Relaxed) {
-                        Score::MIN
-                    } else {
-                        let eval = {
-                            let alpha = alpha_atomic.load(Relaxed);
-                            // Search with a null window
-                            let eval_null_window = -evaluate_action(
-                                cells,
-                                1 - current_player,
-                                action,
-                                depth - 1,
-                                (-alpha - 1, -alpha),
-                                end_time,
-                                transposition_table,
-                            );
-                            // If fail high, do the search with the full window
-                            if alpha < eval_null_window && eval_null_window < beta {
-                                -evaluate_action(
+            // Cutoffs will happen on winning moves
+            let alpha = BASE_ALPHA;
+            let beta = BASE_BETA;
+
+            let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
+            let first_eval = -evaluate_action(
+                cells,
+                1 - current_player,
+                available_actions[order[0]],
+                depth - 1,
+                (-beta, -alpha),
+                end_time,
+                transposition_table,
+            );
+            scores[0] = first_eval;
+
+            let alpha_atomic: AtomicI32 = AtomicI32::new(max(alpha, first_eval));
+            // This will stop iteration if there is a cutoff
+            let atomic_cut: AtomicBool = AtomicBool::new(alpha_atomic.load(Relaxed) > beta);
+
+            // Evaluate possible moves
+            scores
+                .iter_mut()
+                .enumerate()
+                .skip(1)
+                .par_bridge()
+                .for_each(|(k, score)| {
+                    let action = available_actions[order[k]];
+                    *score = {
+                        if atomic_cut.load(Relaxed) {
+                            Score::MIN
+                        } else {
+                            let eval = {
+                                let alpha = alpha_atomic.load(Relaxed);
+                                // Search with a null window
+                                let eval_null_window = -evaluate_action(
                                     cells,
                                     1 - current_player,
                                     action,
                                     depth - 1,
-                                    (-beta, -alpha),
+                                    (-alpha - 1, -alpha),
                                     end_time,
                                     transposition_table,
-                                )
-                            } else {
-                                eval_null_window
+                                );
+                                // If fail high, do the search with the full window
+                                if alpha < eval_null_window && eval_null_window < beta {
+                                    -evaluate_action(
+                                        cells,
+                                        1 - current_player,
+                                        action,
+                                        depth - 1,
+                                        (-beta, -alpha),
+                                        end_time,
+                                        transposition_table,
+                                    )
+                                } else {
+                                    eval_null_window
+                                }
+                            };
+
+                            alpha_atomic.fetch_max(eval, Relaxed);
+
+                            // Cutoff
+                            if eval > beta {
+                                atomic_cut.store(true, Relaxed);
                             }
-                        };
-
-                        alpha_atomic.fetch_max(eval, Relaxed);
-
-                        // Cutoff
-                        if eval > beta {
-                            atomic_cut.store(true, Relaxed);
+                            eval
                         }
-                        eval
                     }
-                }
-            });
-        scores
+                });
+            scores
+        }
     };
 
     if let Some(end_time) = end_time {
