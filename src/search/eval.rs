@@ -185,125 +185,114 @@ pub fn evaluate_action(
     let mut score = -MAX_SCORE;
 
     let mut alpha = alpha;
-    if depth == 1 {
-        #[cfg(feature = "nps-count")]
-        let mut node_count: u64 = 1;
-        let (previous_score, previous_piece_scores) = evaluate_position_with_details(&new_cells);
-        for action in available_actions.into_iter() {
+    match depth {
+        1 => {
             #[cfg(feature = "nps-count")]
-            {
-                node_count += 1;
+            let mut node_count: u64 = 1;
+            let (previous_score, previous_piece_scores) =
+                evaluate_position_with_details(&new_cells);
+            for action in available_actions.into_iter() {
+                #[cfg(feature = "nps-count")]
+                {
+                    node_count += 1;
+                }
+                score = max(
+                    score,
+                    -evaluate_action_terminal(
+                        &new_cells,
+                        1 - current_player,
+                        action,
+                        previous_score,
+                        &previous_piece_scores,
+                    ),
+                );
+                alpha = max(alpha, score);
+                if alpha > beta {
+                    break;
+                }
             }
-            score = max(
-                score,
-                -evaluate_action_terminal(
-                    &new_cells,
-                    1 - current_player,
-                    action,
-                    previous_score,
-                    &previous_piece_scores,
-                ),
-            );
-            alpha = max(alpha, score);
-            if alpha > beta {
-                break;
+            #[cfg(feature = "nps-count")]
+            unsafe {
+                increment_node_count(node_count);
             }
         }
-        #[cfg(feature = "nps-count")]
-        unsafe {
-            increment_node_count(node_count);
-        }
-    } else {
-        let new_cells_hash = new_cells.hash();
-        let (table_action, table_depth) =
-            match read_transposition_table(new_cells_hash, current_player, transposition_table) {
-                Some((table_action, table_depth)) => (Some(table_action), Some(table_depth)),
-                None => (None, None),
-            };
-        let winning_action = sort_actions(
-            &new_cells,
-            current_player,
-            table_action,
-            &mut available_actions,
-        );
-        if let Some(winning_action) = winning_action {
-            write_transposition_table(
-                new_cells_hash,
+        2 => {
+            let winning_action = sort_actions(
+                &new_cells,
                 current_player,
-                winning_action,
-                depth,
-                table_depth,
-                transposition_table,
+                None,
+                &mut available_actions,
             );
-            return MAX_SCORE;
-        }
-        let eval = -evaluate_action(
-            &new_cells,
-            1 - current_player,
-            available_actions[0],
-            depth - 1,
-            (-beta, -alpha),
-            end_time,
-            transposition_table,
-        );
-        alpha = max(alpha, eval);
-        if alpha > beta {
-            write_transposition_table(
-                new_cells_hash,
-                current_player,
-                available_actions[0],
-                depth,
-                table_depth,
-                transposition_table,
-            );
-            return eval;
-        }
-        score = eval;
-        if depth == 2 {
-            let mut best_action = available_actions[0];
-            for action in available_actions.into_iter().skip(1) {
+            if winning_action.is_some() {
+                return MAX_SCORE;
+            }
+            for action in available_actions.into_iter() {
                 let eval = {
-                    let eval_null_window = -evaluate_action(
+                    -evaluate_action(
                         &new_cells,
                         1 - current_player,
                         action,
                         depth - 1,
-                        (-alpha - 1, -alpha),
+                        (-beta, -alpha),
                         end_time,
                         transposition_table,
-                    );
-                    if alpha < eval_null_window && eval_null_window < beta {
-                        -evaluate_action(
-                            &new_cells,
-                            1 - current_player,
-                            action,
-                            depth - 1,
-                            (-beta, -alpha),
-                            end_time,
-                            transposition_table,
-                        )
-                    } else {
-                        eval_null_window
-                    }
+                    )
                 };
-                if eval > score {
-                    score = eval;
-                    best_action = action;
-                }
+                score = max(score, eval);
                 alpha = max(alpha, eval);
                 if alpha > beta {
                     break;
                 }
             }
-            write_transposition_table(
-                new_cells_hash,
+        }
+        _ => {
+            let new_cells_hash = new_cells.hash();
+            let (table_action, table_depth) =
+                match read_transposition_table(new_cells_hash, current_player, transposition_table)
+                {
+                    Some((table_action, table_depth)) => (Some(table_action), Some(table_depth)),
+                    None => (None, None),
+                };
+            let winning_action = sort_actions(
+                &new_cells,
                 current_player,
-                best_action,
-                depth,
-                table_depth,
+                table_action,
+                &mut available_actions,
+            );
+            if let Some(winning_action) = winning_action {
+                write_transposition_table(
+                    new_cells_hash,
+                    current_player,
+                    winning_action,
+                    depth,
+                    table_depth,
+                    transposition_table,
+                );
+                return MAX_SCORE;
+            }
+            // Evaluate first action sequentially
+            let eval = -evaluate_action(
+                &new_cells,
+                1 - current_player,
+                available_actions[0],
+                depth - 1,
+                (-beta, -alpha),
+                end_time,
                 transposition_table,
             );
-        } else {
+            alpha = max(alpha, eval);
+            if alpha > beta {
+                write_transposition_table(
+                    new_cells_hash,
+                    current_player,
+                    available_actions[0],
+                    depth,
+                    table_depth,
+                    transposition_table,
+                );
+                return eval;
+            }
+            score = eval;
             let alpha_atomic = AtomicI32::new(alpha);
             let score_atomic = AtomicI32::new(score);
             let best_action_atomic = AtomicU32::new(available_actions[0]);
