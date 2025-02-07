@@ -326,9 +326,7 @@ pub fn evaluate_action(
                                 end_time,
                                 transposition_table,
                             );
-                            if alpha < eval_null_window
-                                && eval_null_window < beta
-                            {
+                            if alpha < eval_null_window && eval_null_window < beta {
                                 -evaluate_action(
                                     &new_cells,
                                     1 - current_player,

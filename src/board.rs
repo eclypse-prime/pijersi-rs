@@ -192,7 +192,11 @@ impl Board {
             depth,
             None,
             self.options.verbose,
-            if self.options.use_table {transposition_table} else {None},
+            if self.options.use_table {
+                transposition_table
+            } else {
+                None
+            },
         )
     }
 
@@ -215,7 +219,11 @@ impl Board {
             u64::MAX,
             Some(Instant::now() + Duration::from_millis(movetime)),
             self.options.verbose,
-            if self.options.use_table {transposition_table} else {None},
+            if self.options.use_table {
+                transposition_table
+            } else {
+                None
+            },
         )
     }
 

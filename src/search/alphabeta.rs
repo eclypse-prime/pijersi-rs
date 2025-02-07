@@ -171,7 +171,6 @@ pub fn search(
 
     let scores: Vec<Score> = reverse_argsort(&scores, &order);
 
-
     let res = scores
         .iter()
         .enumerate()
@@ -181,7 +180,7 @@ pub fn search(
         .map(|(action, score)| (action, score, scores));
 
     res
-    }
+}
 
 /// Returns the best move by searching up to the chosen depth.
 ///
