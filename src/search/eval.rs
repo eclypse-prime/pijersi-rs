@@ -315,16 +315,18 @@ pub fn evaluate_action(
                 .for_each(|action| {
                     if !cut_atomic.load(Relaxed) {
                         let eval = {
+                            let alpha = alpha_atomic.load(Relaxed);
+
                             let eval_null_window = -evaluate_action(
                                 &new_cells,
                                 1 - current_player,
                                 action,
                                 depth - 1,
-                                (-alpha_atomic.load(Relaxed) - 1, -alpha_atomic.load(Relaxed)),
+                                (-alpha - 1, -alpha),
                                 end_time,
                                 transposition_table,
                             );
-                            if alpha_atomic.load(Relaxed) < eval_null_window
+                            if alpha < eval_null_window
                                 && eval_null_window < beta
                             {
                                 -evaluate_action(
@@ -332,7 +334,7 @@ pub fn evaluate_action(
                                     1 - current_player,
                                     action,
                                     depth - 1,
-                                    (-beta, -alpha_atomic.load(Relaxed)),
+                                    (-beta, -alpha),
                                     end_time,
                                     transposition_table,
                                 )
