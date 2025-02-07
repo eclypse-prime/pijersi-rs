@@ -216,12 +216,8 @@ pub fn evaluate_action(
             }
         }
         2 => {
-            let winning_action = sort_actions(
-                &new_cells,
-                current_player,
-                None,
-                &mut available_actions,
-            );
+            let winning_action =
+                sort_actions(&new_cells, current_player, None, &mut available_actions);
             if winning_action.is_some() {
                 return MAX_SCORE;
             }

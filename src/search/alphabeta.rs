@@ -16,7 +16,9 @@ use crate::utils::{argsort, reverse_argsort};
 
 use super::super::logic::movegen::available_player_actions;
 
-use super::eval::{evaluate_action, evaluate_action_terminal, evaluate_position_with_details, MAX_SCORE};
+use super::eval::{
+    evaluate_action, evaluate_action_terminal, evaluate_position_with_details, MAX_SCORE,
+};
 use super::Score;
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
