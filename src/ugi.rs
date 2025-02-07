@@ -83,6 +83,7 @@ enum QueryArgs {
 #[derive(Subcommand, Debug)]
 enum SetoptionArgs {
     UseBook { value: String },
+    UseTable { value: String },
     Verbose { value: String },
 }
 
@@ -286,6 +287,12 @@ impl UgiEngine {
             SetoptionArgs::UseBook { value } => match parse_bool_arg(&value) {
                 Ok(value) => {
                     self.board.options.use_book = value;
+                }
+                Err(e) => print_error_trace(&e),
+            },
+            SetoptionArgs::UseTable { value } => match parse_bool_arg(&value) {
+                Ok(value) => {
+                    self.board.options.use_table = value;
                 }
                 Err(e) => print_error_trace(&e),
             },

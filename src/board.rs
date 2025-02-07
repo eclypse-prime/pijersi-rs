@@ -42,6 +42,8 @@ use crate::search::Score;
 pub struct BoardOptions {
     /// Using the opening book
     pub use_book: bool,
+    /// Using the hash table
+    pub use_table: bool,
     /// Printing the info logs during searches
     pub verbose: bool,
 }
@@ -56,12 +58,13 @@ impl BoardOptions {
     /// `BoardOptions` constructor. By default, the options are set to:
     /// ```not_rust
     /// use_book: true
+    /// use_table: true
     /// verbose: true
     /// ```
     pub const fn new() -> Self {
         Self {
             use_book: false,
-            // use_book: true,
+            use_table: true,
             verbose: true,
         }
     }
@@ -189,7 +192,7 @@ impl Board {
             depth,
             None,
             self.options.verbose,
-            transposition_table,
+            if self.options.use_table {transposition_table} else {None},
         )
     }
 
@@ -212,7 +215,7 @@ impl Board {
             u64::MAX,
             Some(Instant::now() + Duration::from_millis(movetime)),
             self.options.verbose,
-            transposition_table,
+            if self.options.use_table {transposition_table} else {None},
         )
     }
 
