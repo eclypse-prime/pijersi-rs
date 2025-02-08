@@ -63,7 +63,7 @@ impl BoardOptions {
     /// ```
     pub const fn new() -> Self {
         Self {
-            use_book: false,
+            use_book: true,
             use_table: true,
             verbose: true,
         }
