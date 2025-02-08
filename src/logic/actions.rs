@@ -6,7 +6,10 @@
 //! |-------|------------------|-------------|--------------|-------------|
 //! | Width | 8                | 8           | 8            | 8           |
 
-use std::ops::{Index, IndexMut, Range, RangeFull};
+use std::{
+    ops::{Index, IndexMut, Range, RangeFull},
+    sync::atomic::AtomicU32,
+};
 
 use crate::piece::{Piece, PieceTrait};
 
@@ -20,6 +23,8 @@ pub const MAX_PLAYER_ACTIONS: usize = 512;
 
 /// An action is stored as a u32 value. See [`crate::logic::actions`] for the specific data format.
 pub type Action = u32;
+/// An atomic action is stored as a AtomicU32 value.
+pub type AtomicAction = AtomicU32;
 
 /// Mask to get the action without additional data
 pub const ACTION_MASK: Action = 0x00FF_FFFF;

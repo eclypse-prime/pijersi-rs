@@ -1,8 +1,8 @@
 //! This module implements the alphabeta search that chooses the best move
 
 use std::cmp::max;
+use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
-use std::sync::atomic::{AtomicBool, AtomicI32};
 use std::sync::RwLock;
 use std::time::Instant;
 
@@ -19,7 +19,7 @@ use super::super::logic::movegen::available_player_actions;
 use super::eval::{
     evaluate_action, evaluate_action_terminal, evaluate_position_with_details, MAX_SCORE,
 };
-use super::Score;
+use super::{AtomicScore, NodeType, Score};
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
 pub const BASE_BETA: Score = 262_144;
@@ -105,12 +105,12 @@ pub fn search(
             for k in 0..n_actions {
                 let action = available_actions[order[k]];
                 let eval = -evaluate_action(
-                    cells,
-                    1 - current_player,
+                    (cells, 1 - current_player),
                     action,
                     depth - 1,
                     (-beta, -alpha),
                     end_time,
+                    NodeType::PV,
                     transposition_table,
                 );
 
@@ -133,17 +133,17 @@ pub fn search(
 
             let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
             let first_eval = -evaluate_action(
-                cells,
-                1 - current_player,
+                (cells, 1 - current_player),
                 available_actions[order[0]],
                 depth - 1,
                 (-beta, -alpha),
                 end_time,
+                NodeType::PV,
                 transposition_table,
             );
             scores[0] = first_eval;
 
-            let alpha_atomic: AtomicI32 = AtomicI32::new(max(alpha, first_eval));
+            let alpha_atomic: AtomicScore = AtomicScore::new(max(alpha, first_eval));
             // This will stop iteration if there is a cutoff
             let atomic_cut: AtomicBool = AtomicBool::new(alpha_atomic.load(Relaxed) > beta);
 
@@ -163,23 +163,23 @@ pub fn search(
                                 let alpha = alpha_atomic.load(Relaxed);
                                 // Search with a null window
                                 let eval_null_window = -evaluate_action(
-                                    cells,
-                                    1 - current_player,
+                                    (cells, 1 - current_player),
                                     action,
                                     depth - 1,
                                     (-alpha - 1, -alpha),
                                     end_time,
+                                    NodeType::Cut,
                                     transposition_table,
                                 );
                                 // If fail high, do the search with the full window
                                 if alpha < eval_null_window && eval_null_window < beta {
                                     -evaluate_action(
-                                        cells,
-                                        1 - current_player,
+                                        (cells, 1 - current_player),
                                         action,
                                         depth - 1,
                                         (-beta, -alpha),
                                         end_time,
+                                        NodeType::PV,
                                         transposition_table,
                                     )
                                 } else {
