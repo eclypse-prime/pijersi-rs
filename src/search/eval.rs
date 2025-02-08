@@ -14,6 +14,7 @@ use crate::logic::actions::{play_action, Action, ActionTrait, Actions};
 use crate::logic::index::{CellIndex, CellIndexTrait};
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
+use crate::logic::rules::is_action_win;
 use crate::logic::{Cells, Player, N_CELLS};
 use crate::piece::{Piece, PieceTrait};
 use crate::search::lookup::PIECE_SCORES;
@@ -111,25 +112,30 @@ pub fn sort_actions(
 ) -> Option<Action> {
     let n_actions = available_actions.len();
     let mut index_sorted = 0;
+
+    // If there is a TT action and it is part of the available actions, move it first
     if let Some(table_action) = table_action {
         for i in 0..n_actions {
             if available_actions[i] == table_action {
-                available_actions[..].swap(i, 0);
+                // Immediately returns if action is win
+                if is_action_win(cells, table_action) {
+                    return Some(table_action);
+                }
+                available_actions[..].swap(0, i);
                 index_sorted = 1;
                 break;
             }
         }
     }
+
+    // Skip sorting the first action if there is a TT action
     let index_start = index_sorted;
+    // Find all the captures and put them at the beginning
     for i in index_start..n_actions {
         let action = available_actions[i];
-        let (index_start, index_mid, index_end) = action.to_indices();
-        if !cells[index_start].is_wise()
-            && ((current_player == 0 && index_end.is_black_home())
-                || (current_player == 1 && index_end.is_white_home())
-                || ((current_player == 0 && !index_mid.is_null() && index_mid.is_black_home())
-                    || (current_player == 1 && !index_mid.is_null() && index_mid.is_white_home())))
-        {
+        let (_index_start, index_mid, index_end) = action.to_indices();
+        // Immediately return if the action is a win
+        if is_action_win(cells, action) {
             return Some(action);
         }
         if (!index_mid.is_null()
@@ -295,7 +301,7 @@ pub fn evaluate_action(
             available_actions
                 .into_iter()
                 .skip(1)
-                .par_bridge()
+                // .par_bridge()
                 .for_each(|action| {
                     if !cut_atomic.load(Relaxed) {
                         let eval = {
@@ -361,10 +367,7 @@ pub fn evaluate_action_terminal(
 ) -> Score {
     let (index_start, index_mid, index_end) = action.to_indices();
 
-    if !cells[index_start].is_wise()
-        && ((current_player == 1 && index_end.is_black_home())
-            || (current_player == 0 && index_end.is_white_home()))
-    {
+    if is_action_win(cells, action) {
         return -MAX_SCORE;
     }
 
