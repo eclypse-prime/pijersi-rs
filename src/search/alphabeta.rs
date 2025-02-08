@@ -92,9 +92,8 @@ pub fn search(
                 })
                 .collect()
         }
+        // On depth 2, run the classic recursive search sequentially
         2 => {
-            // On depth 2, run the classic recursive search sequentially
-
             // Cutoffs will happen on winning moves
             let mut alpha = BASE_ALPHA;
             let beta = BASE_BETA;
@@ -124,14 +123,15 @@ pub fn search(
             }
             scores
         }
+        // On depth > 2, run the classic recursive search sequentially with parallel search
         _ => {
-            // On depth > 2, run the classic recursive search sequentially with parallel search
-
-            // Cutoffs will happen on winning moves
+            // Cutoffs will happen on winning actions
             let alpha = BASE_ALPHA;
             let beta = BASE_BETA;
 
             let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
+
+            // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
             let first_eval = -evaluate_action(
                 (cells, 1 - current_player),
                 available_actions[order[0]],

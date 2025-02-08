@@ -56,6 +56,7 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (Score, [Score; N_CELLS]
     (piece_scores.iter().sum(), piece_scores)
 }
 
+/// Reads the transposition table and returns its entry (action, depth, score, node type) if it exists.
 #[inline]
 fn read_transposition_table(
     cells_hash: usize,
@@ -68,18 +69,16 @@ fn read_transposition_table(
             transposition_table.read(cells_hash)
         {
             if table_player == current_player {
-                Some((table_action, table_depth, table_score, table_node_type))
-            } else {
-                None
+                return Some((table_action, table_depth, table_score, table_node_type));
             }
-        } else {
-            None
         }
-    } else {
-        None
     }
+    None
 }
 
+/// Write the transposition table and store an entry (action, depth, score, node type).
+///
+/// Replaces the stored entry if the new entry has a higher depth or is the same depth and is a PV node.
 #[inline]
 fn write_transposition_table(
     cells_hash: usize,
@@ -92,10 +91,14 @@ fn write_transposition_table(
 ) {
     if let Some(transposition_table) = transposition_table {
         let mut transposition_table = transposition_table.write().unwrap();
-        if let Some((table_depth, _table_player, _table_action, _table_score, _table_node_type)) =
+        if let Some((table_depth, _table_player, _table_action, _table_score, table_node_type)) =
             transposition_table.read(cells_hash)
         {
-            if depth > table_depth {
+            if depth > table_depth
+                || (depth == table_depth
+                    && table_node_type != NodeType::PV
+                    && node_type == NodeType::PV)
+            {
                 transposition_table.insert(
                     cells_hash,
                     depth,
@@ -183,6 +186,7 @@ pub fn evaluate_action(
         };
     }
 
+    // Stop searching if the allocated time is up (if there are time controls)
     if let Some(end_time) = end_time {
         if Instant::now() > end_time {
             return -MAX_SCORE;
@@ -192,6 +196,7 @@ pub fn evaluate_action(
     let mut available_actions = available_player_actions(&new_cells, current_player);
     let n_actions = available_actions.len();
 
+    // If there are no actions available, the player has lost
     if n_actions == 0 {
         return -MAX_SCORE;
     }
@@ -200,6 +205,7 @@ pub fn evaluate_action(
 
     let mut alpha = alpha;
     match depth {
+        // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
         1 => {
             #[cfg(feature = "nps-count")]
             let mut node_count: u64 = 1;
@@ -221,6 +227,7 @@ pub fn evaluate_action(
                     ),
                 );
                 alpha = max(alpha, score);
+                // Beta-cutoff, stop the search
                 if alpha > beta {
                     break;
                 }
@@ -230,6 +237,7 @@ pub fn evaluate_action(
                 increment_node_count(node_count);
             }
         }
+        // On depth 2, run the classic recursive search sequentially
         2 => {
             let winning_action =
                 sort_actions(&new_cells, current_player, None, &mut available_actions);
@@ -250,17 +258,21 @@ pub fn evaluate_action(
                 };
                 score = max(score, eval);
                 alpha = max(alpha, eval);
+                // Beta-cutoff, stop the search
                 if alpha > beta {
                     break;
                 }
             }
         }
+        // On depth > 2, run the classic recursive search sequentially with parallel search
         _ => {
+            // Read the transposition table
             let new_cells_hash = new_cells.hash();
             let table_action =
                 match read_transposition_table(new_cells_hash, current_player, transposition_table)
                 {
                     Some((table_action, table_depth, table_score, table_node_type)) => {
+                        // If the table has a match with the same depth, a cutoff may be possible depending on the node type
                         if table_depth == depth {
                             match table_node_type {
                                 NodeType::PV => return table_score,
@@ -280,12 +292,16 @@ pub fn evaluate_action(
                     }
                     None => None,
                 };
+
+            // Sort actions to improve alphabeta search
             let winning_action = sort_actions(
                 &new_cells,
                 current_player,
                 table_action,
                 &mut available_actions,
             );
+
+            // Return if one of the available actions is an immediate win
             if let Some(winning_action) = winning_action {
                 write_transposition_table(
                     new_cells_hash,
@@ -298,6 +314,7 @@ pub fn evaluate_action(
                 );
                 return MAX_SCORE;
             }
+            // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
             // Evaluate first action sequentially
             let eval = -evaluate_action(
                 (&new_cells, 1 - current_player),
@@ -313,6 +330,7 @@ pub fn evaluate_action(
                 transposition_table,
             );
             alpha = max(alpha, eval);
+            // Beta-cutoff, stop the search
             if alpha > beta {
                 write_transposition_table(
                     new_cells_hash,
@@ -326,9 +344,12 @@ pub fn evaluate_action(
                 return eval;
             }
             score = max(score, eval);
+
+            // Using atomic variables for parallel search
             let alpha_atomic = AtomicScore::new(alpha);
             let score_atomic = AtomicScore::new(score);
             let best_action_atomic = AtomicAction::new(available_actions[0]);
+            // This will stop iteration if there is a cutoff
             let cut_atomic = AtomicBool::new(false);
             available_actions
                 .into_iter()
@@ -339,6 +360,7 @@ pub fn evaluate_action(
                         let eval = {
                             let alpha = alpha_atomic.load(Relaxed);
 
+                            // Search with a null window
                             let eval_null_window = -evaluate_action(
                                 (&new_cells, 1 - current_player),
                                 action,
@@ -352,6 +374,8 @@ pub fn evaluate_action(
                                 },
                                 transposition_table,
                             );
+
+                            // If fail high, do the search with the full window
                             if alpha < eval_null_window && eval_null_window < beta {
                                 -evaluate_action(
                                     (&new_cells, 1 - current_player),
@@ -375,6 +399,7 @@ pub fn evaluate_action(
                             best_action_atomic.store(action, Relaxed);
                         }
                         alpha_atomic.fetch_max(eval, Relaxed);
+                        // Beta-cutoff, stop the search
                         if eval > beta {
                             cut_atomic.store(true, Relaxed);
                         }

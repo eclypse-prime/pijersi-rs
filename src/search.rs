@@ -14,7 +14,7 @@ pub type AtomicScore = AtomicI32;
 
 /// The type of the node. It is used to determine if the score is exact, lower-bound, or higher bound.
 /// See <https://www.chessprogramming.org/Node_Types>
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum NodeType {
     /// PV (Principal Variation) node: all actions searched, returned score is exact
     #[default]
