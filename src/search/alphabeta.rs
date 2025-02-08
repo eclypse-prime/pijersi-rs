@@ -3,7 +3,7 @@
 use std::cmp::max;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::atomic::{AtomicBool, AtomicI32};
-use std::sync::Mutex;
+use std::sync::RwLock;
 use std::time::Instant;
 
 use rayon::prelude::*;
@@ -44,7 +44,7 @@ pub fn search(
     depth: u64,
     end_time: Option<Instant>,
     scores: &Option<Vec<Score>>,
-    transposition_table: Option<&Mutex<SearchTable>>,
+    transposition_table: Option<&RwLock<SearchTable>>,
 ) -> Option<(Action, Score, Vec<Score>)> {
     if depth == 0 {
         return None;
@@ -230,7 +230,7 @@ pub fn search_iterative(
     max_depth: u64,
     end_time: Option<Instant>,
     verbose: bool,
-    transposition_table: Option<&Mutex<SearchTable>>,
+    transposition_table: Option<&RwLock<SearchTable>>,
 ) -> Option<(Action, Score)> {
     let mut best_result: Option<(Action, Score)> = None;
     let mut last_scores: Option<Vec<Score>> = None;

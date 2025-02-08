@@ -70,7 +70,7 @@ impl SearchTable {
     }
     #[inline]
     /// Reads the transposition table and returns the entry corresponding to the position hash if there is one.
-    pub fn read(&mut self, hash: usize) -> Option<(u64, u8, Action)> {
+    pub fn read(&self, hash: usize) -> Option<(u64, u8, Action)> {
         let entry = self.data[hash & SEARCH_TABLE_MASK];
         if entry.key == hash {
             Some(entry.unpack())

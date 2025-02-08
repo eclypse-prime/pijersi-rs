@@ -3,7 +3,7 @@
 use std::cmp::max;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32};
-use std::sync::Mutex;
+use std::sync::RwLock;
 use std::time::Instant;
 
 use rayon::prelude::*;
@@ -60,10 +60,10 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (Score, [Score; N_CELLS]
 fn read_transposition_table(
     cells_hash: usize,
     current_player: Player,
-    transposition_table: Option<&Mutex<SearchTable>>,
+    transposition_table: Option<&RwLock<SearchTable>>,
 ) -> Option<(Action, u64)> {
     if let Some(transposition_table) = transposition_table {
-        let mut transposition_table = transposition_table.lock().unwrap();
+        let transposition_table = transposition_table.read().unwrap();
         if let Some((table_depth, table_player, table_action)) =
             transposition_table.read(cells_hash)
         {
@@ -87,16 +87,16 @@ fn write_transposition_table(
     action: Action,
     depth: u64,
     table_depth: Option<u64>,
-    transposition_table: Option<&Mutex<SearchTable>>,
+    transposition_table: Option<&RwLock<SearchTable>>,
 ) {
     if let Some(transposition_table) = transposition_table {
         if let Some(table_depth) = table_depth {
             if depth > table_depth {
-                let mut transposition_table = transposition_table.lock().unwrap();
+                let mut transposition_table = transposition_table.write().unwrap();
                 transposition_table.insert(cells_hash, depth, current_player, action);
             }
         } else {
-            let mut transposition_table = transposition_table.lock().unwrap();
+            let mut transposition_table = transposition_table.write().unwrap();
             transposition_table.insert(cells_hash, depth, current_player, action);
         }
     }
@@ -161,7 +161,7 @@ pub fn evaluate_action(
     depth: u64,
     (alpha, beta): (Score, Score),
     end_time: Option<Instant>,
-    transposition_table: Option<&Mutex<SearchTable>>,
+    transposition_table: Option<&RwLock<SearchTable>>,
 ) -> Score {
     let mut new_cells: Cells = *cells;
     play_action(&mut new_cells, action);

@@ -4,7 +4,7 @@
 
 use clap::{Args, Parser, Subcommand};
 use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
-use std::{process::exit, sync::Mutex, time::Instant};
+use std::{process::exit, sync::RwLock, time::Instant};
 
 use crate::{
     board::Board,
@@ -91,7 +91,7 @@ enum SetoptionArgs {
 pub struct UgiEngine {
     board: Board,
     opening_book: Option<OpeningBook>,
-    transposition_table: Option<Mutex<SearchTable>>,
+    transposition_table: Option<RwLock<SearchTable>>,
 }
 
 impl Default for UgiEngine {
@@ -123,7 +123,7 @@ impl UgiEngine {
 
     fn isready(&mut self) {
         self.opening_book = Some(OpeningBook::new());
-        self.transposition_table = Some(Mutex::new(SearchTable::default()));
+        self.transposition_table = Some(RwLock::new(SearchTable::default()));
         println!("readyok");
     }
 

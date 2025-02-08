@@ -12,7 +12,7 @@
 //! 32  33  34  35  36  37  38
 //!   39  40  41  42  43  44
 //! ```
-use std::sync::Mutex;
+use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
 use crate::errors::{ParseError, ParseErrorKind, RulesErrorKind, RuntimeError};
@@ -176,7 +176,7 @@ impl Board {
         &self,
         depth: u64,
         opening_book: Option<&OpeningBook>,
-        transposition_table: Option<&Mutex<SearchTable>>,
+        transposition_table: Option<&RwLock<SearchTable>>,
     ) -> Option<(Action, Score)> {
         if self.options.use_book {
             if let Some((action, book_depth, score)) = self.search_book(opening_book) {
@@ -205,7 +205,7 @@ impl Board {
         &self,
         movetime: u64,
         opening_book: Option<&OpeningBook>,
-        transposition_table: Option<&Mutex<SearchTable>>,
+        transposition_table: Option<&RwLock<SearchTable>>,
     ) -> Option<(Action, Score)> {
         if self.options.use_book {
             if let Some((action, _depth, score)) = self.search_book(opening_book) {
