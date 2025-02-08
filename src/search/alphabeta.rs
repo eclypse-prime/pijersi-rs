@@ -286,9 +286,6 @@ pub fn search_iterative(
                     break;
                 }
                 best_result = Some((action, score));
-                if verbose {
-                    println!("{:?}", &scores);
-                }
                 last_scores = Some(scores);
                 if score > BASE_BETA {
                     if verbose {
