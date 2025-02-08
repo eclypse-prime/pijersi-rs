@@ -5,7 +5,6 @@ use pijersi_rs::logic::perft::perft;
 use pijersi_rs::logic::translate::string_to_action;
 use pijersi_rs::search::alphabeta::{BASE_ALPHA, BASE_BETA};
 use pijersi_rs::search::eval::evaluate_action;
-use pijersi_rs::search::NodeType;
 
 fn bench_perft(c: &mut Criterion) {
     let mut board = Board::new();
