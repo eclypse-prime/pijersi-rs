@@ -301,7 +301,7 @@ pub fn evaluate_action(
             available_actions
                 .into_iter()
                 .skip(1)
-                // .par_bridge()
+                .par_bridge()
                 .for_each(|action| {
                     if !cut_atomic.load(Relaxed) {
                         let eval = {
