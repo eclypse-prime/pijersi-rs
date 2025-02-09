@@ -72,7 +72,7 @@ struct Bucket {
 
 impl Bucket {
     /// Inserts an entry in the bucket if the replace conditions are met.
-    /// 
+    ///
     /// * If there no entry with the same hash, replace the first empty entry or the entry with the lowest stored depth
     /// * If there is an entry with the same hash:
     ///   - Replace the entry if the new depth is higher
