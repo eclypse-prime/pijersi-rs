@@ -1,36 +1,41 @@
 //! This module implements the evaluation functions: evaluates the score of a current position or evaluates the best score at a given depth.
 
 use std::cmp::max;
+use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
-use std::sync::atomic::{AtomicBool, AtomicI64};
+use std::sync::RwLock;
 use std::time::Instant;
 
 use rayon::prelude::*;
 
-use crate::logic::actions::{play_action, Action, ActionTrait, Actions};
+use crate::hash::position::HashTrait;
+use crate::hash::search::SearchTable;
+use crate::logic::actions::{play_action, Action, ActionTrait, Actions, AtomicAction};
 use crate::logic::index::{CellIndex, CellIndexTrait};
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::movegen::available_player_actions;
+use crate::logic::rules::is_action_win;
 use crate::logic::{Cells, Player, N_CELLS};
 use crate::piece::{Piece, PieceTrait};
 use crate::search::lookup::PIECE_SCORES;
 
 #[cfg(feature = "nps-count")]
 use super::alphabeta::increment_node_count;
+use super::{AtomicScore, NodeType, Score};
 
 /// The max score (is reached on winning position)
-pub const MAX_SCORE: i64 = 524_288;
+pub const MAX_SCORE: Score = 16_384;
 
 /// Returns the score of a single cell given its content and index.
 ///
 /// Uses lookup tables for faster computations.
 #[inline]
-pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> i64 {
+pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> Score {
     PIECE_SCORES[PIECE_TO_INDEX[piece as usize] * N_CELLS + index]
 }
 
 /// Returns the score of a board.
-pub fn evaluate_position(cells: &Cells) -> i64 {
+pub fn evaluate_position(cells: &Cells) -> Score {
     #[cfg(feature = "nps-count")]
     unsafe {
         increment_node_count(1);
@@ -43,12 +48,47 @@ pub fn evaluate_position(cells: &Cells) -> i64 {
 }
 
 /// Returns the score of a board along with its individual cell scores.
-pub fn evaluate_position_with_details(cells: &Cells) -> (i64, [i64; N_CELLS]) {
-    let mut piece_scores: [i64; N_CELLS] = [0i64; N_CELLS];
+pub fn evaluate_position_with_details(cells: &Cells) -> (Score, [Score; N_CELLS]) {
+    let mut piece_scores: [Score; N_CELLS] = [0; N_CELLS];
     for (k, &cell) in cells.iter().enumerate() {
         piece_scores[k] = evaluate_cell(cell, k);
     }
     (piece_scores.iter().sum(), piece_scores)
+}
+
+/// Reads the transposition table and returns its entry (action, depth, score, node type) if it exists.
+#[inline]
+pub fn read_transposition_table(
+    cells_hash: usize,
+    transposition_table: Option<&RwLock<SearchTable>>,
+) -> Option<(Action, u64, Score, NodeType)> {
+    if let Some(transposition_table) = transposition_table {
+        let transposition_table = transposition_table.read().unwrap();
+        if let Some((table_depth, table_action, table_score, table_node_type)) =
+            transposition_table.read(cells_hash)
+        {
+            return Some((table_action, table_depth, table_score, table_node_type));
+        }
+    }
+    None
+}
+
+/// Write the transposition table and store an entry (action, depth, score, node type).
+///
+/// Replaces the stored entry if the new entry has a higher depth or is the same depth and is a PV node.
+#[inline]
+pub fn write_transposition_table(
+    cells_hash: usize,
+    action: Action,
+    depth: u64,
+    score: Score,
+    node_type: NodeType,
+    transposition_table: Option<&RwLock<SearchTable>>,
+) {
+    if let Some(transposition_table) = transposition_table {
+        let mut transposition_table = transposition_table.write().unwrap();
+        transposition_table.insert(cells_hash, depth, action, score, node_type);
+    }
 }
 
 /// Sorts the available actions based on how good they are estimated to be (in descending order -> best actions first).
@@ -56,20 +96,36 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (i64, [i64; N_CELLS]) {
 pub fn sort_actions(
     cells: &Cells,
     current_player: Player,
+    table_action: Option<Action>,
     available_actions: &mut Actions,
-) -> bool {
+) -> Option<Action> {
     let n_actions = available_actions.len();
     let mut index_sorted = 0;
-    for i in 0..n_actions {
+
+    // If there is a TT action and it is part of the available actions, move it first
+    if let Some(table_action) = table_action {
+        for i in 0..n_actions {
+            if available_actions[i] == table_action {
+                // Immediately returns if action is win
+                if is_action_win(cells, table_action) {
+                    return Some(table_action);
+                }
+                available_actions[..].swap(0, i);
+                index_sorted = 1;
+                break;
+            }
+        }
+    }
+
+    // Skip sorting the first action if there is a TT action
+    let index_start = index_sorted;
+    // Find all the captures and put them at the beginning
+    for i in index_start..n_actions {
         let action = available_actions[i];
-        let (index_start, index_mid, index_end) = action.to_indices();
-        if !cells[index_start].is_wise()
-            && ((current_player == 0 && index_end.is_black_home())
-                || (current_player == 1 && index_end.is_white_home())
-                || ((current_player == 0 && !index_mid.is_null() && index_mid.is_black_home())
-                    || (current_player == 1 && !index_mid.is_null() && index_mid.is_white_home())))
-        {
-            return true;
+        let (_index_start, index_mid, index_end) = action.to_indices();
+        // Immediately return if the action is a win
+        if is_action_win(cells, action) {
+            return Some(action);
         }
         if (!index_mid.is_null()
             && !cells[index_mid].is_empty()
@@ -81,23 +137,21 @@ pub fn sort_actions(
             index_sorted += 1;
         }
     }
-    false
+    None
 }
 
 /// Evaluates the score of a given action by searching at a given depth.
 ///
 /// Recursively calculates the best score using the alphabeta search to the chosen depth.
 pub fn evaluate_action(
-    cells: &Cells,
-    current_player: Player,
+    (cells, current_player): (&Cells, Player),
     action: Action,
     depth: u64,
-    alpha: i64,
-    beta: i64,
+    (alpha, beta): (Score, Score),
     end_time: Option<Instant>,
-) -> i64 {
-    let mut alpha = alpha;
-
+    node_type: NodeType,
+    transposition_table: Option<&RwLock<SearchTable>>,
+) -> Score {
     let mut new_cells: Cells = *cells;
     play_action(&mut new_cells, action);
 
@@ -109,104 +163,166 @@ pub fn evaluate_action(
         };
     }
 
+    // Stop searching if the allocated time is up (if there are time controls)
     if let Some(end_time) = end_time {
         if Instant::now() > end_time {
-            return i64::MIN;
+            return -MAX_SCORE;
         }
     }
 
-    // let (available_actions, n_actions) = available_player_actions(&new_cells, current_player);
     let mut available_actions = available_player_actions(&new_cells, current_player);
     let n_actions = available_actions.len();
 
+    // If there are no actions available, the player has lost
     if n_actions == 0 {
-        return i64::MIN;
+        return -MAX_SCORE;
     }
 
-    let mut score = i64::MIN;
+    let mut score = -MAX_SCORE;
 
-    if depth == 1 {
-        #[cfg(feature = "nps-count")]
-        let mut node_count: u64 = 1;
-        let (previous_score, previous_piece_scores) = evaluate_position_with_details(&new_cells);
-        for action in available_actions.into_iter() {
+    let mut alpha = alpha;
+    match depth {
+        // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
+        1 => {
             #[cfg(feature = "nps-count")]
-            {
-                node_count += 1;
-            }
-            score = max(
-                score,
-                -evaluate_action_terminal(
-                    &new_cells,
-                    1 - current_player,
-                    action,
-                    previous_score,
-                    &previous_piece_scores,
-                ),
-            );
-            alpha = max(alpha, score);
-            if alpha > beta {
-                break;
-            }
-        }
-        #[cfg(feature = "nps-count")]
-        unsafe {
-            increment_node_count(node_count);
-        }
-    } else {
-        let is_action_win = sort_actions(&new_cells, current_player, &mut available_actions);
-        if is_action_win {
-            return MAX_SCORE;
-        }
-        let eval = -evaluate_action(
-            &new_cells,
-            1 - current_player,
-            available_actions[0],
-            depth - 1,
-            -beta,
-            -alpha,
-            end_time,
-        );
-        score = max(score, eval);
-        alpha = max(alpha, score);
-        if alpha > beta {
-            return score;
-        }
-        if depth == 2 {
-            for action in available_actions.into_iter().skip(1) {
-                let eval = {
-                    let eval_null_window = -evaluate_action(
+            let mut node_count: u64 = 1;
+            let (previous_score, previous_piece_scores) =
+                evaluate_position_with_details(&new_cells);
+            for action in available_actions.into_iter() {
+                #[cfg(feature = "nps-count")]
+                {
+                    node_count += 1;
+                }
+                score = max(
+                    score,
+                    -evaluate_action_terminal(
                         &new_cells,
                         1 - current_player,
                         action,
-                        depth - 1,
-                        -alpha - 1,
-                        -alpha,
-                        end_time,
-                    );
-                    if alpha < eval_null_window && eval_null_window < beta {
-                        -evaluate_action(
-                            &new_cells,
-                            1 - current_player,
-                            action,
-                            depth - 1,
-                            -beta,
-                            -alpha,
-                            end_time,
-                        )
-                    } else {
-                        eval_null_window
-                    }
-                };
-                score = max(score, eval);
+                        previous_score,
+                        &previous_piece_scores,
+                    ),
+                );
                 alpha = max(alpha, score);
+                // Beta-cutoff, stop the search
                 if alpha > beta {
                     break;
                 }
             }
-        } else {
-            let alpha_atomic = AtomicI64::new(alpha);
-            let score_atomic = AtomicI64::new(score);
+            #[cfg(feature = "nps-count")]
+            unsafe {
+                increment_node_count(node_count);
+            }
+        }
+        // On depth 2, run the classic recursive search sequentially
+        2 => {
+            let winning_action =
+                sort_actions(&new_cells, current_player, None, &mut available_actions);
+            if winning_action.is_some() {
+                return MAX_SCORE;
+            }
+            for action in available_actions.into_iter() {
+                let eval = {
+                    -evaluate_action(
+                        (&new_cells, 1 - current_player),
+                        action,
+                        depth - 1,
+                        (-beta, -alpha),
+                        end_time,
+                        NodeType::PV,
+                        transposition_table,
+                    )
+                };
+                score = max(score, eval);
+                alpha = max(alpha, eval);
+                // Beta-cutoff, stop the search
+                if alpha > beta {
+                    break;
+                }
+            }
+        }
+        // On depth > 2, run the classic recursive search sequentially with parallel search
+        _ => {
+            // Read the transposition table
+            let new_cells_hash = (&new_cells, current_player).hash();
+            let table_action = match read_transposition_table(new_cells_hash, transposition_table) {
+                Some((table_action, table_depth, table_score, table_node_type)) => {
+                    // If the table has a match with the same depth, a cutoff may be possible depending on the node type
+                    if table_depth == depth {
+                        match table_node_type {
+                            NodeType::PV => return table_score,
+                            NodeType::Cut => {
+                                if table_score > beta {
+                                    return table_score;
+                                }
+                            }
+                            NodeType::All => {
+                                if table_score < alpha {
+                                    return table_score;
+                                }
+                            }
+                        }
+                    }
+                    Some(table_action)
+                }
+                None => None,
+            };
+
+            // Sort actions to improve alphabeta search
+            let winning_action = sort_actions(
+                &new_cells,
+                current_player,
+                table_action,
+                &mut available_actions,
+            );
+
+            // Return if one of the available actions is an immediate win
+            if let Some(winning_action) = winning_action {
+                write_transposition_table(
+                    new_cells_hash,
+                    winning_action,
+                    depth,
+                    MAX_SCORE,
+                    NodeType::PV,
+                    transposition_table,
+                );
+                return MAX_SCORE;
+            }
+            // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
+            // Evaluate first action sequentially
+            let eval = -evaluate_action(
+                (&new_cells, 1 - current_player),
+                available_actions[0],
+                depth - 1,
+                (-beta, -alpha),
+                end_time,
+                match node_type {
+                    NodeType::PV => NodeType::PV,
+                    NodeType::Cut => NodeType::All,
+                    NodeType::All => NodeType::Cut,
+                },
+                transposition_table,
+            );
+            alpha = max(alpha, eval);
+            // Beta-cutoff, stop the search
+            if alpha > beta {
+                write_transposition_table(
+                    new_cells_hash,
+                    available_actions[0],
+                    depth,
+                    eval,
+                    node_type,
+                    transposition_table,
+                );
+                return eval;
+            }
+            score = max(score, eval);
+
+            // Using atomic variables for parallel search
+            let alpha_atomic = AtomicScore::new(alpha);
+            let score_atomic = AtomicScore::new(score);
+            let best_action_atomic = AtomicAction::new(available_actions[0]);
+            // This will stop iteration if there is a cutoff
             let cut_atomic = AtomicBool::new(false);
             available_actions
                 .into_iter()
@@ -215,39 +331,62 @@ pub fn evaluate_action(
                 .for_each(|action| {
                     if !cut_atomic.load(Relaxed) {
                         let eval = {
+                            let alpha = alpha_atomic.load(Relaxed);
+
+                            // Search with a null window
                             let eval_null_window = -evaluate_action(
-                                &new_cells,
-                                1 - current_player,
+                                (&new_cells, 1 - current_player),
                                 action,
                                 depth - 1,
-                                -alpha_atomic.load(Relaxed) - 1,
-                                -alpha_atomic.load(Relaxed),
+                                (-alpha - 1, -alpha),
                                 end_time,
+                                match node_type {
+                                    NodeType::PV => NodeType::Cut,
+                                    NodeType::Cut => NodeType::Cut,
+                                    NodeType::All => NodeType::Cut,
+                                },
+                                transposition_table,
                             );
-                            if alpha_atomic.load(Relaxed) < eval_null_window
-                                && eval_null_window < beta
-                            {
+
+                            // If fail high, do the search with the full window
+                            if alpha < eval_null_window && eval_null_window < beta {
                                 -evaluate_action(
-                                    &new_cells,
-                                    1 - current_player,
+                                    (&new_cells, 1 - current_player),
                                     action,
                                     depth - 1,
-                                    -beta,
-                                    -alpha_atomic.load(Relaxed),
+                                    (-beta, -alpha),
                                     end_time,
+                                    match node_type {
+                                        NodeType::PV => NodeType::PV,
+                                        NodeType::Cut => NodeType::Cut,
+                                        NodeType::All => NodeType::Cut,
+                                    },
+                                    transposition_table,
                                 )
                             } else {
                                 eval_null_window
                             }
                         };
-                        score_atomic.fetch_max(eval, Relaxed);
+                        if eval > score_atomic.load(Relaxed) {
+                            score_atomic.store(eval, Relaxed);
+                            best_action_atomic.store(action, Relaxed);
+                        }
                         alpha_atomic.fetch_max(eval, Relaxed);
-                        if alpha_atomic.load(Relaxed) > beta {
+                        // Beta-cutoff, stop the search
+                        if eval > beta {
                             cut_atomic.store(true, Relaxed);
                         }
                     }
                 });
             score = score_atomic.load(Relaxed);
+            write_transposition_table(
+                new_cells_hash,
+                best_action_atomic.load(Relaxed),
+                depth,
+                score,
+                node_type,
+                transposition_table,
+            );
         }
     }
     score
@@ -261,15 +400,12 @@ pub fn evaluate_action_terminal(
     cells: &Cells,
     current_player: Player,
     action: Action,
-    previous_score: i64,
-    previous_piece_scores: &[i64; N_CELLS],
-) -> i64 {
+    previous_score: Score,
+    previous_piece_scores: &[Score; N_CELLS],
+) -> Score {
     let (index_start, index_mid, index_end) = action.to_indices();
 
-    if !cells[index_start].is_wise()
-        && ((current_player == 1 && index_end.is_black_home())
-            || (current_player == 0 && index_end.is_white_home()))
-    {
+    if is_action_win(cells, action) {
         return -MAX_SCORE;
     }
 

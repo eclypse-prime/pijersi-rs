@@ -1,5 +1,8 @@
 //! This module implements the lookup tables used to hash a position.
 
+/// Is used to determine if the player at a given position is white or black
+pub const PLAYER_HASH: usize = 0xB8EE939A4B04A4CA;
+
 /// Associates a piece's type index and cell index to its score, `index = piece_index*45 + cell_index`
 pub const ZOBRIST_TABLE: [usize; 1575] = [
     0x60DE2E3245EBC40E,

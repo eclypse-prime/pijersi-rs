@@ -12,9 +12,11 @@
 //! 32  33  34  35  36  37  38
 //!   39  40  41  42  43  44
 //! ```
+use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
 use crate::errors::{ParseError, ParseErrorKind, RulesErrorKind, RuntimeError};
+use crate::hash::search::SearchTable;
 use crate::logic::actions::{play_action, Action, ActionTrait};
 use crate::logic::rules::{
     get_winning_player, is_action_legal, is_position_stalemate, is_position_win,
@@ -30,6 +32,7 @@ use crate::piece::{
 };
 use crate::search::alphabeta::search_iterative;
 use crate::search::openings::OpeningBook;
+use crate::search::Score;
 
 /// This struct represents the board options.
 ///
@@ -39,6 +42,8 @@ use crate::search::openings::OpeningBook;
 pub struct BoardOptions {
     /// Using the opening book
     pub use_book: bool,
+    /// Using the hash table
+    pub use_table: bool,
     /// Printing the info logs during searches
     pub verbose: bool,
 }
@@ -53,11 +58,13 @@ impl BoardOptions {
     /// `BoardOptions` constructor. By default, the options are set to:
     /// ```not_rust
     /// use_book: true
+    /// use_table: true
     /// verbose: true
     /// ```
     pub const fn new() -> Self {
         Self {
             use_book: true,
+            use_table: true,
             verbose: true,
         }
     }
@@ -150,7 +157,7 @@ impl Board {
     }
 
     /// Searches and returns the action corresponding to the current board state according to the opening book (if it exists)
-    fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(Action, u64, i64)> {
+    fn search_book(&self, opening_book: Option<&OpeningBook>) -> Option<(Action, u64, Score)> {
         if let Some(opening_book) = opening_book {
             if let Some(&(action, score)) = opening_book.lookup(self) {
                 let depth = action.search_depth();
@@ -158,7 +165,7 @@ impl Board {
                 if self.options.verbose {
                     println!("info book depth {depth} score {score} pv {action_string}");
                 }
-                return Some((action, depth, score));
+                return Some((action, depth, score as Score));
             }
         }
         None
@@ -169,7 +176,8 @@ impl Board {
         &self,
         depth: u64,
         opening_book: Option<&OpeningBook>,
-    ) -> Option<(Action, i64)> {
+        transposition_table: Option<&RwLock<SearchTable>>,
+    ) -> Option<(Action, Score)> {
         if self.options.use_book {
             if let Some((action, book_depth, score)) = self.search_book(opening_book) {
                 // TODO: start searching from the book move's depth and use it to sort the search order
@@ -184,6 +192,11 @@ impl Board {
             depth,
             None,
             self.options.verbose,
+            if self.options.use_table {
+                transposition_table
+            } else {
+                None
+            },
         )
     }
 
@@ -192,7 +205,8 @@ impl Board {
         &self,
         movetime: u64,
         opening_book: Option<&OpeningBook>,
-    ) -> Option<(Action, i64)> {
+        transposition_table: Option<&RwLock<SearchTable>>,
+    ) -> Option<(Action, Score)> {
         if self.options.use_book {
             if let Some((action, _depth, score)) = self.search_book(opening_book) {
                 // TODO: start searching from the book move's depth and use it to sort the search order
@@ -205,6 +219,11 @@ impl Board {
             u64::MAX,
             Some(Instant::now() + Duration::from_millis(movetime)),
             self.options.verbose,
+            if self.options.use_table {
+                transposition_table
+            } else {
+                None
+            },
         )
     }
 

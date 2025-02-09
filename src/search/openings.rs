@@ -49,9 +49,10 @@ pub struct Response {
     /// The position that is used as a key
     pub position: Position,
     /// The pre-calculated response
-    pub action: Action,
+    pub action: u64,
     /// The predicted score of the response
     pub score: i64,
+    // TODO: rewrite everything with action: u32 and score: Score
 }
 const RESPONSE_SIZE: usize = 70;
 
@@ -60,7 +61,7 @@ impl Response {
     pub fn new(position: Position, action: Action, score: i64) -> Self {
         Self {
             position,
-            action,
+            action: action as u64,
             score,
         }
     }
@@ -109,7 +110,12 @@ impl OpeningBook {
         let responses = decode_responses(&openings_bytes);
         let map: HashMap<Position, (Action, i64)> = responses
             .iter()
-            .map(|&response| (response.position, (response.action, response.score)))
+            .map(|&response| {
+                (
+                    response.position,
+                    (response.action as Action, response.score),
+                )
+            })
             .collect();
         Self { map }
     }
