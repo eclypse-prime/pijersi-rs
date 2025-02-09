@@ -7,9 +7,9 @@ pub mod eval;
 pub mod lookup;
 pub mod openings;
 
-/// The score is represented by a i32 value.
+/// The score is represented by a i16 value.
 pub type Score = i16;
-/// The atomic score is represented by a AtomicI32 value.
+/// The atomic score is represented by a AtomicI16 value.
 pub type AtomicScore = AtomicI16;
 
 /// The type of the node. It is used to determine if the score is exact, lower-bound, or higher bound.
