@@ -73,7 +73,7 @@ pub fn search(
         0 => return None,
         1 => {
             #[cfg(feature = "nps-count")]
-            increment_node_count(n_actions as u64);
+            increment_node_count(n_actions as u64 + 1);
             // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
             let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
             order
