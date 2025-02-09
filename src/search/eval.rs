@@ -24,7 +24,7 @@ use super::alphabeta::increment_node_count;
 use super::{AtomicScore, NodeType, Score};
 
 /// The max score (is reached on winning position)
-pub const MAX_SCORE: Score = 524_288;
+pub const MAX_SCORE: Score = 16_384;
 
 /// Returns the score of a single cell given its content and index.
 ///
@@ -49,7 +49,7 @@ pub fn evaluate_position(cells: &Cells) -> Score {
 
 /// Returns the score of a board along with its individual cell scores.
 pub fn evaluate_position_with_details(cells: &Cells) -> (Score, [Score; N_CELLS]) {
-    let mut piece_scores: [Score; N_CELLS] = [0i32; N_CELLS];
+    let mut piece_scores: [Score; N_CELLS] = [0; N_CELLS];
     for (k, &cell) in cells.iter().enumerate() {
         piece_scores[k] = evaluate_cell(cell, k);
     }
@@ -58,19 +58,16 @@ pub fn evaluate_position_with_details(cells: &Cells) -> (Score, [Score; N_CELLS]
 
 /// Reads the transposition table and returns its entry (action, depth, score, node type) if it exists.
 #[inline]
-fn read_transposition_table(
+pub fn read_transposition_table(
     cells_hash: usize,
-    current_player: Player,
     transposition_table: Option<&RwLock<SearchTable>>,
 ) -> Option<(Action, u64, Score, NodeType)> {
     if let Some(transposition_table) = transposition_table {
         let transposition_table = transposition_table.read().unwrap();
-        if let Some((table_depth, table_player, table_action, table_score, table_node_type)) =
+        if let Some((table_depth, table_action, table_score, table_node_type)) =
             transposition_table.read(cells_hash)
         {
-            if table_player == current_player {
-                return Some((table_action, table_depth, table_score, table_node_type));
-            }
+            return Some((table_action, table_depth, table_score, table_node_type));
         }
     }
     None
@@ -80,9 +77,8 @@ fn read_transposition_table(
 ///
 /// Replaces the stored entry if the new entry has a higher depth or is the same depth and is a PV node.
 #[inline]
-fn write_transposition_table(
+pub fn write_transposition_table(
     cells_hash: usize,
-    current_player: Player,
     action: Action,
     depth: u64,
     score: Score,
@@ -91,26 +87,7 @@ fn write_transposition_table(
 ) {
     if let Some(transposition_table) = transposition_table {
         let mut transposition_table = transposition_table.write().unwrap();
-        if let Some((table_depth, _table_player, _table_action, _table_score, table_node_type)) =
-            transposition_table.read(cells_hash)
-        {
-            if depth > table_depth
-                || (depth == table_depth
-                    && table_node_type != NodeType::PV
-                    && node_type == NodeType::PV)
-            {
-                transposition_table.insert(
-                    cells_hash,
-                    depth,
-                    current_player,
-                    action,
-                    score,
-                    node_type,
-                );
-            }
-        } else {
-            transposition_table.insert(cells_hash, depth, current_player, action, score, node_type);
-        }
+        transposition_table.insert(cells_hash, depth, action, score, node_type);
     }
 }
 
@@ -267,31 +244,29 @@ pub fn evaluate_action(
         // On depth > 2, run the classic recursive search sequentially with parallel search
         _ => {
             // Read the transposition table
-            let new_cells_hash = new_cells.hash();
-            let table_action =
-                match read_transposition_table(new_cells_hash, current_player, transposition_table)
-                {
-                    Some((table_action, table_depth, table_score, table_node_type)) => {
-                        // If the table has a match with the same depth, a cutoff may be possible depending on the node type
-                        if table_depth == depth {
-                            match table_node_type {
-                                NodeType::PV => return table_score,
-                                NodeType::Cut => {
-                                    if table_score > beta {
-                                        return table_score;
-                                    }
+            let new_cells_hash = (&new_cells, current_player).hash();
+            let table_action = match read_transposition_table(new_cells_hash, transposition_table) {
+                Some((table_action, table_depth, table_score, table_node_type)) => {
+                    // If the table has a match with the same depth, a cutoff may be possible depending on the node type
+                    if table_depth == depth {
+                        match table_node_type {
+                            NodeType::PV => return table_score,
+                            NodeType::Cut => {
+                                if table_score > beta {
+                                    return table_score;
                                 }
-                                NodeType::All => {
-                                    if table_score < alpha {
-                                        return table_score;
-                                    }
+                            }
+                            NodeType::All => {
+                                if table_score < alpha {
+                                    return table_score;
                                 }
                             }
                         }
-                        Some(table_action)
                     }
-                    None => None,
-                };
+                    Some(table_action)
+                }
+                None => None,
+            };
 
             // Sort actions to improve alphabeta search
             let winning_action = sort_actions(
@@ -305,7 +280,6 @@ pub fn evaluate_action(
             if let Some(winning_action) = winning_action {
                 write_transposition_table(
                     new_cells_hash,
-                    current_player,
                     winning_action,
                     depth,
                     MAX_SCORE,
@@ -334,7 +308,6 @@ pub fn evaluate_action(
             if alpha > beta {
                 write_transposition_table(
                     new_cells_hash,
-                    current_player,
                     available_actions[0],
                     depth,
                     eval,
@@ -408,7 +381,6 @@ pub fn evaluate_action(
             score = score_atomic.load(Relaxed);
             write_transposition_table(
                 new_cells_hash,
-                current_player,
                 best_action_atomic.load(Relaxed),
                 depth,
                 score,

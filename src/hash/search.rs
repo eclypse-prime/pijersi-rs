@@ -6,7 +6,6 @@ use crate::{
     logic::{
         actions::{Action, ActionTrait},
         index::CellIndex,
-        Player,
     },
     search::{NodeType, Score},
 };
@@ -15,11 +14,12 @@ const KEY_BIT_WIDTH: usize = 24;
 const SEARCH_TABLE_SIZE: usize = 2 << KEY_BIT_WIDTH;
 const SEARCH_TABLE_MASK: usize = (2 << (KEY_BIT_WIDTH)) - 1;
 
-#[derive(Clone, Copy, Default)]
+const BUCKET_SIZE: usize = 4;
+
+#[derive(Clone, Copy, Default, Debug)]
 struct SearchEntry {
     depth: u8,
-    player: u8,
-    key: usize,
+    hash: usize,
     index_start: u8,
     index_mid: u8,
     index_end: u8,
@@ -29,19 +29,11 @@ struct SearchEntry {
 
 impl SearchEntry {
     #[inline]
-    fn new(
-        depth: u64,
-        player: Player,
-        key: usize,
-        action: Action,
-        score: Score,
-        node_type: NodeType,
-    ) -> Self {
+    fn new(depth: u64, hash: usize, action: Action, score: Score, node_type: NodeType) -> Self {
         let (index_start, index_mid, index_end) = action.to_indices();
         SearchEntry {
             depth: depth as u8,
-            player,
-            key,
+            hash,
             index_start: index_start as u8,
             index_mid: index_mid as u8,
             index_end: index_end as u8,
@@ -50,10 +42,9 @@ impl SearchEntry {
         }
     }
     #[inline]
-    fn unpack(self) -> (u64, u8, Action, Score, NodeType) {
+    fn unpack(self) -> (u64, Action, Score, NodeType) {
         (
             self.depth as u64,
-            self.player,
             Action::from_indices(
                 self.index_start as CellIndex,
                 self.index_mid as CellIndex,
@@ -65,9 +56,49 @@ impl SearchEntry {
     }
 }
 
+#[derive(Clone, Copy, Default, Debug)]
+struct Bucket {
+    entries: [SearchEntry; BUCKET_SIZE],
+}
+
+impl Bucket {
+    fn insert(
+        &mut self,
+        hash: usize,
+        depth: u64,
+        action: Action,
+        score: Score,
+        node_type: NodeType,
+    ) {
+        let mut min_depth = u8::MAX;
+        let mut min_index: usize = 0;
+        for i in 0..BUCKET_SIZE {
+            let entry = self.entries[i];
+            if entry.depth == 0 {
+                self.entries[i] = SearchEntry::new(depth, hash, action, score, node_type);
+                return;
+            }
+            if entry.depth < min_depth {
+                min_depth = entry.depth;
+                min_index = i;
+            }
+        }
+        self.entries[min_index] = SearchEntry::new(depth, hash, action, score, node_type);
+    }
+
+    fn read(&self, hash: usize) -> Option<(u64, Action, Score, NodeType)> {
+        for entry in self.entries {
+            if entry.hash == hash {
+                return Some(entry.unpack());
+            }
+        }
+        None
+    }
+}
+
 /// Search transposition table
 pub struct SearchTable {
-    data: Vec<SearchEntry>,
+    data: Vec<Bucket>,
 }
 
 impl Default for SearchTable {
@@ -85,23 +116,18 @@ impl SearchTable {
         &mut self,
         hash: usize,
         depth: u64,
-        player: u8,
         action: Action,
         score: Score,
         node_type: NodeType,
     ) {
-        self.data[hash & SEARCH_TABLE_MASK] =
-            SearchEntry::new(depth, player, hash, action, score, node_type);
+        let bucket = &mut self.data[hash & SEARCH_TABLE_MASK];
+        bucket.insert(hash, depth, action, score, node_type);
     }
     #[inline]
     /// Reads the transposition table and returns the entry corresponding to the position hash if there is one.
-    pub fn read(&self, hash: usize) -> Option<(u64, u8, Action, Score, NodeType)> {
-        let entry = self.data[hash & SEARCH_TABLE_MASK];
-        if entry.key == hash {
-            Some(entry.unpack())
-        } else {
-            None
-        }
+    pub fn read(&self, hash: usize) -> Option<(u64, Action, Score, NodeType)> {
+        let bucket = self.data[hash & SEARCH_TABLE_MASK];
+        bucket.read(hash)
     }
     #[inline]
     /// Empties the transposition table

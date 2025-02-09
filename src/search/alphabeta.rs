@@ -22,7 +22,7 @@ use super::eval::{
 use super::{AtomicScore, NodeType, Score};
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
-pub const BASE_BETA: Score = 262_144;
+pub const BASE_BETA: Score = 8_192;
 /// Starting alpha value for the alphabeta search (starting alpha is equal to -beta)
 pub const BASE_ALPHA: Score = -BASE_BETA;
 
