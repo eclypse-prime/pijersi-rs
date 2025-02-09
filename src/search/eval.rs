@@ -37,9 +37,7 @@ pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> Score {
 /// Returns the score of a board.
 pub fn evaluate_position(cells: &Cells) -> Score {
     #[cfg(feature = "nps-count")]
-    unsafe {
-        increment_node_count(1);
-    }
+    increment_node_count(1);
     cells
         .iter()
         .enumerate()
@@ -210,9 +208,7 @@ pub fn evaluate_action(
                 }
             }
             #[cfg(feature = "nps-count")]
-            unsafe {
-                increment_node_count(node_count);
-            }
+            increment_node_count(node_count);
         }
         // On depth 2, run the classic recursive search sequentially
         2 => {

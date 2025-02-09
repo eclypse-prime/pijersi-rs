@@ -30,10 +30,10 @@ pub const BASE_ALPHA: Score = -BASE_BETA;
 use std::sync::atomic::AtomicU64;
 #[cfg(feature = "nps-count")]
 /// Counts the number of evaluated nodes during a search
-pub static mut TOTAL_NODE_COUNT: AtomicU64 = AtomicU64::new(0);
+pub static TOTAL_NODE_COUNT: AtomicU64 = AtomicU64::new(0);
 #[cfg(feature = "nps-count")]
 /// Increments the `TOTAL_NODE_COUNT` counter by the chosen amount.
-pub unsafe fn increment_node_count(node_count: u64) {
+pub fn increment_node_count(node_count: u64) {
     TOTAL_NODE_COUNT.fetch_add(node_count, Relaxed);
 }
 
@@ -73,9 +73,7 @@ pub fn search(
         0 => return None,
         1 => {
             #[cfg(feature = "nps-count")]
-            unsafe {
-                increment_node_count(n_actions as u64);
-            }
+            increment_node_count(n_actions as u64);
             // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
             let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
             order
@@ -260,20 +258,16 @@ pub fn search_iterative(
                         "info depth {depth} time {duration_ms} score {score} pv {action_string}"
                     );
                     #[cfg(feature = "nps-count")]
-                    unsafe {
-                        print!(
-                            " nodes {} nps {}",
-                            TOTAL_NODE_COUNT.load(Relaxed),
-                            TOTAL_NODE_COUNT.load(Relaxed) as u128 * 1_000_000_000
-                                / duration.as_nanos()
-                        );
-                    }
+                    print!(
+                        " nodes {} nps {}",
+                        TOTAL_NODE_COUNT.load(Relaxed),
+                        TOTAL_NODE_COUNT.load(Relaxed) as u128 * 1_000_000_000
+                            / duration.as_nanos()
+                    );
                     println!();
                 }
                 #[cfg(feature = "nps-count")]
-                unsafe {
-                    TOTAL_NODE_COUNT.store(0, Relaxed);
-                }
+                TOTAL_NODE_COUNT.store(0, Relaxed);
                 if score < BASE_ALPHA {
                     if verbose {
                         println!("info loss in {}", depth / 2);
