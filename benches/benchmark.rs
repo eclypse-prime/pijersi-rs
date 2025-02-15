@@ -2,9 +2,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use pijersi_rs::board::Board;
 use pijersi_rs::logic::perft::perft;
-use pijersi_rs::logic::translate::string_to_action;
-use pijersi_rs::search::alphabeta::{BASE_ALPHA, BASE_BETA};
-use pijersi_rs::search::eval::evaluate_action;
+use pijersi_rs::search::alphabeta::{search_node, BASE_ALPHA, BASE_BETA};
 
 fn bench_perft(c: &mut Criterion) {
     let mut board = Board::new();
@@ -26,12 +24,10 @@ fn bench_perft(c: &mut Criterion) {
 fn bench_evaluate_action(c: &mut Criterion) {
     let mut board = Board::new();
     board.init();
-    let action = string_to_action(&board.cells, "a1b1c1").unwrap();
-    c.bench_function("evaluate_action 1", |b| {
+    c.bench_function("search_node 1", |b| {
         b.iter(|| {
-            black_box(evaluate_action(
+            black_box(search_node(
                 (&board.cells, 1 - board.current_player),
-                action,
                 1,
                 (BASE_ALPHA, BASE_BETA),
                 None,
@@ -40,11 +36,10 @@ fn bench_evaluate_action(c: &mut Criterion) {
             ))
         })
     });
-    c.bench_function("evaluate_action 2", |b| {
+    c.bench_function("search_node 2", |b| {
         b.iter(|| {
-            black_box(evaluate_action(
+            black_box(search_node(
                 (&board.cells, 1 - board.current_player),
-                action,
                 2,
                 (BASE_ALPHA, BASE_BETA),
                 None,
@@ -53,11 +48,10 @@ fn bench_evaluate_action(c: &mut Criterion) {
             ))
         })
     });
-    c.bench_function("evaluate_action 3", |b| {
+    c.bench_function("search_node 3", |b| {
         b.iter(|| {
-            black_box(evaluate_action(
+            black_box(search_node(
                 (&board.cells, 1 - board.current_player),
-                action,
                 3,
                 (BASE_ALPHA, BASE_BETA),
                 None,
@@ -66,11 +60,10 @@ fn bench_evaluate_action(c: &mut Criterion) {
             ))
         })
     });
-    c.bench_function("evaluate_action 4", |b| {
+    c.bench_function("search_node 4", |b| {
         b.iter(|| {
-            black_box(evaluate_action(
+            black_box(search_node(
                 (&board.cells, 1 - board.current_player),
-                action,
                 4,
                 (BASE_ALPHA, BASE_BETA),
                 None,

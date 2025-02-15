@@ -308,7 +308,10 @@ pub fn search_root(
     res
 }
 
-fn search_node(
+/// Evaluates the score of a given action by searching at a given depth.
+///
+/// Recursively calculates the best score using the alphabeta search to the chosen depth.
+pub fn search_node(
     (cells, current_player): (&Cells, Player),
     depth: u64,
     (alpha, beta): (Score, Score),
