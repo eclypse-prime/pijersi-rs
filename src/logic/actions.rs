@@ -14,7 +14,9 @@ use std::{
 use crate::piece::{Piece, PieceTrait};
 
 use super::{
-    index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH}, translate::action_to_string, Cells
+    index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
+    translate::action_to_string,
+    Cells,
 };
 
 /// Size of the array that stores player actions
@@ -192,7 +194,13 @@ impl Actions {
     /// Print the actions in string format
     #[inline]
     pub fn print_str(&self, cells: &Cells) {
-        println!("{:?}", self[..].iter().map(|&action| {action_to_string(cells, action)}).collect::<Vec<String>>());
+        println!(
+            "{:?}",
+            self[..]
+                .iter()
+                .map(|&action| { action_to_string(cells, action) })
+                .collect::<Vec<String>>()
+        );
     }
 }
 

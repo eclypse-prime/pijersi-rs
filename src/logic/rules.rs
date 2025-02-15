@@ -129,8 +129,9 @@ pub fn is_action_win(cells: &Cells, action: Action) -> bool {
     let moving_piece: Piece = cells[index_start];
 
     !moving_piece.is_wise()
-        && (index_mid != INDEX_NULL && ((moving_piece.is_white() && index_mid.is_black_home())
-            || (moving_piece.is_black() && index_mid.is_white_home()))
+        && (index_mid != INDEX_NULL
+            && ((moving_piece.is_white() && index_mid.is_black_home())
+                || (moving_piece.is_black() && index_mid.is_white_home()))
             || (moving_piece.is_white() && index_end.is_black_home())
             || (moving_piece.is_black() && index_end.is_white_home()))
 }
