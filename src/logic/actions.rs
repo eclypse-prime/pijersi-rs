@@ -14,8 +14,7 @@ use std::{
 use crate::piece::{Piece, PieceTrait};
 
 use super::{
-    index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
-    Cells,
+    index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH}, translate::action_to_string, Cells
 };
 
 /// Size of the array that stores player actions
@@ -183,6 +182,18 @@ impl Actions {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Print the actions
+    #[inline]
+    pub fn print(&self) {
+        println!("{:?}", self[..].iter().collect::<Vec<&u32>>());
+    }
+
+    /// Print the actions in string format
+    #[inline]
+    pub fn print_str(&self, cells: &Cells) {
+        println!("{:?}", self[..].iter().map(|&action| {action_to_string(cells, action)}).collect::<Vec<String>>());
+    }
 }
 
 impl From<&[Action]> for Actions {
@@ -255,14 +266,14 @@ impl IndexMut<Range<usize>> for Actions {
 impl Index<RangeFull> for Actions {
     type Output = [Action];
     #[inline]
-    fn index(&self, index: RangeFull) -> &Self::Output {
-        &self.data[index]
+    fn index(&self, _index: RangeFull) -> &Self::Output {
+        &self.data[0..self.current_index]
     }
 }
 
 impl IndexMut<RangeFull> for Actions {
     #[inline]
-    fn index_mut(&mut self, index: RangeFull) -> &mut Self::Output {
-        &mut self.data[index]
+    fn index_mut(&mut self, _index: RangeFull) -> &mut Self::Output {
+        &mut self.data[0..self.current_index]
     }
 }

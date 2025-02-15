@@ -110,17 +110,15 @@ pub fn can_unstack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> 
 /// To win, one allied piece (except wise) must reach the last row in the opposite side.
 #[inline]
 pub fn is_action_win(cells: &Cells, action: Action) -> bool {
-    let (index_start, _index_mid, index_end) = action.to_indices();
+    let (index_start, index_mid, index_end) = action.to_indices();
 
     let moving_piece: Piece = cells[index_start];
 
-    if !moving_piece.is_wise()
-        && ((moving_piece.is_white() && index_end.is_black_home())
+    !moving_piece.is_wise()
+        && (index_mid != INDEX_NULL && ((moving_piece.is_white() && index_mid.is_black_home())
+            || (moving_piece.is_black() && index_mid.is_white_home()))
+            || (moving_piece.is_white() && index_end.is_black_home())
             || (moving_piece.is_black() && index_end.is_white_home()))
-    {
-        return true;
-    }
-    false
 }
 
 /// Returns true if the given action is legal.
