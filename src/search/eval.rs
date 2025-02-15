@@ -1,8 +1,11 @@
 //! This module implements the evaluation functions: evaluates the score of a current position or evaluates the best score at a given depth.
 
-use crate::logic::actions::{Action, ActionTrait};
+use std::cmp::max;
+
+use crate::logic::actions::{play_action, Action, ActionTrait};
 use crate::logic::index::CellIndex;
 use crate::logic::lookup::PIECE_TO_INDEX;
+use crate::logic::movegen::available_player_captures;
 use crate::logic::rules::is_action_win;
 use crate::logic::{Cells, Player, N_CELLS};
 use crate::piece::{Piece, PieceTrait};
@@ -24,14 +27,19 @@ pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> Score {
 }
 
 /// Returns the score of a board.
-pub fn evaluate_position(cells: &Cells) -> Score {
+pub fn evaluate_position(cells: &Cells, current_player: Player) -> Score {
     #[cfg(feature = "nps-count")]
     increment_node_count(1);
-    cells
+    let eval = cells
         .iter()
         .enumerate()
         .map(|(index, &piece)| evaluate_cell(piece, index))
-        .sum()
+        .sum();
+    if current_player == 0 {
+        eval
+    } else {
+        -eval
+    }
 }
 
 /// Returns the score of a board along with its individual cell scores.
@@ -146,4 +154,45 @@ pub fn evaluate_action_terminal(
     } else {
         -current_score
     }
+}
+
+/// TODO
+pub fn quiescence_search(
+    cells: &Cells,
+    current_player: Player,
+    (alpha, beta): (Score, Score),
+) -> Score {
+    let available_actions = available_player_captures(cells, current_player);
+    let n_actions = available_actions.len();
+
+    let stand_pat = evaluate_position(cells, current_player);
+
+    if n_actions == 0 || stand_pat > beta {
+        return stand_pat;
+    }
+
+    let mut score = stand_pat;
+
+    let mut alpha = max(alpha, stand_pat);
+
+    let mut new_cells;
+    for action in available_actions.into_iter() {
+        if is_action_win(cells, action) {
+            return MAX_SCORE;
+        }
+        new_cells = *cells;
+        play_action(&mut new_cells, action);
+        let eval = max(
+            score,
+            -quiescence_search(&new_cells, 1 - current_player, (-beta, -alpha)),
+        );
+        score = max(score, eval);
+        alpha = max(alpha, eval);
+
+        // Beta-cutoff, stop the search
+        if alpha > beta {
+            break;
+        }
+    }
+    score
 }

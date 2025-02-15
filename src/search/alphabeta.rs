@@ -20,9 +20,7 @@ use crate::utils::{argsort, reverse_argsort};
 
 use super::super::logic::movegen::available_player_actions;
 
-use super::eval::{
-    evaluate_action_terminal, evaluate_position, evaluate_position_with_details, MAX_SCORE,
-};
+use super::eval::{quiescence_search, MAX_SCORE};
 use super::{AtomicScore, NodeType, Score};
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
@@ -157,136 +155,81 @@ pub fn search_root(
         return None;
     }
 
-    let scores: Vec<Score> = match depth {
-        0 => return None,
-        1 => {
-            #[cfg(feature = "nps-count")]
-            increment_node_count(n_actions as u64 + 1);
-            // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
-            let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
-            order
-                .iter()
-                .map(|&index| available_actions[index])
-                .map(|action| {
-                    -evaluate_action_terminal(
-                        cells,
-                        1 - current_player,
-                        action,
-                        previous_score,
-                        &previous_piece_scores,
-                    )
-                })
-                .collect()
-        }
-        // On depth 2, run the classic recursive search sequentially
-        2 => {
-            // Cutoffs will happen on winning moves
-            let mut alpha = BASE_ALPHA;
-            let beta = BASE_BETA;
+    let scores: Vec<Score> = {
+        // Cutoffs will happen on winning actions
+        let alpha = BASE_ALPHA;
+        let beta = BASE_BETA;
 
-            let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
+        let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
 
-            // Evaluate possible moves
-            for k in 0..n_actions {
+        // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
+        let mut new_cells = *cells;
+        play_action(&mut new_cells, available_actions[order[0]]);
+        let first_eval = -search_node(
+            (&new_cells, 1 - current_player),
+            depth - 1,
+            (-beta, -alpha),
+            end_time,
+            NodeType::PV,
+            transposition_table,
+        );
+        scores[0] = first_eval;
+
+        let alpha_atomic: AtomicScore = AtomicScore::new(max(alpha, first_eval));
+        // This will stop iteration if there is a cutoff
+        let atomic_cut: AtomicBool = AtomicBool::new(alpha_atomic.load(Relaxed) > beta);
+
+        // Evaluate possible moves
+        scores
+            .iter_mut()
+            .enumerate()
+            .skip(1)
+            .par_bridge()
+            .for_each(|(k, score)| {
                 let action = available_actions[order[k]];
                 let mut new_cells = *cells;
                 play_action(&mut new_cells, action);
-                let eval = -search_node(
-                    (&new_cells, 1 - current_player),
-                    depth - 1,
-                    (-beta, -alpha),
-                    end_time,
-                    NodeType::PV,
-                    transposition_table,
-                );
-
-                alpha = max(alpha, eval);
-                scores[k] = eval;
-
-                // Cutoff
-                if eval > beta {
-                    break;
-                }
-            }
-            scores
-        }
-        // On depth > 2, run the classic recursive search sequentially with parallel search
-        _ => {
-            // Cutoffs will happen on winning actions
-            let alpha = BASE_ALPHA;
-            let beta = BASE_BETA;
-
-            let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
-
-            // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
-            let mut new_cells = *cells;
-            play_action(&mut new_cells, available_actions[order[0]]);
-            let first_eval = -search_node(
-                (&new_cells, 1 - current_player),
-                depth - 1,
-                (-beta, -alpha),
-                end_time,
-                NodeType::PV,
-                transposition_table,
-            );
-            scores[0] = first_eval;
-
-            let alpha_atomic: AtomicScore = AtomicScore::new(max(alpha, first_eval));
-            // This will stop iteration if there is a cutoff
-            let atomic_cut: AtomicBool = AtomicBool::new(alpha_atomic.load(Relaxed) > beta);
-
-            // Evaluate possible moves
-            scores
-                .iter_mut()
-                .enumerate()
-                .skip(1)
-                .par_bridge()
-                .for_each(|(k, score)| {
-                    let action = available_actions[order[k]];
-                    let mut new_cells = *cells;
-                    play_action(&mut new_cells, action);
-                    *score = {
-                        if atomic_cut.load(Relaxed) {
-                            Score::MIN
-                        } else {
-                            let eval = {
-                                let alpha = alpha_atomic.load(Relaxed);
-                                // Search with a null window
-                                let eval_null_window = -search_node(
+                *score = {
+                    if atomic_cut.load(Relaxed) {
+                        Score::MIN
+                    } else {
+                        let eval = {
+                            let alpha = alpha_atomic.load(Relaxed);
+                            // Search with a null window
+                            let eval_null_window = -search_node(
+                                (&new_cells, 1 - current_player),
+                                depth - 1,
+                                (-alpha - 1, -alpha),
+                                end_time,
+                                NodeType::Cut,
+                                transposition_table,
+                            );
+                            // If fail high, do the search with the full window
+                            if alpha < eval_null_window && eval_null_window < beta {
+                                -search_node(
                                     (&new_cells, 1 - current_player),
                                     depth - 1,
-                                    (-alpha - 1, -alpha),
+                                    (-beta, -alpha),
                                     end_time,
-                                    NodeType::Cut,
+                                    NodeType::PV,
                                     transposition_table,
-                                );
-                                // If fail high, do the search with the full window
-                                if alpha < eval_null_window && eval_null_window < beta {
-                                    -search_node(
-                                        (&new_cells, 1 - current_player),
-                                        depth - 1,
-                                        (-beta, -alpha),
-                                        end_time,
-                                        NodeType::PV,
-                                        transposition_table,
-                                    )
-                                } else {
-                                    eval_null_window
-                                }
-                            };
-
-                            alpha_atomic.fetch_max(eval, Relaxed);
-
-                            // Cutoff
-                            if eval > beta {
-                                atomic_cut.store(true, Relaxed);
+                                )
+                            } else {
+                                eval_null_window
                             }
-                            eval
+                        };
+
+                        alpha_atomic.fetch_max(eval, Relaxed);
+
+                        // Cutoff
+                        if eval > beta {
+                            atomic_cut.store(true, Relaxed);
                         }
+                        eval
                     }
-                });
-            scores
-        }
+                }
+            });
+        scores
     };
 
     if let Some(end_time) = end_time {
@@ -296,6 +239,10 @@ pub fn search_root(
     }
 
     let scores: Vec<Score> = reverse_argsort(&scores, &order);
+
+    // for i in 0..scores.len() {
+    //     println!("{} {}", action_to_string(cells, available_actions[i]), scores[i])
+    // }
 
     let res = scores
         .iter()
@@ -320,11 +267,7 @@ pub fn search_node(
     transposition_table: Option<&RwLock<SearchTable>>,
 ) -> Score {
     if depth == 0 {
-        return if current_player == 0 {
-            evaluate_position(cells)
-        } else {
-            -evaluate_position(cells)
-        };
+        return quiescence_search(cells, current_player, (BASE_ALPHA, BASE_BETA));
     }
 
     // Stop searching if the allocated time is up (if there are time controls)
@@ -345,211 +288,150 @@ pub fn search_node(
     let mut score = -MAX_SCORE;
 
     let mut alpha = alpha;
-    match depth {
-        // On depth 1, run the lightweight eval, only calculating score differences on cells that changed (incremental eval)
-        1 => {
-            #[cfg(feature = "nps-count")]
-            let mut node_count: u64 = 1;
-            let (previous_score, previous_piece_scores) = evaluate_position_with_details(cells);
-            for action in available_actions.into_iter() {
-                #[cfg(feature = "nps-count")]
-                {
-                    node_count += 1;
-                }
-                score = max(
-                    score,
-                    -evaluate_action_terminal(
-                        cells,
-                        1 - current_player,
-                        action,
-                        previous_score,
-                        &previous_piece_scores,
-                    ),
-                );
-                alpha = max(alpha, score);
-                // Beta-cutoff, stop the search
-                if alpha > beta {
-                    break;
+    // Read the transposition table
+    let cells_hash = (cells, current_player).hash();
+    let table_action = match read_transposition_table(cells_hash, transposition_table) {
+        Some((table_action, table_depth, table_score, table_node_type)) => {
+            // If the table has a match with the same depth, a cutoff may be possible depending on the node type
+            if table_depth == depth {
+                match table_node_type {
+                    NodeType::PV => return table_score,
+                    NodeType::Cut => {
+                        if table_score > beta {
+                            return table_score;
+                        }
+                    }
+                    NodeType::All => {
+                        if table_score < alpha {
+                            return table_score;
+                        }
+                    }
                 }
             }
-            #[cfg(feature = "nps-count")]
-            increment_node_count(node_count);
+            Some(table_action)
         }
-        // On depth 2, run the classic recursive search sequentially
-        2 => {
-            let winning_action = sort_actions(cells, current_player, None, &mut available_actions);
-            if winning_action.is_some() {
-                return MAX_SCORE;
-            }
-            let mut new_cells;
-            for action in available_actions.into_iter() {
-                new_cells = *cells;
-                play_action(&mut new_cells, action);
+        None => None,
+    };
+
+    // Sort actions to improve alphabeta search
+    let winning_action = sort_actions(cells, current_player, table_action, &mut available_actions);
+
+    // Return if one of the available actions is an immediate win
+    if let Some(winning_action) = winning_action {
+        write_transposition_table(
+            cells_hash,
+            winning_action,
+            depth,
+            MAX_SCORE,
+            NodeType::PV,
+            transposition_table,
+        );
+        return MAX_SCORE;
+    }
+
+    // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
+    // Evaluate first action sequentially
+    let mut new_cells = *cells;
+    play_action(&mut new_cells, available_actions[0]);
+    let eval = -search_node(
+        (&new_cells, 1 - current_player),
+        depth - 1,
+        (-beta, -alpha),
+        end_time,
+        match node_type {
+            NodeType::PV => NodeType::PV,
+            NodeType::Cut => NodeType::All,
+            NodeType::All => NodeType::Cut,
+        },
+        transposition_table,
+    );
+    alpha = max(alpha, eval);
+    // Beta-cutoff, stop the search
+    if alpha > beta {
+        write_transposition_table(
+            cells_hash,
+            available_actions[0],
+            depth,
+            eval,
+            node_type,
+            transposition_table,
+        );
+        return eval;
+    }
+    score = max(score, eval);
+
+    // Using atomic variables for parallel search
+    let alpha_atomic = AtomicScore::new(alpha);
+    let score_atomic = AtomicScore::new(score);
+    let best_action_atomic = AtomicAction::new(available_actions[0]);
+    // This will stop iteration if there is a cutoff
+    let cut_atomic = AtomicBool::new(false);
+
+    // Evaluate the rest of the actions in parallel
+    available_actions
+        .into_iter()
+        .skip(1)
+        .par_bridge()
+        .for_each(|action| {
+            if !cut_atomic.load(Relaxed) {
                 let eval = {
-                    -search_node(
+                    let alpha = alpha_atomic.load(Relaxed);
+
+                    let mut new_cells = *cells;
+                    play_action(&mut new_cells, action);
+
+                    // Search with a null window
+                    let eval_null_window = -search_node(
                         (&new_cells, 1 - current_player),
                         depth - 1,
-                        (-beta, -alpha),
+                        (-alpha - 1, -alpha),
                         end_time,
-                        NodeType::PV,
+                        match node_type {
+                            NodeType::PV => NodeType::Cut,
+                            NodeType::Cut => NodeType::Cut,
+                            NodeType::All => NodeType::Cut,
+                        },
                         transposition_table,
-                    )
+                    );
+
+                    // If fail high, do the search with the full window
+                    if alpha < eval_null_window && eval_null_window < beta {
+                        -search_node(
+                            (&new_cells, 1 - current_player),
+                            depth - 1,
+                            (-beta, -alpha),
+                            end_time,
+                            match node_type {
+                                NodeType::PV => NodeType::PV,
+                                NodeType::Cut => NodeType::Cut,
+                                NodeType::All => NodeType::Cut,
+                            },
+                            transposition_table,
+                        )
+                    } else {
+                        eval_null_window
+                    }
                 };
-                score = max(score, eval);
-                alpha = max(alpha, eval);
+                if eval > score_atomic.load(Relaxed) {
+                    score_atomic.store(eval, Relaxed);
+                    best_action_atomic.store(action, Relaxed);
+                }
+                alpha_atomic.fetch_max(eval, Relaxed);
                 // Beta-cutoff, stop the search
-                if alpha > beta {
-                    break;
+                if eval > beta {
+                    cut_atomic.store(true, Relaxed);
                 }
             }
-        }
-        // On depth > 2, run the classic recursive search sequentially with parallel search
-        _ => {
-            // Read the transposition table
-            let cells_hash = (cells, current_player).hash();
-            let table_action = match read_transposition_table(cells_hash, transposition_table) {
-                Some((table_action, table_depth, table_score, table_node_type)) => {
-                    // If the table has a match with the same depth, a cutoff may be possible depending on the node type
-                    if table_depth == depth {
-                        match table_node_type {
-                            NodeType::PV => return table_score,
-                            NodeType::Cut => {
-                                if table_score > beta {
-                                    return table_score;
-                                }
-                            }
-                            NodeType::All => {
-                                if table_score < alpha {
-                                    return table_score;
-                                }
-                            }
-                        }
-                    }
-                    Some(table_action)
-                }
-                None => None,
-            };
-
-            // Sort actions to improve alphabeta search
-            let winning_action =
-                sort_actions(cells, current_player, table_action, &mut available_actions);
-
-            // Return if one of the available actions is an immediate win
-            if let Some(winning_action) = winning_action {
-                write_transposition_table(
-                    cells_hash,
-                    winning_action,
-                    depth,
-                    MAX_SCORE,
-                    NodeType::PV,
-                    transposition_table,
-                );
-                return MAX_SCORE;
-            }
-            // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
-            // Evaluate first action sequentially
-
-            let mut new_cells = *cells;
-            play_action(&mut new_cells, available_actions[0]);
-            let eval = -search_node(
-                (&new_cells, 1 - current_player),
-                depth - 1,
-                (-beta, -alpha),
-                end_time,
-                match node_type {
-                    NodeType::PV => NodeType::PV,
-                    NodeType::Cut => NodeType::All,
-                    NodeType::All => NodeType::Cut,
-                },
-                transposition_table,
-            );
-            alpha = max(alpha, eval);
-            // Beta-cutoff, stop the search
-            if alpha > beta {
-                write_transposition_table(
-                    cells_hash,
-                    available_actions[0],
-                    depth,
-                    eval,
-                    node_type,
-                    transposition_table,
-                );
-                return eval;
-            }
-            score = max(score, eval);
-
-            // Using atomic variables for parallel search
-            let alpha_atomic = AtomicScore::new(alpha);
-            let score_atomic = AtomicScore::new(score);
-            let best_action_atomic = AtomicAction::new(available_actions[0]);
-            // This will stop iteration if there is a cutoff
-            let cut_atomic = AtomicBool::new(false);
-            available_actions
-                .into_iter()
-                .skip(1)
-                .par_bridge()
-                .for_each(|action| {
-                    if !cut_atomic.load(Relaxed) {
-                        let eval = {
-                            let alpha = alpha_atomic.load(Relaxed);
-
-                            let mut new_cells = *cells;
-                            play_action(&mut new_cells, action);
-
-                            // Search with a null window
-                            let eval_null_window = -search_node(
-                                (&new_cells, 1 - current_player),
-                                depth - 1,
-                                (-alpha - 1, -alpha),
-                                end_time,
-                                match node_type {
-                                    NodeType::PV => NodeType::Cut,
-                                    NodeType::Cut => NodeType::Cut,
-                                    NodeType::All => NodeType::Cut,
-                                },
-                                transposition_table,
-                            );
-
-                            // If fail high, do the search with the full window
-                            if alpha < eval_null_window && eval_null_window < beta {
-                                -search_node(
-                                    (&new_cells, 1 - current_player),
-                                    depth - 1,
-                                    (-beta, -alpha),
-                                    end_time,
-                                    match node_type {
-                                        NodeType::PV => NodeType::PV,
-                                        NodeType::Cut => NodeType::Cut,
-                                        NodeType::All => NodeType::Cut,
-                                    },
-                                    transposition_table,
-                                )
-                            } else {
-                                eval_null_window
-                            }
-                        };
-                        if eval > score_atomic.load(Relaxed) {
-                            score_atomic.store(eval, Relaxed);
-                            best_action_atomic.store(action, Relaxed);
-                        }
-                        alpha_atomic.fetch_max(eval, Relaxed);
-                        // Beta-cutoff, stop the search
-                        if eval > beta {
-                            cut_atomic.store(true, Relaxed);
-                        }
-                    }
-                });
-            score = score_atomic.load(Relaxed);
-            write_transposition_table(
-                cells_hash,
-                best_action_atomic.load(Relaxed),
-                depth,
-                score,
-                node_type,
-                transposition_table,
-            );
-        }
-    }
+        });
+    score = score_atomic.load(Relaxed);
+    write_transposition_table(
+        cells_hash,
+        best_action_atomic.load(Relaxed),
+        depth,
+        score,
+        node_type,
+        transposition_table,
+    );
     score
 }
 
