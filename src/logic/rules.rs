@@ -3,7 +3,7 @@ use crate::piece::{Piece, PieceTrait};
 
 use super::{
     actions::{Action, ActionTrait, ACTION_MASK},
-    index::{CellIndex, CellIndexTrait},
+    index::{CellIndex, CellIndexTrait, INDEX_NULL},
     movegen::available_player_actions,
     perft::count_player_actions,
     Cells, Player,
@@ -103,6 +103,20 @@ pub fn can_unstack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> 
         }
     }
     true
+}
+
+#[inline]
+/// Returns true if the chosen actrion is a capture
+pub fn is_action_capture(cells: &Cells, action: Action) -> bool {
+    let (index_start, index_mid, index_end) = action.to_indices();
+
+    let moving_piece: Piece = cells[index_start];
+    let piece_colour = moving_piece.colour();
+
+    (!index_mid.is_null()
+        && !cells[index_mid].is_empty()
+        && cells[index_mid].colour() != piece_colour)
+        || (!cells[index_end].is_empty() && cells[index_end].colour() != piece_colour)
 }
 
 /// Returns true if the chosen action leads to a win.

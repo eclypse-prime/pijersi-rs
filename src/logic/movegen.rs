@@ -4,10 +4,10 @@ use crate::piece::{Piece, PieceTrait};
 
 use super::actions::{Action, ActionTrait, Actions};
 use super::index::{CellIndex, CellIndexTrait, INDEX_NULL};
-use super::rules::{can_move1, can_move2, can_stack, can_unstack};
+use super::rules::{can_move1, can_move2, can_stack, can_unstack, is_action_capture};
 use super::{Cells, Player, N_CELLS};
 
-/// Returns the possible moves for a player.
+/// Returns the possible actions for a player.
 /// The result is a `Actions` struct (fixed-length vector).
 #[inline(always)]
 pub fn available_player_actions(cells: &Cells, current_player: Player) -> Actions {
@@ -25,7 +25,7 @@ pub fn available_player_actions(cells: &Cells, current_player: Player) -> Action
     player_actions
 }
 
-/// Calculates the possible moves for a player.
+/// Calculates the possible actions for a piece.
 /// The result is stored in a `Actions` struct (fixed-length vector).
 /// This array is passed in parameter and modified by this function.
 #[inline]
@@ -36,7 +36,7 @@ pub fn available_piece_actions(
 ) {
     let piece_start: Piece = cells[index_start];
 
-    // If the piece is not a stack
+    // If the piece is a stack
     if piece_start.is_stack() {
         // 2 range first action
         for &index_mid in index_start.neighbours2() {
@@ -130,6 +130,143 @@ pub fn available_piece_actions(
             // 1-range move
             else if can_move1(cells, piece_start, index_mid) {
                 player_actions.push(Action::from_indices(index_start, INDEX_NULL, index_mid));
+            }
+        }
+    }
+}
+
+/// Returns the possible captures for a player.
+/// The result is a `Actions` struct (fixed-length vector).
+#[inline(always)]
+pub fn available_player_captures(cells: &Cells, current_player: Player) -> Actions {
+    let mut player_actions = Actions::default();
+
+    // Calculate possible player_actions
+    for index in 0..N_CELLS {
+        if !cells[index].is_empty() {
+            if cells[index].is_wise() {
+                continue;
+            }
+            // Choose pieces of the current player's colour
+            if (cells[index].colour()) == (current_player << 1) {
+                available_piece_captures(cells, index, &mut player_actions);
+            }
+        }
+    }
+    player_actions
+}
+
+/// Calculates the possible captures for a piece.
+/// The result is stored in a `Actions` struct (fixed-length vector).
+/// This array is passed in parameter and modified by this function.
+#[inline]
+pub fn available_piece_captures(
+    cells: &Cells,
+    index_start: CellIndex,
+    player_actions: &mut Actions,
+) {
+    let piece_start: Piece = cells[index_start];
+
+    let mut push_action_if_capture = |action: Action| {
+        if is_action_capture(cells, action) {
+            player_actions.push(action);
+        }
+    };
+
+    // If the piece is a stack
+    if piece_start.is_stack() {
+        // 2 range first action
+        for &index_mid in index_start.neighbours2() {
+            let half_action: Action = Action::from_indices_half(index_start, index_mid);
+            if can_move2(cells, piece_start, index_start, index_mid) {
+                // 2-range move, stack or unstack
+                for &index_end in index_mid.neighbours1() {
+                    // 2-range move, unstack or 2-range move, stack
+                    if can_unstack(cells, piece_start, index_end)
+                        || can_stack(cells, piece_start, index_end)
+                    {
+                        push_action_if_capture(half_action.add_last_index(index_end));
+                    }
+                }
+                // 2-range move
+                push_action_if_capture(Action::from_indices(index_start, INDEX_NULL, index_mid));
+            }
+        }
+        // 1-range first action
+        for &index_mid in index_start.neighbours1() {
+            let half_action: Action = Action::from_indices_half(index_start, index_mid);
+            // 1-range move, [stack or unstack] optional
+            if can_move1(cells, piece_start, index_mid) {
+                // 1-range move, stack or unstack
+                for &index_end in index_mid.neighbours1() {
+                    // 1-range move, unstack or 1-range move, stack
+                    if can_unstack(cells, piece_start, index_end)
+                        || can_stack(cells, piece_start, index_end)
+                    {
+                        push_action_if_capture(half_action.add_last_index(index_end));
+                    }
+                }
+                // 1-range move, unstack on starting position
+                push_action_if_capture(Action::from_indices(index_start, index_mid, index_start));
+
+                // 1-range move
+                push_action_if_capture(Action::from_indices(index_start, INDEX_NULL, index_mid));
+            }
+            // stack, [1/2-range move] optional
+            else if can_stack(cells, piece_start, index_mid) {
+                // stack, 2-range move
+                for &index_end in index_mid.neighbours2() {
+                    if can_move2(cells, piece_start, index_mid, index_end) {
+                        push_action_if_capture(half_action.add_last_index(index_end));
+                    }
+                }
+
+                // stack, 1-range move
+                for &index_end in index_mid.neighbours1() {
+                    if can_move1(cells, piece_start, index_end) {
+                        push_action_if_capture(half_action.add_last_index(index_end));
+                    }
+                }
+
+                // stack only
+                push_action_if_capture(Action::from_indices(index_start, index_start, index_mid));
+            }
+
+            // unstack
+            if can_unstack(cells, piece_start, index_mid) {
+                // unstack only
+                push_action_if_capture(Action::from_indices(index_start, index_start, index_mid));
+            }
+        }
+    } else {
+        // 1-range first action
+        for &index_mid in index_start.neighbours1() {
+            let half_action: Action = Action::from_indices_half(index_start, index_mid);
+            // stack, [1/2-range move] optional
+            if can_stack(cells, piece_start, index_mid) {
+                // stack, 2-range move
+                for &index_end in index_mid.neighbours2() {
+                    if can_move2(cells, piece_start, index_mid, index_end)
+                        || (index_start == ((index_mid + index_end) / 2)
+                            && can_move1(cells, piece_start, index_end))
+                    {
+                        push_action_if_capture(half_action.add_last_index(index_end));
+                    }
+                }
+
+                // stack, 0/1-range move
+                for &index_end in index_mid.neighbours1() {
+                    if can_move1(cells, piece_start, index_end) || index_start == index_end {
+                        push_action_if_capture(half_action.add_last_index(index_end));
+                    }
+                }
+
+                // stack only
+                push_action_if_capture(Action::from_indices(index_start, index_start, index_mid));
+            }
+            // 1-range move
+            else if can_move1(cells, piece_start, index_mid) {
+                push_action_if_capture(Action::from_indices(index_start, INDEX_NULL, index_mid));
             }
         }
     }
