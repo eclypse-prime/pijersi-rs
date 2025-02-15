@@ -14,17 +14,17 @@ categories = ["games"]
 
 [dependencies]
 bincode = "*"
-clap = {version = "*", features = ["derive"]}
+clap = { version = "*", features = ["derive"] }
 current_platform = "*"
 miniz_oxide = "*"
 rayon = "*"
 regex = "*"
-serde = {version = "*", features = ["derive"]}
+serde = { version = "*", features = ["derive"] }
 serde_bytes = "*"
 thiserror = "*"
 
 [dev-dependencies]
-criterion="*"
+criterion = "*"
 
 [profile.release]
 lto = "fat"
