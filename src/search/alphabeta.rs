@@ -1,6 +1,6 @@
 //! This module implements the alphabeta search that chooses the best move
 
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::RwLock;
@@ -162,17 +162,22 @@ pub fn search_root(
 
         let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
 
-        // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
-        let mut new_cells = *cells;
-        play_action(&mut new_cells, available_actions[order[0]]);
-        let first_eval = -search_node(
-            (&new_cells, 1 - current_player),
-            depth - 1,
-            (-beta, -alpha),
-            end_time,
-            NodeType::PV,
-            transposition_table,
-        );
+        let first_action = available_actions[order[0]];
+        let first_eval = if is_action_win(cells, first_action) {
+            MAX_SCORE
+        } else {
+            // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
+            let mut new_cells = *cells;
+            play_action(&mut new_cells, first_action);
+            -search_node(
+                (&new_cells, 1 - current_player),
+                depth - 1,
+                (-beta, -alpha),
+                end_time,
+                NodeType::PV,
+                transposition_table,
+            )
+        };
         scores[0] = first_eval;
 
         let alpha_atomic: AtomicScore = AtomicScore::new(max(alpha, first_eval));
@@ -186,14 +191,16 @@ pub fn search_root(
             .skip(1)
             .par_bridge()
             .for_each(|(k, score)| {
-                let action = available_actions[order[k]];
-                let mut new_cells = *cells;
-                play_action(&mut new_cells, action);
                 *score = {
                     if atomic_cut.load(Relaxed) {
                         Score::MIN
                     } else {
-                        let eval = {
+                        let action = available_actions[order[k]];
+                        let eval = if is_action_win(cells, action) {
+                            MAX_SCORE
+                        } else {
+                            let mut new_cells = *cells;
+                            play_action(&mut new_cells, action);
                             let alpha = alpha_atomic.load(Relaxed);
                             // Search with a null window
                             let eval_null_window = -search_node(
@@ -267,7 +274,7 @@ pub fn search_node(
     transposition_table: Option<&RwLock<SearchTable>>,
 ) -> Score {
     if depth == 0 {
-        return quiescence_search(cells, current_player, (BASE_ALPHA, BASE_BETA));
+        return quiescence_search(cells, current_player, (alpha, beta));
     }
 
     // Stop searching if the allocated time is up (if there are time controls)
@@ -487,12 +494,12 @@ pub fn search_iterative(
                 TOTAL_NODE_COUNT.store(0, Relaxed);
                 if score < BASE_ALPHA {
                     if verbose {
-                        println!("info loss in {}", depth / 2);
+                        println!("info loss in {}", min(1, depth / 2));
                     }
                     best_result = if let Some((last_action, _last_score)) = best_result {
                         Some((last_action, score))
                     } else {
-                        None
+                        Some((action, score))
                     };
                     break;
                 }
