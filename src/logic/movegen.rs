@@ -4,7 +4,9 @@ use crate::piece::{Piece, PieceTrait};
 
 use super::actions::{Action, ActionTrait, Actions};
 use super::index::{CellIndex, CellIndexTrait, INDEX_NULL};
-use super::rules::{can_move1, can_move2, can_stack, can_unstack, is_action_capture, is_action_win};
+use super::rules::{
+    can_move1, can_move2, can_stack, can_unstack, is_action_capture, is_action_win,
+};
 use super::{Cells, Player, N_CELLS};
 
 /// Returns the possible actions for a player.
@@ -168,7 +170,7 @@ pub fn available_piece_captures(
     let piece_start: Piece = cells[index_start];
 
     let mut push_action_if_capture = |action: Action| {
-        if is_action_capture(cells, action)  || is_action_win(cells, action) {
+        if is_action_capture(cells, action) || is_action_win(cells, action) {
             player_actions.push(action);
         }
     };
