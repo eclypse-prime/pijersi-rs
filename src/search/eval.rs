@@ -156,7 +156,9 @@ pub fn evaluate_action_terminal(
     }
 }
 
-/// TODO
+/// Evaluates a position using quiescence search.
+///
+/// Resolves all capture chains before evaluating positions and returns the best score using alphabeta.
 pub fn quiescence_search(
     cells: &Cells,
     current_player: Player,
@@ -165,6 +167,7 @@ pub fn quiescence_search(
     let available_actions = available_player_captures(cells, current_player);
     let n_actions = available_actions.len();
 
+    // Heuristic to return early
     let stand_pat = evaluate_position(cells, current_player);
 
     if n_actions == 0 || stand_pat > beta {
@@ -178,7 +181,7 @@ pub fn quiescence_search(
     let mut new_cells;
     for action in available_actions.into_iter() {
         if is_action_win(cells, action) {
-            return MAX_SCORE;
+            return MAX_SCORE / 4;
         }
         new_cells = *cells;
         play_action(&mut new_cells, action);

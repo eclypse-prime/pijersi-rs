@@ -13,7 +13,7 @@ use super::{
 ///
 /// The capture rules are the sames as rock-paper-scissors.
 /// The wise piece can neither capture or be captured.
-#[inline]
+#[inline(always)]
 pub fn can_take(attacker: Piece, target: Piece) -> bool {
     let attacker_type: Piece = attacker.r#type();
     let target_type: Piece = target.r#type();
@@ -24,7 +24,7 @@ pub fn can_take(attacker: Piece, target: Piece) -> bool {
 }
 
 /// Returns whether the chosen 1-range move is possible.
-#[inline]
+#[inline(always)]
 pub fn can_move1(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bool {
     let target_piece: Piece = cells[index_end];
 
@@ -41,7 +41,7 @@ pub fn can_move1(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bo
 }
 
 /// Returns whether the chosen 2-range move is possible.
-#[inline]
+#[inline(always)]
 pub fn can_move2(
     cells: &Cells,
     moving_piece: Piece,
@@ -67,7 +67,7 @@ pub fn can_move2(
 }
 
 /// Returns whether the chosen stack action is possible.
-#[inline]
+#[inline(always)]
 pub fn can_stack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bool {
     let target_piece: Piece = cells[index_end];
 
@@ -89,7 +89,7 @@ pub fn can_stack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bo
 }
 
 /// Returns whether the chosen unstack action is possible.
-#[inline]
+#[inline(always)]
 pub fn can_unstack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bool {
     let target_piece: Piece = cells[index_end];
 
