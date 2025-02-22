@@ -4,9 +4,7 @@ use crate::piece::{Piece, PieceTrait};
 
 use super::actions::{Action, ActionTrait, Actions};
 use super::index::{CellIndex, CellIndexTrait, INDEX_NULL};
-use super::rules::{
-    can_move1, can_move2, can_stack, can_unstack, is_action_capture, is_action_win,
-};
+use super::rules::{can_move1, can_move2, can_stack, can_unstack};
 use super::{Cells, Player, N_CELLS};
 
 /// Returns the possible actions for a player.
