@@ -1,11 +1,11 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use pijersi_rs::board::Board;
+use pijersi_rs::board::Game;
 use pijersi_rs::logic::perft::perft;
 use pijersi_rs::search::alphabeta::{search_node, BASE_ALPHA, BASE_BETA};
 
 fn bench_perft(c: &mut Criterion) {
-    let mut board = Board::new();
+    let mut board = Game::new();
     board.init();
     c.bench_function("perft 1", |b| {
         b.iter(|| black_box(perft(&board.cells, board.current_player, 1)))
@@ -22,7 +22,7 @@ fn bench_perft(c: &mut Criterion) {
 }
 
 fn bench_evaluate_action(c: &mut Criterion) {
-    let mut board = Board::new();
+    let mut board = Game::new();
     board.init();
     c.bench_function("search_node 1", |b| {
         b.iter(|| {
@@ -75,7 +75,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
 }
 
 fn bench_search(c: &mut Criterion) {
-    let mut board = Board::new();
+    let mut board = Game::new();
     board.init();
     board.options.verbose = false;
     c.bench_function("search 1", |b| {
