@@ -5,7 +5,11 @@ use crate::{
         translate::{coords_to_index, piece_to_char, piece_to_char2},
         Player,
     },
-    piece::{Piece, PieceColour, PieceTrait, PieceType, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, HALF_PIECE_WIDTH, TOP_MASK, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE},
+    piece::{
+        Piece, PieceColour, PieceTrait, PieceType, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS,
+        BLACK_WISE, HALF_PIECE_WIDTH, TOP_MASK, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS,
+        WHITE_WISE,
+    },
 };
 
 pub const NEIGHBOURS1: [Bitboard; 45] = [
@@ -165,11 +169,7 @@ impl BoardTrait for Board {
         self[4] | self[5] | self[6] | self[7] | self[12] | self[13] | self[14] | self[15]
     }
 
-    fn set_piece(
-        &mut self,
-        index: CellIndex,
-        piece: Piece,
-    ) {
+    fn set_piece(&mut self, index: CellIndex, piece: Piece) {
         self[(piece & 0b0111) as usize].set(index);
         if piece.is_stack() {
             self[(piece >> HALF_PIECE_WIDTH) as usize].set(index);
@@ -184,7 +184,7 @@ impl BoardTrait for Board {
     }
 
     fn get_piece(&self, index: usize) -> Piece {
-        let mut piece= 0u8;
+        let mut piece = 0u8;
         for k in 0..8 {
             if self[k].get(index) {
                 piece = k as u8 | 0b1000;
@@ -201,7 +201,7 @@ impl BoardTrait for Board {
     }
 
     fn remove_piece(&mut self, index: CellIndex) {
-        let piece = self.get_piece(index );
+        let piece = self.get_piece(index);
         self.unset_piece(index, piece);
     }
 
@@ -330,9 +330,7 @@ pub const fn gen_piece_bb(piece_colour: &PieceColour, piece_type: &PieceType) ->
     0b1000 | colour_part | type_part
 }
 
-pub fn move2_mask(bitboard: Bitboard, index: CellIndex) {
-    
-}
+pub fn move2_mask(bitboard: Bitboard, index: CellIndex) {}
 
 pub fn do_move_bb(board: &mut Board, index_start: CellIndex, index_end: CellIndex) {
     let start_piece = board.get_piece(index_start);
@@ -347,7 +345,7 @@ pub fn do_stack_bb(board: &mut Board, index_start: CellIndex, index_end: CellInd
 
     board.unset_piece(index_start, piece_start);
     board.unset_piece(index_end, piece_end);
-    
+
     if piece_start.bottom() != 0 {
         board.set_piece(index_start, piece_start.bottom());
     }
@@ -356,7 +354,7 @@ pub fn do_stack_bb(board: &mut Board, index_start: CellIndex, index_end: CellInd
 
 pub fn do_unstack_bb(board: &mut Board, index_start: CellIndex, index_end: CellIndex) {
     let piece_start: Piece = board.get_piece(index_start);
-    
+
     board.unset_piece(index_start, piece_start);
     board.remove_piece(index_end);
 
