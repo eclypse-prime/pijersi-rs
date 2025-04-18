@@ -1,11 +1,11 @@
-use pijersi_rs::board::Board;
+use pijersi_rs::board::Game;
 use pijersi_rs::logic::perft::count_player_actions;
 use pijersi_rs::logic::perft::perft;
 use pijersi_rs::logic::perft::perft_split;
 
 #[test]
 fn test_count_player_actions() {
-    let mut board = Board::new();
+    let mut board = Game::new();
     board.init();
     assert_eq!(
         count_player_actions(&board.cells, board.current_player, 1),
@@ -23,7 +23,7 @@ fn test_count_player_actions() {
 
 #[test]
 fn test_perft() {
-    let mut board = Board::new();
+    let mut board = Game::new();
     board.init();
     assert_eq!(perft(&board.cells, board.current_player, 1), 186);
     assert_eq!(perft(&board.cells, board.current_player, 2), 34054);
@@ -33,7 +33,7 @@ fn test_perft() {
 
 #[test]
 fn test_perft_split() {
-    let mut board = Board::new();
+    let mut board = Game::new();
     board.init();
     assert_eq!(
         perft_split(&board.cells, board.current_player, 1)

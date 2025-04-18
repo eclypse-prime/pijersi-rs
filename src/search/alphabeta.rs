@@ -112,8 +112,8 @@ pub fn sort_actions(
         }
         if (!index_mid.is_null()
             && !cells[index_mid].is_empty()
-            && cells[index_mid].colour() != current_player << 1)
-            || (!cells[index_end].is_empty() && cells[index_end].colour() != current_player << 1)
+            && cells[index_mid].colour() != current_player << 2)
+            || (!cells[index_end].is_empty() && cells[index_end].colour() != current_player << 2)
         {
             available_actions[i] = available_actions[index_sorted];
             available_actions[index_sorted] = action;
@@ -295,6 +295,7 @@ pub fn search_node(
     let mut score = -MAX_SCORE;
 
     let mut alpha = alpha;
+    let mut beta = beta;
     // Read the transposition table
     let cells_hash = (cells, current_player).hash();
     let table_action = match read_transposition_table(cells_hash, transposition_table) {
@@ -307,11 +308,13 @@ pub fn search_node(
                         if table_score > beta {
                             return table_score;
                         }
+                        alpha = table_score;
                     }
                     NodeType::All => {
                         if table_score < alpha {
                             return table_score;
                         }
+                        beta = table_score;
                     }
                 }
             }

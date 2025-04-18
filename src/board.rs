@@ -39,7 +39,7 @@ use crate::search::Score;
 /// It contains various parameters for the search engine:
 /// * Using the opening book
 /// * Printing the info logs during searches
-pub struct BoardOptions {
+pub struct GameOptions {
     /// Using the opening book
     pub use_book: bool,
     /// Using the hash table
@@ -48,13 +48,13 @@ pub struct BoardOptions {
     pub verbose: bool,
 }
 
-impl Default for BoardOptions {
+impl Default for GameOptions {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl BoardOptions {
+impl GameOptions {
     /// `BoardOptions` constructor. By default, the options are set to:
     /// ```not_rust
     /// use_book: true
@@ -78,9 +78,9 @@ impl BoardOptions {
 /// * Current half moves count
 /// * Current full moves count
 /// * Piece count
-pub struct Board {
+pub struct Game {
     /// The board options
-    pub options: BoardOptions,
+    pub options: GameOptions,
     /// The current cells storing the piece data as `Piece` (see [`crate::piece`])
     pub cells: Cells,
     /// The current player: 0 if white, 1 if black
@@ -90,17 +90,17 @@ pub struct Board {
     last_piece_count: u64,
 }
 
-impl Default for Board {
+impl Default for Game {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Board {
+impl Game {
     /// Board constructor: the cells are empty on initialization, the current player is white.
     pub fn new() -> Self {
         Self {
-            options: BoardOptions::new(),
+            options: GameOptions::new(),
             cells: CELLS_EMPTY,
             current_player: 0,
             half_moves: 0u64,

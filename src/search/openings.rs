@@ -13,7 +13,7 @@ use miniz_oxide::inflate::decompress_to_vec;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    board::Board,
+    board::Game,
     logic::{actions::Action, Cells, Player, CELLS_EMPTY},
 };
 
@@ -29,7 +29,7 @@ pub struct Position {
 
 impl Position {
     /// Creates a new `Position` from a board. Copies its cells and current player.
-    pub fn new(board: &Board) -> Self {
+    pub fn new(board: &Game) -> Self {
         Self {
             cells: board.cells,
             current_player: board.current_player,
@@ -121,7 +121,7 @@ impl OpeningBook {
     }
 
     /// Looks for a stored move corresponding to the provided board state and returns it if it exists.
-    pub fn lookup(&self, board: &Board) -> Option<&(Action, i64)> {
+    pub fn lookup(&self, board: &Game) -> Option<&(Action, i64)> {
         self.map.get(&Position::new(board))
     }
 }

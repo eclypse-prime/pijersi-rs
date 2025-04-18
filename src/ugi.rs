@@ -7,7 +7,7 @@ use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 use std::{process::exit, sync::RwLock, time::Instant};
 
 use crate::{
-    board::Board,
+    board::Game,
     errors::{get_error_trace, RuntimeError, UgiErrorKind},
     hash::search::SearchTable,
     logic::{
@@ -95,7 +95,7 @@ enum SetoptionArgs {
 
 /// The `UgiEngine` struct that implements the UGI protocol.
 pub struct UgiEngine {
-    board: Board,
+    board: Game,
     opening_book: Option<OpeningBook>,
     transposition_table: Option<RwLock<SearchTable>>,
 }
@@ -110,7 +110,7 @@ impl UgiEngine {
     /// Creates a new `UgiEngine`
     pub fn new() -> Self {
         let mut new_self = Self {
-            board: Board::default(),
+            board: Game::default(),
             opening_book: None,
             transposition_table: None,
         };
@@ -367,7 +367,7 @@ fn print_error_trace(error: &dyn std::error::Error) {
 }
 
 /// Plays all the actions in the list. If there is an invalid action in the list, stops and rolls back to the initial state.
-fn play_actions(board: &mut Board, actions: &[String]) {
+fn play_actions(board: &mut Game, actions: &[String]) {
     let (cells, player, half_moves, full_moves) = board.get_state();
     for action_string in actions {
         let result = board.play_from_string(action_string);
@@ -383,7 +383,7 @@ fn play_actions(board: &mut Board, actions: &[String]) {
 }
 
 /// Sets the state of the board using PSN/FEN arguments
-fn set_fen(board: &mut Board, fen_args: &FenArgs) {
+fn set_fen(board: &mut Game, fen_args: &FenArgs) {
     let new_cells = string_to_cells(&fen_args.fen);
     let player = string_to_player(&fen_args.player);
     match (new_cells, player) {

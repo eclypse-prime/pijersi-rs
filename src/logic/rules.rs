@@ -18,7 +18,7 @@ pub fn can_take(attacker: Piece, target: Piece) -> bool {
     let attacker_type: Piece = attacker.r#type();
     let target_type: Piece = target.r#type();
     // Concat has 16 possible values, we can use a truth table to quickly get the result
-    let concat = attacker_type | (target_type >> 2);
+    let concat = (attacker_type << 2) | target_type;
     // This will optimize to a single `bt` operartion in asm
     (0b0000_0001_0100_0010 >> concat) & 1 == 1
 }

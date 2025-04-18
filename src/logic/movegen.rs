@@ -17,7 +17,7 @@ pub fn available_player_actions(cells: &Cells, current_player: Player) -> Action
     for index in 0..N_CELLS {
         if !cells[index].is_empty() {
             // Choose pieces of the current player's colour
-            if (cells[index].colour()) == (current_player << 1) {
+            if (cells[index].colour()) == (current_player << 2) {
                 available_piece_actions(cells, index, &mut player_actions);
             }
         }
@@ -148,7 +148,7 @@ pub fn available_player_captures(cells: &Cells, current_player: Player) -> Actio
                 continue;
             }
             // Choose pieces of the current player's colour
-            if (cells[index].colour()) == (current_player << 1) {
+            if (cells[index].colour()) == (current_player << 2) {
                 available_piece_captures(cells, index, &mut player_actions);
             }
         }

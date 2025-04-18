@@ -8,8 +8,8 @@ use crate::{
     },
     logic::actions::ActionTrait,
     piece::{
-        Piece, PieceTrait, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY,
-        WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
+        Piece, PieceColour, PieceTrait, PieceType, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS,
+        BLACK_WISE, CELL_EMPTY, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
     },
 };
 
@@ -50,6 +50,23 @@ pub const fn piece_to_char(piece: Piece) -> Option<char> {
         BLACK_ROCK => Some('r'),
         BLACK_WISE => Some('w'),
         _ => None,
+    }
+}
+
+pub const fn piece_to_char2(piece_colour: &PieceColour, piece_type: &PieceType) -> char {
+    // let colour_part: Piece = match piece_colour {
+    //     PieceColour::White => COLOUR_WHITE,
+    //     PieceColour::Black => COLOUR_BLACK,
+    // };
+    let char = match piece_type {
+        PieceType::Scissors => 's',
+        PieceType::Paper => 'p',
+        PieceType::Rock => 'r',
+        PieceType::Wise => 'w',
+    };
+    match piece_colour {
+        PieceColour::White => char.to_ascii_uppercase(),
+        PieceColour::Black => char,
     }
 }
 
@@ -265,13 +282,13 @@ pub fn cells_to_pretty_string(cells: &Cells) -> String {
         let bottom_piece: Piece = piece.bottom();
         let char1: char = match top_piece {
             0b0000 => '.',
-            0b0001 => 'S',
-            0b0101 => 'P',
-            0b1001 => 'R',
-            0b1101 => 'W',
-            0b0011 => 's',
-            0b0111 => 'p',
-            0b1011 => 'r',
+            0b1000 => 'S',
+            0b1001 => 'P',
+            0b1010 => 'R',
+            0b1011 => 'W',
+            0b1100 => 's',
+            0b1101 => 'p',
+            0b1110 => 'r',
             0b1111 => 'w',
             _ => '?',
         };
@@ -280,13 +297,13 @@ pub fn cells_to_pretty_string(cells: &Cells) -> String {
         } else {
             match bottom_piece {
                 0b0000 => '-',
-                0b0001 => 'S',
-                0b0101 => 'P',
-                0b1001 => 'R',
-                0b1101 => 'W',
-                0b0011 => 's',
-                0b0111 => 'p',
-                0b1011 => 'r',
+                0b1000 => 'S',
+                0b1001 => 'P',
+                0b1010 => 'R',
+                0b1011 => 'W',
+                0b1100 => 's',
+                0b1101 => 'p',
+                0b1110 => 'r',
                 0b1111 => 'w',
                 _ => '?',
             }

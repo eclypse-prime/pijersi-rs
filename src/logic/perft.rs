@@ -21,7 +21,7 @@ fn count_player_actions_terminal(cells: &Cells, current_player: Player) -> u64 {
     cells
         .iter()
         .enumerate()
-        .filter(|(_index, piece)| !piece.is_empty() && (piece.colour() == (current_player << 1)))
+        .filter(|(_index, piece)| !piece.is_empty() && (piece.colour() == (current_player << 2)))
         .map(|(index, _piece)| count_piece_actions_terminal(cells, index))
         .sum::<u64>()
 }
@@ -186,7 +186,7 @@ pub fn count_player_actions(cells: &Cells, current_player: Player, depth: u64) -
             .iter()
             .enumerate()
             .filter(|(_index, piece)| {
-                !piece.is_empty() && (piece.colour() == (current_player << 1))
+                !piece.is_empty() && (piece.colour() == (current_player << 2))
             })
             .map(|(index, _piece)| count_piece_actions(cells, index, current_player, depth))
             .sum::<u64>(),
