@@ -38,10 +38,10 @@ pub fn available_piece_actions(
 
     // If the piece is a stack
     if piece_start.is_stack() {
-        // 2 range first action
+        // 2-range first action
         for &index_mid in index_start.neighbours2() {
-            let half_action: Action = Action::from_indices_half(index_start, index_mid);
             if can_move2(cells, piece_start, index_start, index_mid) {
+                let half_action: Action = Action::from_indices_half(index_start, index_mid);
                 // 2-range move, stack or unstack
                 for &index_end in index_mid.neighbours1() {
                     // 2-range move, unstack or 2-range move, stack
@@ -104,9 +104,9 @@ pub fn available_piece_actions(
     } else {
         // 1-range first action
         for &index_mid in index_start.neighbours1() {
-            let half_action: Action = Action::from_indices_half(index_start, index_mid);
             // stack, [1/2-range move] optional
             if can_stack(cells, piece_start, index_mid) {
+                let half_action: Action = Action::from_indices_half(index_start, index_mid);
                 // stack, 2-range move
                 for &index_end in index_mid.neighbours2() {
                     if can_move2(cells, piece_start, index_mid, index_end)

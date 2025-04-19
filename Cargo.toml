@@ -17,6 +17,7 @@ bincode = "*"
 clap = { version = "*", features = ["derive"] }
 current_platform = "*"
 miniz_oxide = "*"
+rand = "*"
 rayon = "*"
 regex = "*"
 serde = { version = "*", features = ["derive"] }
