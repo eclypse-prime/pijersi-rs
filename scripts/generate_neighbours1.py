@@ -1,4 +1,4 @@
-"""A helper script to generate the neighbouring cells table `NEIGHBOURS1: [CellIndex; 315]`
+"""A helper script to generate the neighbouring cells table `NEIGHBOURS1: [Bitboard; 45]`
 I wanted to hardcode this so I created this script to generate all the cases in Rust code.
 """
 
@@ -37,17 +37,13 @@ def find_neighbours(i: int, j: int) -> List[int]:
 
 
 def print_case(i: int, j: int):
-    line = "    &["
     neighbours = find_neighbours(i, j)
-    n = len(neighbours)
-    for k, neighbour in enumerate(neighbours):
-        line += str(neighbour)
-        if k < n - 1:
-            line += ", "
-    line += "],"
-    print(line)
+    mask = 0
+    for neighbour in neighbours:
+        mask += 1 << neighbour
+    print(f"    {mask},")
 
-print("pub const NEIGHBOURS1: [&[CellIndex]; 45] = [")
+print("pub const NEIGHBOURS1: [Bitboard; 45] = [")
 for i in range(7):
     if i % 2 == 0:
         for j in range(6):

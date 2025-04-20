@@ -13,7 +13,7 @@ use miniz_oxide::inflate::decompress_to_vec;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    board::Game,
+    game::Game,
     logic::{actions::Action, Cells, Player, CELLS_EMPTY},
 };
 
@@ -29,10 +29,10 @@ pub struct Position {
 
 impl Position {
     /// Creates a new `Position` from a board. Copies its cells and current player.
-    pub fn new(board: &Game) -> Self {
+    pub fn new(game: &Game) -> Self {
         Self {
-            cells: board.cells,
-            current_player: board.current_player,
+            cells: CELLS_EMPTY,
+            current_player: game.current_player,
         }
     }
     const fn empty() -> Self {

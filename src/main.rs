@@ -1,6 +1,6 @@
 use std::io;
 
-use pijersi_rs::ugi::UgiEngine;
+use pijersi_rs::{game::Game, logic::perft::perft_split, ugi::UgiEngine};
 
 /// Runs the UGI protocol engine
 fn main() {

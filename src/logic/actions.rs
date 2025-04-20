@@ -11,7 +11,10 @@ use std::{
     sync::atomic::AtomicU32,
 };
 
-use crate::piece::{Piece, PieceTrait};
+use crate::{
+    bitboard::Board,
+    piece::{Piece, PieceTrait},
+};
 
 use super::{
     index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
@@ -21,6 +24,8 @@ use super::{
 
 /// Size of the array that stores player actions
 pub const MAX_PLAYER_ACTIONS: usize = 512;
+/// Size of the array that stores player actions
+pub const MAX_PLAYER_CAPTURES: usize = 128;
 
 /// An action is stored as a u32 value. See [`crate::logic::actions`] for the specific data format.
 pub type Action = u32;
@@ -158,14 +163,16 @@ impl ActionTrait for Action {
     }
 }
 
+pub type ActionsLight = Actions<MAX_PLAYER_CAPTURES>;
+
 /// This struct is a fixed-length array that stores player actions
 #[derive(Debug, Clone, Copy)]
-pub struct Actions {
-    data: [Action; MAX_PLAYER_ACTIONS],
+pub struct Actions<const N: usize = MAX_PLAYER_ACTIONS> {
+    data: [Action; N],
     current_index: usize,
 }
 
-impl Actions {
+impl<const N: usize> Actions<N> {
     /// Store a new action
     #[inline]
     pub fn push(&mut self, value: Action) {
@@ -193,22 +200,22 @@ impl Actions {
 
     /// Print the actions in string format
     #[inline]
-    pub fn print_str(&self, cells: &Cells) {
+    pub fn print_str(&self, board: &Board) {
         println!(
             "{:?}",
             self[..]
                 .iter()
-                .map(|&action| { action_to_string(cells, action) })
+                .map(|&action| { action_to_string(board, action) })
                 .collect::<Vec<String>>()
         );
     }
 }
 
-impl From<&[Action]> for Actions {
+impl<const N: usize> From<&[Action]> for Actions<N> {
     fn from(value: &[Action]) -> Self {
-        let mut data = [0; MAX_PLAYER_ACTIONS];
+        let mut data = [0; N];
         let current_index = value.len();
-        assert!(current_index < MAX_PLAYER_ACTIONS);
+        assert!(current_index < N);
         data[..current_index].copy_from_slice(value);
         Actions {
             data,
@@ -217,31 +224,31 @@ impl From<&[Action]> for Actions {
     }
 }
 
-impl Default for Actions {
+impl<const N: usize> Default for Actions<N> {
     fn default() -> Self {
         Actions {
-            data: [0; MAX_PLAYER_ACTIONS],
+            data: [0; N],
             current_index: 0,
         }
     }
 }
 
-impl IntoIterator for Actions {
+impl<const N: usize> IntoIterator for Actions<N> {
     type Item = Action;
-    type IntoIter = std::iter::Take<std::array::IntoIter<Action, MAX_PLAYER_ACTIONS>>;
+    type IntoIter = std::iter::Take<std::array::IntoIter<Action, N>>;
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.data.into_iter().take(self.current_index)
     }
 }
 
-impl PartialEq for Actions {
+impl<const N: usize> PartialEq for Actions<N> {
     fn eq(&self, other: &Self) -> bool {
         self.current_index == other.current_index && self.data == other.data
     }
 }
 
-impl Index<usize> for Actions {
+impl<const N: usize> Index<usize> for Actions<N> {
     type Output = Action;
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
@@ -249,14 +256,14 @@ impl Index<usize> for Actions {
     }
 }
 
-impl IndexMut<usize> for Actions {
+impl<const N: usize> IndexMut<usize> for Actions<N> {
     #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.data[index]
     }
 }
 
-impl Index<Range<usize>> for Actions {
+impl<const N: usize> Index<Range<usize>> for Actions<N> {
     type Output = [Action];
     #[inline]
     fn index(&self, index: Range<usize>) -> &Self::Output {
@@ -264,14 +271,14 @@ impl Index<Range<usize>> for Actions {
     }
 }
 
-impl IndexMut<Range<usize>> for Actions {
+impl<const N: usize> IndexMut<Range<usize>> for Actions<N> {
     #[inline]
     fn index_mut(&mut self, index: Range<usize>) -> &mut Self::Output {
         &mut self.data[index]
     }
 }
 
-impl Index<RangeFull> for Actions {
+impl<const N: usize> Index<RangeFull> for Actions<N> {
     type Output = [Action];
     #[inline]
     fn index(&self, _index: RangeFull) -> &Self::Output {
@@ -279,7 +286,7 @@ impl Index<RangeFull> for Actions {
     }
 }
 
-impl IndexMut<RangeFull> for Actions {
+impl<const N: usize> IndexMut<RangeFull> for Actions<N> {
     #[inline]
     fn index_mut(&mut self, _index: RangeFull) -> &mut Self::Output {
         &mut self.data[0..self.current_index]

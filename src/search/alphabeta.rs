@@ -8,6 +8,7 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
+use crate::bitboard::Board;
 use crate::hash::position::HashTrait;
 use crate::hash::search::SearchTable;
 use crate::logic::actions::{play_action, Action, ActionTrait, Actions, AtomicAction};
@@ -17,8 +18,6 @@ use crate::logic::translate::action_to_string;
 use crate::logic::{Cells, Player};
 use crate::piece::PieceTrait;
 use crate::utils::{argsort, reverse_argsort};
-
-use super::super::logic::movegen::available_player_actions;
 
 use super::eval::{quiescence_search, MAX_SCORE};
 use super::{AtomicScore, NodeType, Score};
@@ -77,7 +76,7 @@ pub fn write_transposition_table(
 /// Sorts the available actions based on how good they are estimated to be (in descending order -> best actions first).
 #[inline]
 pub fn sort_actions(
-    cells: &Cells,
+    board: &Board,
     current_player: Player,
     table_action: Option<Action>,
     available_actions: &mut Actions,
@@ -90,7 +89,7 @@ pub fn sort_actions(
         for i in 0..n_actions {
             if available_actions[i] == table_action {
                 // Immediately returns if action is win
-                if is_action_win(cells, table_action) {
+                if is_action_win(board, table_action) {
                     return Some(table_action);
                 }
                 available_actions[..].swap(0, i);
@@ -107,13 +106,14 @@ pub fn sort_actions(
         let action = available_actions[i];
         let (_index_start, index_mid, index_end) = action.to_indices();
         // Immediately return if the action is a win
-        if is_action_win(cells, action) {
+        if is_action_win(board, action) {
             return Some(action);
         }
         if (!index_mid.is_null()
-            && !cells[index_mid].is_empty()
-            && cells[index_mid].colour() != current_player << 2)
-            || (!cells[index_end].is_empty() && cells[index_end].colour() != current_player << 2)
+            && !board.get_piece(index_mid).is_empty()
+            && board.get_piece(index_mid).colour() != current_player << 2)
+            || (!board.get_piece(index_end).is_empty()
+                && board.get_piece(index_end).colour() != current_player << 2)
         {
             available_actions[i] = available_actions[index_sorted];
             available_actions[index_sorted] = action;
@@ -125,7 +125,7 @@ pub fn sort_actions(
 
 /// Returns the best move at a given depth
 pub fn search_root(
-    cells: &Cells,
+    board: &Board,
     current_player: Player,
     depth: u64,
     end_time: Option<Instant>,
@@ -143,7 +143,7 @@ pub fn search_root(
     }
 
     // Get an array of all the available moves for the current player, the last element of the array is the number of available moves
-    let available_actions = available_player_actions(cells, current_player);
+    let available_actions = board.available_player_actions(current_player);
     let n_actions = available_actions.len();
 
     let order = match scores {
@@ -163,14 +163,14 @@ pub fn search_root(
         let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
 
         let first_action = available_actions[order[0]];
-        let first_eval = if is_action_win(cells, first_action) {
+        let first_eval = if is_action_win(board, first_action) {
             MAX_SCORE
         } else {
             // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
-            let mut new_cells = *cells;
-            play_action(&mut new_cells, first_action);
+            let mut new_board = *board;
+            new_board.play_action(first_action);
             -search_node(
-                (&new_cells, 1 - current_player),
+                (&new_board, 1 - current_player),
                 depth - 1,
                 (-beta, -alpha),
                 end_time,
@@ -196,15 +196,15 @@ pub fn search_root(
                         Score::MIN
                     } else {
                         let action = available_actions[order[k]];
-                        let eval = if is_action_win(cells, action) {
+                        let eval = if is_action_win(board, action) {
                             MAX_SCORE
                         } else {
-                            let mut new_cells = *cells;
-                            play_action(&mut new_cells, action);
+                            let mut new_board = *board;
+                            new_board.play_action(action);
                             let alpha = alpha_atomic.load(Relaxed);
                             // Search with a null window
                             let eval_null_window = -search_node(
-                                (&new_cells, 1 - current_player),
+                                (&new_board, 1 - current_player),
                                 depth - 1,
                                 (-alpha - 1, -alpha),
                                 end_time,
@@ -214,7 +214,7 @@ pub fn search_root(
                             // If fail high, do the search with the full window
                             if alpha < eval_null_window && eval_null_window < beta {
                                 -search_node(
-                                    (&new_cells, 1 - current_player),
+                                    (&new_board, 1 - current_player),
                                     depth - 1,
                                     (-beta, -alpha),
                                     end_time,
@@ -266,7 +266,7 @@ pub fn search_root(
 ///
 /// Recursively calculates the best score using the alphabeta search to the chosen depth.
 pub fn search_node(
-    (cells, current_player): (&Cells, Player),
+    (board, current_player): (&Board, Player),
     depth: u64,
     (alpha, beta): (Score, Score),
     end_time: Option<Instant>,
@@ -274,7 +274,7 @@ pub fn search_node(
     transposition_table: Option<&RwLock<SearchTable>>,
 ) -> Score {
     if depth == 0 {
-        return quiescence_search(cells, current_player, (alpha, beta));
+        return quiescence_search(board, current_player, (alpha, beta));
     }
 
     // Stop searching if the allocated time is up (if there are time controls)
@@ -284,7 +284,7 @@ pub fn search_node(
         }
     }
 
-    let mut available_actions = available_player_actions(cells, current_player);
+    let mut available_actions = board.available_player_actions(current_player);
     let n_actions = available_actions.len();
 
     // If there are no actions available, the player has lost
@@ -297,7 +297,7 @@ pub fn search_node(
     let mut alpha = alpha;
     let mut beta = beta;
     // Read the transposition table
-    let cells_hash = (cells, current_player).hash();
+    let cells_hash = (board, current_player).hash();
     let table_action = match read_transposition_table(cells_hash, transposition_table) {
         Some((table_action, table_depth, table_score, table_node_type)) => {
             // If the table has a match with the same depth, a cutoff may be possible depending on the node type
@@ -324,7 +324,7 @@ pub fn search_node(
     };
 
     // Sort actions to improve alphabeta search
-    let winning_action = sort_actions(cells, current_player, table_action, &mut available_actions);
+    let winning_action = sort_actions(board, current_player, table_action, &mut available_actions);
 
     // Return if one of the available actions is an immediate win
     if let Some(winning_action) = winning_action {
@@ -341,10 +341,10 @@ pub fn search_node(
 
     // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
     // Evaluate first action sequentially
-    let mut new_cells = *cells;
-    play_action(&mut new_cells, available_actions[0]);
+    let mut new_board = *board;
+    new_board.play_action(available_actions[0]);
     let eval = -search_node(
-        (&new_cells, 1 - current_player),
+        (&new_board, 1 - current_player),
         depth - 1,
         (-beta, -alpha),
         end_time,
@@ -387,12 +387,12 @@ pub fn search_node(
                 let eval = {
                     let alpha = alpha_atomic.load(Relaxed);
 
-                    let mut new_cells = *cells;
-                    play_action(&mut new_cells, action);
+                    let mut new_board = *board;
+                    new_board.play_action(action);
 
                     // Search with a null window
                     let eval_null_window = -search_node(
-                        (&new_cells, 1 - current_player),
+                        (&new_board, 1 - current_player),
                         depth - 1,
                         (-alpha - 1, -alpha),
                         end_time,
@@ -407,7 +407,7 @@ pub fn search_node(
                     // If fail high, do the search with the full window
                     if alpha < eval_null_window && eval_null_window < beta {
                         -search_node(
-                            (&new_cells, 1 - current_player),
+                            (&new_board, 1 - current_player),
                             depth - 1,
                             (-beta, -alpha),
                             end_time,
@@ -450,7 +450,7 @@ pub fn search_node(
 /// The search starts at depth 1 and the depth increases until the chosen depth is reached or a winning move is found.
 /// The results at lower depths are used to sort the search order at higher depths.
 pub fn search_iterative(
-    cells: &Cells,
+    board: &Board,
     current_player: Player,
     max_depth: u64,
     end_time: Option<Instant>,
@@ -467,7 +467,7 @@ pub fn search_iterative(
             }
         }
         let proposed_action = search_root(
-            cells,
+            board,
             current_player,
             depth,
             end_time,
@@ -479,7 +479,7 @@ pub fn search_iterative(
         match proposed_action {
             None => (),
             Some((action, score, scores)) => {
-                let action_string = action_to_string(cells, action);
+                let action_string = action_to_string(board, action);
                 if verbose {
                     print!(
                         "info depth {depth} time {duration_ms} score {score} pv {action_string}"

@@ -1,5 +1,6 @@
 //! This module implements the traits and methods used to hash a position.
 
+use crate::bitboard::Board;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::piece::PieceTrait;
 
@@ -13,13 +14,12 @@ pub trait HashTrait {
     fn hash(&self) -> usize;
 }
 
-impl HashTrait for (&Cells, Player) {
+impl HashTrait for (&Board, Player) {
     fn hash(&self) -> usize {
-        self.0
-            .iter()
-            .enumerate()
+        (0..45)
+            .map(|index| (index, self.0.get_piece(index)))
             .filter(|(_index, piece)| !piece.is_empty())
-            .map(|(index, &piece)| ZOBRIST_TABLE[PIECE_TO_INDEX[piece as usize] * N_CELLS + index])
+            .map(|(index, piece)| ZOBRIST_TABLE[PIECE_TO_INDEX[piece as usize] * N_CELLS + index])
             .fold(if self.1 == 1 { PLAYER_HASH } else { 0 }, |acc, e| acc ^ e)
     }
 }

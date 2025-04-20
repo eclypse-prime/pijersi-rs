@@ -3,6 +3,7 @@
 use regex::Regex;
 
 use crate::{
+    bitboard::{Bitboard, Board},
     errors::{
         InvalidCoordinatesKind, InvalidPlayerKind, InvalidPositionKind, ParseError, ParseErrorKind,
     },
@@ -144,8 +145,111 @@ pub fn index_to_string(index: CellIndex) -> String {
     ROW_LETTERS[i].to_string() + &(j + 1).to_string()
 }
 
+impl Bitboard {
+    pub fn to_string(&self) -> String {
+        format!("{:045b}", self.0)
+    }
+
+    pub fn to_pretty_string(&self) -> String {
+        let mut pretty_string = " ".to_owned();
+        for i in 0..45 {
+            pretty_string += if self.get(i) { "X  " } else { ".  " };
+            if [5, 12, 18, 25, 31, 38].contains(&i) {
+                pretty_string += "\n";
+                if [12, 25, 38].contains(&i) {
+                    pretty_string += " ";
+                }
+            }
+        }
+
+        pretty_string
+    }
+}
+
+impl ToString for Board {
+    fn to_string(&self) -> String {
+        let mut cells_string = String::new();
+        for i in 0..7usize {
+            let n_columns: usize = if i % 2 == 0 { 6 } else { 7 };
+            let mut counter: usize = 0;
+            for j in 0..n_columns {
+                let piece = self.get_piece(coords_to_index(i, j));
+                if piece.is_empty() {
+                    counter += 1;
+                } else {
+                    if counter > 0 {
+                        cells_string += &counter.to_string();
+                        counter = 0;
+                    }
+                    if piece.is_stack() {
+                        cells_string += &piece_to_char(piece.bottom()).unwrap().to_string();
+                        cells_string += &piece_to_char(piece.top()).unwrap().to_string();
+                    } else {
+                        cells_string += &piece_to_char(piece).unwrap().to_string();
+                        cells_string += "-";
+                    }
+                }
+            }
+            if counter > 0 {
+                cells_string += &counter.to_string();
+            }
+            if i < 6 {
+                cells_string += "/";
+            }
+        }
+        cells_string
+    }
+}
+
+impl TryFrom<&str> for Board {
+    type Error = ParseError;
+    /// Reads a Pijersi Standard Notation string to apply its state to the cells.
+    fn try_from(board_string: &str) -> Result<Self, Self::Error> {
+        let cell_lines: Vec<&str> = board_string.split('/').collect();
+        if cell_lines.len() == 7 {
+            let mut cursor: CellIndex = 0;
+            let mut new_board = Board::EMPTY;
+            for &cell_line in &cell_lines {
+                let mut j: usize = 0;
+                while j < cell_line.chars().count() {
+                    if let Some(top_char) = char_to_piece(cell_line.chars().nth(j).unwrap()) {
+                        if cell_line.chars().nth(j + 1).unwrap() == '-' {
+                            new_board.set_piece(
+                                cursor,
+                                char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap(),
+                            );
+                        } else {
+                            new_board.set_piece(
+                                cursor,
+                                char_to_piece(cell_line.chars().nth(j + 1).unwrap())
+                                    .unwrap()
+                                    .stack_on(top_char),
+                            );
+                        }
+                        j += 2;
+                        cursor += 1;
+                    } else {
+                        let jump =
+                            cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as CellIndex;
+                        j += 1;
+                        cursor += jump;
+                    }
+                }
+            }
+            Ok(new_board)
+        } else {
+            Err(ParseError {
+                kind: ParseErrorKind::InvalidPosition(InvalidPositionKind::WrongLineNumber(
+                    cell_lines.len(),
+                )),
+                value: board_string.to_owned(),
+            })
+        }
+    }
+}
+
 /// Converts a string (a1b1c1 style) move to the native triple-index format.
-pub fn string_to_action(cells: &Cells, action_string: &str) -> Result<Action, ParseError> {
+pub fn string_to_action(board: &Board, action_string: &str) -> Result<Action, ParseError> {
     let action_pattern = Regex::new(r"^(\w\d)(\w\d)?(\w\d)$").unwrap();
 
     let action_captures = action_pattern.captures(action_string).ok_or(ParseError {
@@ -163,8 +267,8 @@ pub fn string_to_action(cells: &Cells, action_string: &str) -> Result<Action, Pa
     // Guaranteed to match regex "\w\d", no handling needed.
     let index_end: CellIndex = string_to_index(action_captures.get(3).unwrap().as_str())?;
 
-    if !cells[index_end].is_empty()
-        && cells[index_start].colour() == cells[index_end].colour()
+    if !board.get_piece(index_end).is_empty()
+        && board.get_piece(index_start).colour() == board.get_piece(index_end).colour()
         && index_mid.is_null()
     {
         index_mid = index_start;
@@ -177,7 +281,7 @@ pub fn string_to_action(cells: &Cells, action_string: &str) -> Result<Action, Pa
 }
 
 /// Converts a native triple-index move into the string (a1b1c1 style) format.
-pub fn action_to_string(cells: &Cells, action: Action) -> String {
+pub fn action_to_string(board: &Board, action: Action) -> String {
     let (index_start, index_mid, index_end) = action.to_indices();
 
     if index_start.is_null() {
@@ -188,136 +292,21 @@ pub fn action_to_string(cells: &Cells, action: Action) -> String {
     let action_string_end: String = index_to_string(index_end);
 
     let action_string_mid: String = if index_mid.is_null() {
-        if cells[index_start].is_stack() {
+        if board.get_piece(index_start).is_stack() {
             index_to_string(index_end)
         } else {
             String::new()
         }
-    } else if !index_mid.is_null() && index_start == index_mid && !cells[index_start].is_stack() {
+    } else if !index_mid.is_null()
+        && index_start == index_mid
+        && !board.get_piece(index_start).is_stack()
+    {
         String::new()
     } else {
         index_to_string(index_mid)
     };
 
     format!("{action_string_start}{action_string_mid}{action_string_end}")
-}
-
-/// Reads a Pijersi Standard Notation string to apply its state to the cells.
-pub fn string_to_cells(cells_string: &str) -> Result<Cells, ParseError> {
-    let cell_lines: Vec<&str> = cells_string.split('/').collect();
-    if cell_lines.len() == 7 {
-        let mut cursor: CellIndex = 0;
-        let mut new_cells: Cells = CELLS_EMPTY;
-        for &cell_line in &cell_lines {
-            let mut j: usize = 0;
-            while j < cell_line.chars().count() {
-                if let Some(top_char) = char_to_piece(cell_line.chars().nth(j).unwrap()) {
-                    if cell_line.chars().nth(j + 1).unwrap() == '-' {
-                        new_cells[cursor] =
-                            char_to_piece(cell_line.chars().nth(j).unwrap()).unwrap();
-                    } else {
-                        new_cells[cursor] = char_to_piece(cell_line.chars().nth(j + 1).unwrap())
-                            .unwrap()
-                            .stack_on(top_char);
-                    }
-                    j += 2;
-                    cursor += 1;
-                } else {
-                    let jump = cell_line.chars().nth(j).unwrap().to_digit(10).unwrap() as CellIndex;
-                    j += 1;
-                    cursor += jump;
-                }
-            }
-        }
-        Ok(new_cells)
-    } else {
-        Err(ParseError {
-            kind: ParseErrorKind::InvalidPosition(InvalidPositionKind::WrongLineNumber(
-                cell_lines.len(),
-            )),
-            value: cells_string.to_owned(),
-        })
-    }
-}
-
-/// Converts the cells state to a Pijersi Standard Notation string.
-pub fn cells_to_string(cells: &Cells) -> String {
-    let mut cells_string = String::new();
-    for i in 0..7usize {
-        let n_columns: usize = if i % 2 == 0 { 6 } else { 7 };
-        let mut counter: usize = 0;
-        for j in 0..n_columns {
-            let piece = cells[coords_to_index(i, j)];
-            if piece.is_empty() {
-                counter += 1;
-            } else {
-                if counter > 0 {
-                    cells_string += &counter.to_string();
-                    counter = 0;
-                }
-                if piece.is_stack() {
-                    cells_string += &piece_to_char(piece.bottom()).unwrap().to_string();
-                    cells_string += &piece_to_char(piece.top()).unwrap().to_string();
-                } else {
-                    cells_string += &piece_to_char(piece).unwrap().to_string();
-                    cells_string += "-";
-                }
-            }
-        }
-        if counter > 0 {
-            cells_string += &counter.to_string();
-        }
-        if i < 6 {
-            cells_string += "/";
-        }
-    }
-    cells_string
-}
-
-/// Converts the cells to a pretty-formatted string.
-pub fn cells_to_pretty_string(cells: &Cells) -> String {
-    let mut cells_pretty_print: String = " ".to_owned();
-    for (i, &piece) in cells.iter().enumerate() {
-        let top_piece: Piece = piece.top();
-        let bottom_piece: Piece = piece.bottom();
-        let char1: char = match top_piece {
-            0b0000 => '.',
-            0b1000 => 'S',
-            0b1001 => 'P',
-            0b1010 => 'R',
-            0b1011 => 'W',
-            0b1100 => 's',
-            0b1101 => 'p',
-            0b1110 => 'r',
-            0b1111 => 'w',
-            _ => '?',
-        };
-        let char2: char = if top_piece == 0 {
-            ' '
-        } else {
-            match bottom_piece {
-                0b0000 => '-',
-                0b1000 => 'S',
-                0b1001 => 'P',
-                0b1010 => 'R',
-                0b1011 => 'W',
-                0b1100 => 's',
-                0b1101 => 'p',
-                0b1110 => 'r',
-                0b1111 => 'w',
-                _ => '?',
-            }
-        };
-        cells_pretty_print += &format!("{char1}{char2} ");
-
-        if [5, 12, 18, 25, 31, 38].contains(&i) {
-            cells_pretty_print += "\n";
-            if [12, 25, 38].contains(&i) {
-                cells_pretty_print += " ";
-            }
-        }
-    }
-    cells_pretty_print
 }
 
 /// Parses the player argument: `"w"` -> `Ok(0)`, `"b"` -> `Ok(1)`

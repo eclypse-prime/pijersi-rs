@@ -2,10 +2,10 @@
 
 use std::cmp::max;
 
-use crate::logic::actions::{play_action, Action, ActionTrait};
+use crate::bitboard::Board;
+use crate::logic::actions::{play_action, Action, ActionTrait, Actions};
 use crate::logic::index::CellIndex;
 use crate::logic::lookup::PIECE_TO_INDEX;
-use crate::logic::movegen::available_player_captures;
 use crate::logic::rules::is_action_win;
 use crate::logic::{Cells, Player, N_CELLS};
 use crate::piece::{Piece, PieceTrait};
@@ -27,13 +27,11 @@ pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> Score {
 }
 
 /// Returns the score of a board.
-pub fn evaluate_position(cells: &Cells, current_player: Player) -> Score {
+pub fn evaluate_position(board: &Board, current_player: Player) -> Score {
     #[cfg(feature = "nps-count")]
     increment_node_count(1);
-    let eval = cells
-        .iter()
-        .enumerate()
-        .map(|(index, &piece)| evaluate_cell(piece, index))
+    let eval = (0..45)
+        .map(|index| evaluate_cell(board.get_piece(index), index))
         .sum();
     if current_player == 0 {
         eval
@@ -43,20 +41,21 @@ pub fn evaluate_position(cells: &Cells, current_player: Player) -> Score {
 }
 
 /// Returns the score of a board along with its individual cell scores.
-pub fn evaluate_position_with_details(cells: &Cells) -> (Score, [Score; N_CELLS]) {
-    let mut piece_scores: [Score; N_CELLS] = [0; N_CELLS];
-    for (k, &cell) in cells.iter().enumerate() {
-        piece_scores[k] = evaluate_cell(cell, k);
-    }
+pub fn evaluate_position_with_details(board: &Board) -> (Score, [Score; N_CELLS]) {
+    let piece_scores: [Score; N_CELLS] = (0..45)
+        .map(|index| evaluate_cell(board.get_piece(index), index))
+        .collect::<Vec<Score>>()
+        .try_into()
+        .unwrap();
     (piece_scores.iter().sum(), piece_scores)
 }
 
 #[inline]
 /// Evaluates the score of a given action at depth 1.
 ///
-/// Efficient method that only calculates the scores of the cells that would change and compares it to the current score.
+/// Efficient method that only calculates the scores of the board that would change and compares it to the current score.
 pub fn evaluate_action_terminal(
-    cells: &Cells,
+    board: &Board,
     current_player: Player,
     action: Action,
     previous_score: Score,
@@ -64,7 +63,7 @@ pub fn evaluate_action_terminal(
 ) -> Score {
     let (index_start, index_mid, index_end) = action.to_indices();
 
-    if is_action_win(cells, action) {
+    if is_action_win(board, action) {
         return -MAX_SCORE;
     }
 
@@ -76,11 +75,11 @@ pub fn evaluate_action_terminal(
 
         // Ending cell
         current_score -= previous_piece_scores[index_end];
-        current_score += evaluate_cell(cells[index_start], index_end);
+        current_score += evaluate_cell(board.get_piece(index_start), index_end);
     } else {
-        let mut start_piece: Piece = cells[index_start];
-        let mut mid_piece: Piece = cells[index_mid];
-        let mut end_piece: Piece = cells[index_end];
+        let mut start_piece: Piece = board.get_piece(index_start);
+        let mut mid_piece: Piece = board.get_piece(index_mid);
+        let mut end_piece: Piece = board.get_piece(index_end);
         // The piece at the mid coordinates is an ally : stack and action
         if !mid_piece.is_empty()
             && mid_piece.colour() == start_piece.colour()
@@ -160,15 +159,15 @@ pub fn evaluate_action_terminal(
 ///
 /// Resolves all capture chains before evaluating positions and returns the best score using alphabeta.
 pub fn quiescence_search(
-    cells: &Cells,
+    board: &Board,
     current_player: Player,
     (alpha, beta): (Score, Score),
 ) -> Score {
-    let available_actions = available_player_captures(cells, current_player);
+    let available_actions = board.available_player_captures(current_player);
     let n_actions = available_actions.len();
 
     // Heuristic to return early
-    let stand_pat = evaluate_position(cells, current_player);
+    let stand_pat = evaluate_position(board, current_player);
 
     if n_actions == 0 || stand_pat > beta {
         return stand_pat;
@@ -178,16 +177,16 @@ pub fn quiescence_search(
 
     let mut alpha = max(alpha, stand_pat);
 
-    let mut new_cells;
+    let mut new_board;
     for action in available_actions.into_iter() {
-        if is_action_win(cells, action) {
+        if is_action_win(board, action) {
             return MAX_SCORE / 4;
         }
-        new_cells = *cells;
-        play_action(&mut new_cells, action);
+        new_board = *board;
+        new_board.play_action(action);
         let eval = max(
             score,
-            -quiescence_search(&new_cells, 1 - current_player, (-beta, -alpha)),
+            -quiescence_search(&new_board, 1 - current_player, (-beta, -alpha)),
         );
         score = max(score, eval);
         alpha = max(alpha, eval);
