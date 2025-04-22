@@ -3,7 +3,7 @@ use crate::piece::{Piece, PieceTrait};
 
 use super::{
     actions::{Action, ActionTrait, ACTION_MASK},
-    index::{CellIndex, CellIndexTrait},
+    index::{CellIndex, CellIndexTrait, INDEX_NULL},
     movegen::available_player_actions,
     perft::count_player_actions,
     Cells, Player,
@@ -13,7 +13,7 @@ use super::{
 ///
 /// The capture rules are the sames as rock-paper-scissors.
 /// The wise piece can neither capture or be captured.
-#[inline]
+#[inline(always)]
 pub fn can_take(attacker: Piece, target: Piece) -> bool {
     let attacker_type: Piece = attacker.r#type();
     let target_type: Piece = target.r#type();
@@ -24,7 +24,7 @@ pub fn can_take(attacker: Piece, target: Piece) -> bool {
 }
 
 /// Returns whether the chosen 1-range move is possible.
-#[inline]
+#[inline(always)]
 pub fn can_move1(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bool {
     let target_piece: Piece = cells[index_end];
 
@@ -41,7 +41,7 @@ pub fn can_move1(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bo
 }
 
 /// Returns whether the chosen 2-range move is possible.
-#[inline]
+#[inline(always)]
 pub fn can_move2(
     cells: &Cells,
     moving_piece: Piece,
@@ -67,7 +67,7 @@ pub fn can_move2(
 }
 
 /// Returns whether the chosen stack action is possible.
-#[inline]
+#[inline(always)]
 pub fn can_stack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bool {
     let target_piece: Piece = cells[index_end];
 
@@ -89,7 +89,7 @@ pub fn can_stack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bo
 }
 
 /// Returns whether the chosen unstack action is possible.
-#[inline]
+#[inline(always)]
 pub fn can_unstack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> bool {
     let target_piece: Piece = cells[index_end];
 
@@ -105,22 +105,35 @@ pub fn can_unstack(cells: &Cells, moving_piece: Piece, index_end: CellIndex) -> 
     true
 }
 
+#[inline]
+/// Returns true if the chosen actrion is a capture
+pub fn is_action_capture(cells: &Cells, action: Action) -> bool {
+    let (index_start, index_mid, index_end) = action.to_indices();
+
+    let moving_piece: Piece = cells[index_start];
+    let piece_colour = moving_piece.colour();
+
+    (!index_mid.is_null()
+        && !cells[index_mid].is_empty()
+        && cells[index_mid].colour() != piece_colour)
+        || (!cells[index_end].is_empty() && cells[index_end].colour() != piece_colour)
+}
+
 /// Returns true if the chosen action leads to a win.
 ///
 /// To win, one allied piece (except wise) must reach the last row in the opposite side.
 #[inline]
 pub fn is_action_win(cells: &Cells, action: Action) -> bool {
-    let (index_start, _index_mid, index_end) = action.to_indices();
+    let (index_start, index_mid, index_end) = action.to_indices();
 
     let moving_piece: Piece = cells[index_start];
 
-    if !moving_piece.is_wise()
-        && ((moving_piece.is_white() && index_end.is_black_home())
+    !moving_piece.is_wise()
+        && (index_mid != INDEX_NULL
+            && ((moving_piece.is_white() && index_mid.is_black_home())
+                || (moving_piece.is_black() && index_mid.is_white_home()))
+            || (moving_piece.is_white() && index_end.is_black_home())
             || (moving_piece.is_black() && index_end.is_white_home()))
-    {
-        return true;
-    }
-    false
 }
 
 /// Returns true if the given action is legal.

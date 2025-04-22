@@ -15,7 +15,11 @@ use crate::{
         rules::is_action_legal,
         translate::{action_to_string, string_to_action, string_to_cells, string_to_player},
     },
-    search::openings::OpeningBook,
+    search::{
+        alphabeta::{BASE_ALPHA, BASE_BETA},
+        eval::{evaluate_position, quiescence_search},
+        openings::OpeningBook,
+    },
     utils::parse_bool_arg,
     AUTHOR_NAME, ENGINE_NAME, VERSION,
 };
@@ -78,6 +82,8 @@ enum QueryArgs {
     Result,
     Islegal { action_string: String },
     Fen,
+    Eval,
+    QS,
 }
 
 #[derive(Subcommand, Debug)]
@@ -278,6 +284,22 @@ impl UgiEngine {
             }
             QueryArgs::Fen => {
                 println!("{}", self.board.get_string_state());
+            }
+            QueryArgs::Eval => {
+                println!(
+                    "info eval {}",
+                    evaluate_position(&self.board.cells, self.board.current_player)
+                );
+            }
+            QueryArgs::QS => {
+                println!(
+                    "info qs {}",
+                    quiescence_search(
+                        &self.board.cells,
+                        self.board.current_player,
+                        (BASE_ALPHA, BASE_BETA)
+                    )
+                );
             }
         }
     }
