@@ -11,11 +11,11 @@ use rayon::prelude::*;
 use crate::bitboard::Board;
 use crate::hash::position::HashTrait;
 use crate::hash::search::SearchTable;
-use crate::logic::actions::{play_action, Action, ActionTrait, Actions, AtomicAction};
+use crate::logic::actions::{Action, ActionTrait, Actions, AtomicAction};
 use crate::logic::index::CellIndexTrait;
 use crate::logic::rules::is_action_win;
 use crate::logic::translate::action_to_string;
-use crate::logic::{Cells, Player};
+use crate::logic::Player;
 use crate::piece::PieceTrait;
 use crate::utils::{argsort, reverse_argsort};
 

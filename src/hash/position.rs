@@ -4,7 +4,7 @@ use crate::bitboard::Board;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::piece::PieceTrait;
 
-use crate::logic::{Cells, Player, N_CELLS};
+use crate::logic::{Player, N_CELLS};
 
 use super::lookup::{PLAYER_HASH, ZOBRIST_TABLE};
 
@@ -16,7 +16,7 @@ pub trait HashTrait {
 
 impl HashTrait for (&Board, Player) {
     fn hash(&self) -> usize {
-        (0..45)
+        (0..N_CELLS)
             .map(|index| (index, self.0.get_piece(index)))
             .filter(|(_index, piece)| !piece.is_empty())
             .map(|(index, piece)| ZOBRIST_TABLE[PIECE_TO_INDEX[piece as usize] * N_CELLS + index])

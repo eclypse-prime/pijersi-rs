@@ -1,5 +1,7 @@
 //! Implements translation methods to convert the internal representation into a human-readable representation and vice versa.
 
+use std::fmt::Display;
+
 use regex::Regex;
 
 use crate::{
@@ -17,7 +19,7 @@ use crate::{
 use super::{
     actions::Action,
     index::{CellIndex, CellIndexTrait, INDEX_NULL},
-    Cells, Player, CELLS_EMPTY,
+    Player, N_CELLS,
 };
 
 const ROW_LETTERS: [char; 7] = ['g', 'f', 'e', 'd', 'c', 'b', 'a'];
@@ -51,23 +53,6 @@ pub const fn piece_to_char(piece: Piece) -> Option<char> {
         BLACK_ROCK => Some('r'),
         BLACK_WISE => Some('w'),
         _ => None,
-    }
-}
-
-pub const fn piece_to_char2(piece_colour: &PieceColour, piece_type: &PieceType) -> char {
-    // let colour_part: Piece = match piece_colour {
-    //     PieceColour::White => COLOUR_WHITE,
-    //     PieceColour::Black => COLOUR_BLACK,
-    // };
-    let char = match piece_type {
-        PieceType::Scissors => 's',
-        PieceType::Paper => 'p',
-        PieceType::Rock => 'r',
-        PieceType::Wise => 'w',
-    };
-    match piece_colour {
-        PieceColour::White => char.to_ascii_uppercase(),
-        PieceColour::Black => char,
     }
 }
 
@@ -146,10 +131,6 @@ pub fn index_to_string(index: CellIndex) -> String {
 }
 
 impl Bitboard {
-    pub fn to_string(&self) -> String {
-        format!("{:045b}", self.0)
-    }
-
     pub fn to_pretty_string(&self) -> String {
         let mut pretty_string = " ".to_owned();
         for i in 0..45 {
@@ -166,8 +147,8 @@ impl Bitboard {
     }
 }
 
-impl ToString for Board {
-    fn to_string(&self) -> String {
+impl Board {
+    pub fn to_fen(&self) -> String {
         let mut cells_string = String::new();
         for i in 0..7usize {
             let n_columns: usize = if i % 2 == 0 { 6 } else { 7 };
@@ -199,12 +180,9 @@ impl ToString for Board {
         }
         cells_string
     }
-}
 
-impl TryFrom<&str> for Board {
-    type Error = ParseError;
     /// Reads a Pijersi Standard Notation string to apply its state to the cells.
-    fn try_from(board_string: &str) -> Result<Self, Self::Error> {
+    pub fn try_from_fen(board_string: &str) -> Result<Self, ParseError> {
         let cell_lines: Vec<&str> = board_string.split('/').collect();
         if cell_lines.len() == 7 {
             let mut cursor: CellIndex = 0;
@@ -244,6 +222,66 @@ impl TryFrom<&str> for Board {
                 )),
                 value: board_string.to_owned(),
             })
+        }
+    }
+}
+
+impl Display for Bitboard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{:045b}", self.0))
+    }
+}
+
+// This also implements ToString/to_string()
+impl Display for Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut cells_string = String::new();
+        for index in 0..N_CELLS {
+            let piece = self.get_piece(index);
+            if piece.is_empty() {
+                cells_string += ".."
+            } else {
+                cells_string += &piece_to_char(piece.top()).unwrap().to_string();
+                if piece.is_stack() {
+                    cells_string += &piece_to_char(piece.bottom()).unwrap().to_string();
+                } else {
+                    cells_string += "-";
+                }
+            }
+        }
+        f.write_str(&cells_string)
+    }
+}
+
+impl TryFrom<&str> for Board {
+    type Error = ParseError;
+    fn try_from(board_string: &str) -> Result<Self, Self::Error> {
+        if board_string.chars().count() != 2 * N_CELLS {
+            Err(ParseError {
+                kind: ParseErrorKind::InvalidPosition(InvalidPositionKind::WrongCharNumber(
+                    board_string.len(),
+                )),
+                value: board_string.to_owned(),
+            })
+        } else {
+            let mut new_board = Board::EMPTY;
+            let board_chars: Vec<char> = board_string.chars().collect();
+            for (index, piece_chars) in board_chars.chunks_exact(2).enumerate() {
+                let &[top_char, bottom_char] = piece_chars.try_into().unwrap();
+                if top_char != '.' {
+                    if bottom_char == '-' {
+                        new_board.set_piece(index, char_to_piece(top_char).unwrap());
+                    } else {
+                        new_board.set_piece(
+                            index,
+                            char_to_piece(top_char)
+                                .unwrap()
+                                .stack_on(char_to_piece(bottom_char).unwrap()),
+                        );
+                    }
+                }
+            }
+            Ok(new_board)
         }
     }
 }

@@ -1,11 +1,12 @@
+//! Implements the code to create and manipulate bitboards.
+
 use std::ops::{BitAnd, BitOr, Index, IndexMut, Not};
 
 use crate::{
     logic::{
         actions::{Action, ActionTrait},
         index::{CellIndex, CellIndexTrait, INDEX_NULL},
-        lookup::{BLOCKER_MASKS, MAGICS, NEIGHBOURS1, NEIGHBOURS2},
-        translate::{coords_to_index, piece_to_char},
+        lookup::{BLOCKER_MASKS, MAGICS, NEIGHBOURS1},
         Player, N_CELLS,
     },
     piece::{
@@ -16,18 +17,37 @@ use crate::{
 
 const N_BITBOARDS: usize = 16;
 
-const BLACK_WIN_MASK: u64 = 0b000000000000000000000000000000000000000111111;
-const WHITE_WIN_MASK: u64 = 0b111111000000000000000000000000000000000000000;
+const WHITE_WIN_MASK: u64 = 0b000000000000000000000000000000000000000111111;
+const BLACK_WIN_MASK: u64 = 0b111111000000000000000000000000000000000000000;
 
-/// S P R W top
-/// S P R W bottom
-/// s p r w top
-/// s p r w bottom
-#[derive(Clone, Copy)]
+/// This struct represents a 64 bit (only 45 are used) bitboard.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Bitboard(pub u64);
 
-#[derive(Clone, Copy)]
-pub struct Board([Bitboard; N_BITBOARDS]);
+/// This struct uses bitboards to represent the board and its pieces.
+///
+/// It contains 16 bitboards in the following order:
+///
+/// | Index | Position | Color | Piece    |
+/// |-------|----------|-------|----------|
+/// | 0     | Top      | White | Scissors |
+/// | 1     | Top      | White | Paper    |
+/// | 2     | Top      | White | Rock     |
+/// | 3     | Top      | White | Wise     |
+/// | 4     | Top      | Black | Scissors |
+/// | 5     | Top      | Black | Paper    |
+/// | 6     | Top      | Black | Rock     |
+/// | 7     | Top      | Black | Wise     |
+/// | 8     | Bottom   | White | Scissors |
+/// | 9     | Bottom   | White | Paper    |
+/// | 10    | Bottom   | White | Rock     |
+/// | 11    | Bottom   | White | Wise     |
+/// | 12    | Bottom   | Black | Scissors |
+/// | 13    | Bottom   | Black | Paper    |
+/// | 14    | Bottom   | Black | Rock     |
+/// | 15    | Bottom   | Black | Wise     |
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Board(pub [Bitboard; N_BITBOARDS]);
 
 impl Iterator for Bitboard {
     type Item = usize;
@@ -44,26 +64,32 @@ impl Iterator for Bitboard {
 }
 
 impl Bitboard {
+    /// An null (invalid) bitboard.
     pub const NULL: Self = Self(u64::MAX);
+    /// An empty bitboard.
     pub const EMPTY: Self = Self(0);
 
+    /// Returns true if there is a set (1) bit at the given index.
     #[inline(always)]
     pub fn get(&self, index: CellIndex) -> bool {
         (self.0 >> index) & 1 == 1
     }
 
+    /// Sets the bit to 1 at the given index.
     #[inline(always)]
     pub fn set(&mut self, index: CellIndex) {
         let mask = 1 << index;
         self.0 |= mask;
     }
 
+    /// Sets the bit to 0 at the given index.
     #[inline(always)]
     pub fn unset(&mut self, index: CellIndex) {
         let mask = !(1 << index);
         self.0 &= mask;
     }
 
+    /// Flips the bit (from 0 to 1 or from 1 to 0) at the given index.
     #[inline(always)]
     pub fn flip(&mut self, index: CellIndex) {
         let mask = 1 << index;
@@ -113,26 +139,39 @@ impl IndexMut<CellIndex> for Board {
 }
 
 impl Board {
+    /// An empty board
     pub const EMPTY: Self = Self([Bitboard::EMPTY; N_BITBOARDS]);
 
+    /// Returns a bitboard representing all pieces on the board
     pub fn all(&self) -> Bitboard {
         self.white() | self.black()
     }
+    /// Returns a bitboard representing the white pieces on the board
     pub fn white(&self) -> Bitboard {
         self[0] | self[1] | self[2] | self[3]
     }
+    /// Returns a bitboard representing the black pieces on the board
     pub fn black(&self) -> Bitboard {
         self[4] | self[5] | self[6] | self[7]
     }
 
+    /// Returns a bitboard representing the white pieces that aren't wise (only scissors, paper, and rock) on the board
     pub fn white_not_wise(&self) -> Bitboard {
         self[0] | self[1] | self[2]
     }
+
+    /// Returns a bitboard representing the black pieces that aren't wise (only scissors, paper, and rock) on the board
     pub fn black_not_wise(&self) -> Bitboard {
         self[4] | self[5] | self[6]
     }
 
-    pub fn colour(&self, player: Player) -> Bitboard {
+    /// Returns a bitboard representing the stacks
+    pub fn stacks(&self) -> Bitboard {
+        self[8] | self[9] | self[10] | self[11] | self[12] | self[13] | self[14] | self[15]
+    }
+
+    /// Returns a bitboard representing the pieces that are the same colour as the given player.
+    pub fn same_colour(&self, player: Player) -> Bitboard {
         if player == 0 {
             self.white()
         } else {
@@ -140,7 +179,17 @@ impl Board {
         }
     }
 
-    pub fn same_bottom(&self, player: Player) -> Bitboard {
+    /// Returns a bitboard representing the pieces that are the same colour as the given player.
+    pub fn same_colour_not_wise(&self, player: Player) -> Bitboard {
+        if player == 0 {
+            self.white_not_wise()
+        } else {
+            self.black_not_wise()
+        }
+    }
+
+    /// Returns a bitboard representing the stacks that are the same colour as the given player.
+    pub fn same_stacks(&self, player: Player) -> Bitboard {
         if player == 0 {
             self[8] | self[9] | self[10] | self[11]
         } else {
@@ -148,6 +197,7 @@ impl Board {
         }
     }
 
+    /// Returns a bitboard representing the wise pieces that are the same colour as the given player.
     pub fn same_wise(&self, player: Player) -> Bitboard {
         if player == 0 {
             self[3]
@@ -156,7 +206,8 @@ impl Board {
         }
     }
 
-    pub fn victim(&self, piece: Piece) -> Bitboard {
+    /// Returns a bitboard representing the pieces that the given piece can capture.
+    pub fn victims(&self, piece: Piece) -> Bitboard {
         match piece & (COLOUR_MASK | TYPE_MASK) {
             0b000 => self[5],
             0b001 => self[6],
@@ -168,6 +219,7 @@ impl Board {
         }
     }
 
+    /// Puts a piece at the given index in the board.
     pub fn set_piece(&mut self, index: CellIndex, piece: Piece) {
         self[(piece & 0b0111) as usize].set(index);
         if piece.is_stack() {
@@ -175,6 +227,7 @@ impl Board {
         }
     }
 
+    /// Removes the given piece from the given index in the board.
     pub fn unset_piece(&mut self, index: CellIndex, piece: Piece) {
         self[(piece & 0b0111) as usize].unset(index);
         if piece.is_stack() {
@@ -182,6 +235,7 @@ impl Board {
         }
     }
 
+    /// Returns the piece from the given index in the board.
     pub fn get_piece(&self, index: usize) -> Piece {
         let mut piece = 0u8;
         for k in 0..8 {
@@ -199,21 +253,57 @@ impl Board {
         piece
     }
 
+    pub fn get_player_piece(&self, index: usize, player: Player) -> Piece {
+        let mut piece = 0u8;
+        if player == 0 {
+            for k in 0..4 {
+                if self[k].get(index) {
+                    piece = k as u8 | 0b1000;
+                    break;
+                }
+            }
+            for k in 8..12 {
+                if self[k].get(index) {
+                    piece |= (k << 4) as u8 | 0b1000_0000;
+                    break;
+                }
+            }
+        } else {
+            for k in 4..8 {
+                if self[k].get(index) {
+                    piece = k as u8 | 0b1000;
+                    break;
+                }
+            }
+            for k in 12..16 {
+                if self[k].get(index) {
+                    piece |= (k << 4) as u8 | 0b1000_0000;
+                    break;
+                }
+            }
+        }
+        piece
+    }
+
+    /// Removes any piece from the given index in the board.
     pub fn remove_piece(&mut self, index: CellIndex) {
         let piece = self.get_piece(index);
         self.unset_piece(index, piece);
     }
 
+    /// Returns a bitboard with the available range-2 moves for the piece at the given index.
     pub fn available_moves2(&self, index: CellIndex, piece: Piece) -> Bitboard {
         let blockers = BLOCKER_MASKS[index] & !self.all();
-        blockers.get_magic(index) & (!self.all() | self.victim(piece))
+        blockers.get_magic(index) & (!self.all() | self.victims(piece))
     }
 
+    /// Returns a bitboard with the available range-1 moves for the piece at the given index.
     pub fn available_moves1(&self, index: CellIndex, piece: Piece) -> Bitboard {
         let neighbours = NEIGHBOURS1[index];
-        neighbours & (!self.all() | self.victim(piece))
+        neighbours & (!self.all() | self.victims(piece))
     }
 
+    /// Returns a bitboard with the available stacks for the piece at the given index.
     pub fn available_stacks(&self, index: CellIndex, piece: Piece) -> Bitboard {
         let neighbours = NEIGHBOURS1[index];
         let player = piece.colour() >> 2;
@@ -221,15 +311,41 @@ impl Board {
             & (if piece.is_wise() {
                 self.same_wise(player)
             } else {
-                self.colour(player)
-            } & !self.same_bottom(player))
+                self.same_colour(player)
+            } & !self.same_stacks(player))
     }
 
+    /// Returns a bitboard with the available unstacks for the piece at the given index.
+    /// An unstack actually follows the same rules as a 1-range move
     pub fn available_unstacks(&self, index: CellIndex, piece: Piece) -> Bitboard {
-        let neighbours = NEIGHBOURS1[index];
-        neighbours & (!self.all() | self.victim(piece))
+        self.available_moves1(index, piece)
     }
 
+    /// Returns a bitboard with the available range-1 captures (moves or unstacks) for the piece at the given index.
+    pub fn available_captures1(&self, index: CellIndex, piece: Piece) -> Bitboard {
+        let neighbours = NEIGHBOURS1[index];
+        neighbours & self.victims(piece)
+    }
+
+    /// Returns a bitboard with the available range-2 captures for the piece at the given index.
+    pub fn available_captures2(&self, index: CellIndex, piece: Piece) -> Bitboard {
+        let blockers = BLOCKER_MASKS[index] & !self.all();
+        blockers.get_magic(index) & self.victims(piece)
+    }
+
+    /// Returns a bitboard with the available range-1 captures (moves or unstacks) for the piece at the given index.
+    pub fn available_non_captures1(&self, index: CellIndex) -> Bitboard {
+        let neighbours = NEIGHBOURS1[index];
+        neighbours & !self.all()
+    }
+
+    /// Returns a bitboard with the available range-2 captures for the piece at the given index.
+    pub fn available_non_captures2(&self, index: CellIndex) -> Bitboard {
+        let blockers = BLOCKER_MASKS[index] & !self.all();
+        blockers.get_magic(index) & !self.all()
+    }
+
+    /// Returns true if the current position is winning for one of the players.
     pub fn is_win(&self) -> bool {
         (self.white_not_wise() & Bitboard(WHITE_WIN_MASK)).0 != 0
             || (self.black_not_wise() & Bitboard(BLACK_WIN_MASK)).0 != 0
@@ -242,6 +358,7 @@ impl Board {
         self.count_player_actions(current_player) == 0
     }
 
+    /// Returns the winning player if there is one.
     pub fn get_winner(&self) -> Option<Player> {
         if (self.white_not_wise() & Bitboard(WHITE_WIN_MASK)).0 != 0 {
             Some(0)
@@ -252,6 +369,43 @@ impl Board {
         }
     }
 
+    /// Applies a move between chosen coordinates.
+    pub fn do_move(&mut self, index_start: CellIndex, index_end: CellIndex) {
+        let start_piece = self.get_piece(index_start);
+        self.unset_piece(index_start, start_piece);
+        self.remove_piece(index_end);
+        self.set_piece(index_end, start_piece);
+    }
+
+    /// Applies a stack between chosen coordinates.
+    pub fn do_stack(&mut self, index_start: CellIndex, index_end: CellIndex) {
+        let piece_start = self.get_piece(index_start);
+        let piece_end = self.get_piece(index_end);
+
+        self.unset_piece(index_start, piece_start);
+        self.unset_piece(index_end, piece_end);
+
+        if piece_start.bottom() != 0 {
+            self.set_piece(index_start, piece_start.bottom());
+        }
+        self.set_piece(index_end, piece_start.stack_on(piece_end));
+    }
+
+    /// Applies an unstack between chosen coordinates.
+    pub fn do_unstack(&mut self, index_start: CellIndex, index_end: CellIndex) {
+        let piece_start: Piece = self.get_piece(index_start);
+
+        self.unset_piece(index_start, piece_start);
+        self.remove_piece(index_end);
+
+        if piece_start.bottom() != 0 {
+            self.set_piece(index_start, piece_start.bottom());
+        }
+
+        self.set_piece(index_end, piece_start.top());
+    }
+
+    /// Plays the selected action.
     pub fn play_action(&mut self, action: Action) {
         let (index_start, index_mid, index_end) = action.to_indices();
 
@@ -265,7 +419,7 @@ impl Board {
             // If there is no intermediate move
             if index_mid.is_null() {
                 // Simple move
-                do_move_bb(self, index_start, index_end);
+                self.do_move(index_start, index_end);
             } else {
                 let piece_mid: Piece = self.get_piece(index_mid);
                 let piece_end: Piece = self.get_piece(index_end);
@@ -274,24 +428,27 @@ impl Board {
                     && piece_mid.colour() == piece_start.colour()
                     && (index_start != index_mid)
                 {
-                    do_stack_bb(self, index_start, index_mid);
-                    do_move_bb(self, index_mid, index_end);
+                    self.do_stack(index_start, index_mid);
+                    self.do_move(index_mid, index_end);
                 }
                 // The piece at the end coordinates is an ally : move and stack
                 else if !piece_end.is_empty() && piece_end.colour() == piece_start.colour() {
-                    do_move_bb(self, index_start, index_mid);
-                    do_stack_bb(self, index_mid, index_end);
+                    self.do_move(index_start, index_mid);
+                    self.do_stack(index_mid, index_end);
                 }
                 // The end coordinates contain an enemy or no piece : move and unstack
                 else {
-                    do_move_bb(self, index_start, index_mid);
-                    do_unstack_bb(self, index_mid, index_end);
+                    self.do_move(index_start, index_mid);
+                    self.do_unstack(index_mid, index_end);
                 }
             }
         }
     }
 
-    fn is_action_win(&self, action: Action) -> bool {
+    /// Returns true if the chosen action leads to a win.
+    ///
+    /// To win, one allied piece (except wise) must reach the last row in the opposite side.
+    pub fn is_action_win(&self, action: Action) -> bool {
         let (index_start, index_mid, index_end) = action.to_indices();
 
         let moving_piece: Piece = self.get_piece(index_start);
@@ -314,6 +471,9 @@ impl Board {
             .sum()
     }
 
+    /// Initializes the the board to the starting configuration.
+    ///
+    /// Sets the pieces to their original position.
     pub fn init(&mut self) {
         self.0 = [Bitboard::EMPTY; N_BITBOARDS];
 
@@ -346,9 +506,21 @@ impl Board {
         self.set_piece(32, WHITE_PAPER);
     }
 
+    /// Converts the cells to a pretty formatted string.
+    ///
+    /// The starting position is represented as such:
+    /// ```not_rust
+    ///  s- p- r- s- p- r-
+    /// p- r- s- ww r- s- p-
+    ///  .  .  .  .  .  .  
+    /// .  .  .  .  .  .  .  
+    ///  .  .  .  .  .  .  
+    /// P- S- R- WW S- R- P-
+    ///  R- P- S- R- P- S-
+    /// ```
     pub fn to_pretty_string(&self) -> String {
         let mut pretty_string = " ".to_owned();
-        for i in 0..45 {
+        for i in 0..N_CELLS {
             let piece = self.get_piece(i);
             let top_piece: Piece = piece.top();
             let bottom_piece: Piece = piece.bottom();
@@ -391,79 +563,5 @@ impl Board {
         }
 
         pretty_string
-    }
-}
-
-pub fn do_move_bb(board: &mut Board, index_start: CellIndex, index_end: CellIndex) {
-    let start_piece = board.get_piece(index_start);
-    board.unset_piece(index_start, start_piece);
-    board.remove_piece(index_end);
-    board.set_piece(index_end, start_piece);
-}
-
-pub fn do_stack_bb(board: &mut Board, index_start: CellIndex, index_end: CellIndex) {
-    let piece_start = board.get_piece(index_start);
-    let piece_end = board.get_piece(index_end);
-
-    board.unset_piece(index_start, piece_start);
-    board.unset_piece(index_end, piece_end);
-
-    if piece_start.bottom() != 0 {
-        board.set_piece(index_start, piece_start.bottom());
-    }
-    board.set_piece(index_end, piece_start.stack_on(piece_end));
-}
-
-pub fn do_unstack_bb(board: &mut Board, index_start: CellIndex, index_end: CellIndex) {
-    let piece_start: Piece = board.get_piece(index_start);
-
-    board.unset_piece(index_start, piece_start);
-    board.remove_piece(index_end);
-
-    if piece_start.bottom() != 0 {
-        board.set_piece(index_start, piece_start.bottom());
-    }
-
-    board.set_piece(index_end, piece_start.top());
-}
-
-pub fn perft_iter_bb(board: &Board, current_player: Player, depth: u64) -> u64 {
-    match depth {
-        0 => 1u64,
-        1 => board.count_player_actions(current_player),
-        _ => {
-            let available_actions = board.available_player_actions(current_player);
-
-            available_actions
-                .into_iter()
-                .filter(|&action| !board.is_action_win(action))
-                .map(|action| {
-                    let mut new_board = *board;
-                    new_board.play_action(action);
-                    perft_iter_bb(&new_board, 1 - current_player, depth - 1)
-                })
-                .sum()
-        }
-    }
-}
-
-pub fn perft_bb(board: &Board, current_player: Player, depth: u64) -> u64 {
-    match depth {
-        0 => 1u64,
-        1 => board.count_player_actions(current_player),
-        _ => {
-            let available_actions = board.available_player_actions(current_player);
-
-            available_actions
-                .into_iter()
-                // .par_bridge()
-                .filter(|&action| !board.is_action_win(action))
-                .map(|action| {
-                    let mut new_board = *board;
-                    new_board.play_action(action);
-                    perft_iter_bb(&new_board, 1 - current_player, depth - 1)
-                })
-                .sum()
-        }
     }
 }

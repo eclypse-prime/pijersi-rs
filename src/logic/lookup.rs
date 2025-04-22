@@ -6,11 +6,9 @@ use crate::bitboard::Bitboard;
 
 use super::N_CELLS;
 
-/// An array associating a cell index to the indices of its 1-range neighbours.
+/// An array associating a cell index to its 1-range neighbours.
 ///
 /// The array is composed of 45 bitboards representing the neighbours corresponding to each index.
-///
-/// The elements are the indices of the neighbouring cells.
 pub const NEIGHBOURS1: [Bitboard; N_CELLS] = [
     Bitboard(194),
     Bitboard(389),
@@ -59,7 +57,10 @@ pub const NEIGHBOURS1: [Bitboard; N_CELLS] = [
     Bitboard(9208409882624),
 ];
 
-pub const NEIGHBOURS2: [Bitboard; 45] = [
+/// An array associating a cell index to its 2-range neighbours.
+///
+/// The array is composed of 45 bitboards representing the neighbours corresponding to each index.
+pub const NEIGHBOURS2: [Bitboard; N_CELLS] = [
     Bitboard(16388),
     Bitboard(40968),
     Bitboard(81937),
@@ -107,7 +108,13 @@ pub const NEIGHBOURS2: [Bitboard; 45] = [
     Bitboard(4399120252928),
 ];
 
-pub const BLOCKER_MASKS: [Bitboard; 45] = [
+/// An array associating a cell index to its 1-range blocker mask.
+///
+/// The blocker masks represent the neighbouring cells that can be blocked, preventing 2-range moves.
+/// The blockers are used in conjunction to the `MAGIC` table to calculate the available 2-range moves.
+///
+/// The array is composed of 45 bitboards representing the blockers corresponding to each index.
+pub const BLOCKER_MASKS: [Bitboard; N_CELLS] = [
     Bitboard(130),
     Bitboard(388),
     Bitboard(778),
@@ -155,7 +162,12 @@ pub const BLOCKER_MASKS: [Bitboard; 45] = [
     Bitboard(8933531975680),
 ];
 
-pub static MAGICS: [(Bitboard, [Bitboard; 64]); 45] = [
+/// An array associating a cell index to its magic number and move table.
+///
+/// The blocker is multiplied by the magic number to get a move table index.
+///
+/// The array is composed of 45 bitboards representing the blockers corresponding to each index.
+pub static MAGICS: [(Bitboard, [Bitboard; 64]); N_CELLS] = [
     (
         Bitboard(4909011556912646376),
         [

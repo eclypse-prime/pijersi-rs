@@ -41,7 +41,7 @@ def print_case(i: int, j: int):
     mask = 0
     for neighbour in neighbours:
         mask += 1 << neighbour
-    print(f"    {mask},")
+    print(f"    Bitboard({mask}),")
 
 print("pub const NEIGHBOURS1: [Bitboard; 45] = [")
 for i in range(7):

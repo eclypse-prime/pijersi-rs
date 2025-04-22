@@ -3,11 +3,11 @@
 use std::cmp::max;
 
 use crate::bitboard::Board;
-use crate::logic::actions::{play_action, Action, ActionTrait, Actions};
+use crate::logic::actions::{Action, ActionTrait};
 use crate::logic::index::CellIndex;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::rules::is_action_win;
-use crate::logic::{Cells, Player, N_CELLS};
+use crate::logic::{Player, N_CELLS};
 use crate::piece::{Piece, PieceTrait};
 use crate::search::lookup::PIECE_SCORES;
 
@@ -30,9 +30,7 @@ pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> Score {
 pub fn evaluate_position(board: &Board, current_player: Player) -> Score {
     #[cfg(feature = "nps-count")]
     increment_node_count(1);
-    let eval = (0..45)
-        .map(|index| evaluate_cell(board.get_piece(index), index))
-        .sum();
+    let eval = board.all().into_iter().map(|index| evaluate_cell(board.get_piece(index), index)).sum();
     if current_player == 0 {
         eval
     } else {

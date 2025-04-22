@@ -11,15 +11,11 @@ use std::{
     sync::atomic::AtomicU32,
 };
 
-use crate::{
-    bitboard::Board,
-    piece::{Piece, PieceTrait},
-};
+use crate::bitboard::Board;
 
 use super::{
-    index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
+    index::{CellIndex, INDEX_MASK, INDEX_WIDTH},
     translate::action_to_string,
-    Cells,
 };
 
 /// Size of the array that stores player actions
@@ -34,82 +30,6 @@ pub type AtomicAction = AtomicU32;
 
 /// Mask to get the action without additional data
 pub const ACTION_MASK: Action = 0x00FF_FFFF;
-
-/// Applies a move between chosen coordinates.
-fn do_move(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
-    if index_start != index_end {
-        // Move the piece to the target cell
-        cells[index_end] = cells[index_start];
-
-        // Set the starting cell as empty
-        cells[index_start].set_empty();
-    }
-}
-
-/// Applies a stack between chosen coordinates.
-fn do_stack(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
-    let piece_start: Piece = cells[index_start];
-    let piece_end: Piece = cells[index_end];
-
-    // If the moving piece is already on top of a stack, leave the bottom piece in the starting cell
-    cells[index_start] = piece_start.bottom();
-
-    // Move the top piece to the target cell and set its new bottom piece
-    cells[index_end] = piece_start.stack_on(piece_end);
-}
-
-/// Applies an unstack between chosen coordinates.
-fn do_unstack(cells: &mut Cells, index_start: CellIndex, index_end: CellIndex) {
-    let piece_start: Piece = cells[index_start];
-
-    // Leave the bottom piece in the starting cell
-    cells[index_start] = piece_start.bottom();
-
-    // Remove the bottom piece from the moving piece
-    // Move the top piece to the target cell
-    // Will overwrite the eaten piece if there is one
-    cells[index_end] = piece_start.top();
-}
-
-/// Plays the selected action.
-pub fn play_action(cells: &mut Cells, action: Action) {
-    let (index_start, index_mid, index_end) = action.to_indices();
-
-    if index_start.is_null() {
-        return;
-    }
-
-    let piece_start: Piece = cells[index_start];
-
-    if !piece_start.is_empty() {
-        // If there is no intermediate move
-        if index_mid.is_null() {
-            // Simple move
-            do_move(cells, index_start, index_end);
-        } else {
-            let piece_mid: Piece = cells[index_mid];
-            let piece_end: Piece = cells[index_end];
-            // The piece at the mid coordinates is an ally : stack and move
-            if !piece_mid.is_empty()
-                && piece_mid.colour() == piece_start.colour()
-                && (index_start != index_mid)
-            {
-                do_stack(cells, index_start, index_mid);
-                do_move(cells, index_mid, index_end);
-            }
-            // The piece at the end coordinates is an ally : move and stack
-            else if !piece_end.is_empty() && piece_end.colour() == piece_start.colour() {
-                do_move(cells, index_start, index_mid);
-                do_stack(cells, index_mid, index_end);
-            }
-            // The end coordinates contain an enemy or no piece : move and unstack
-            else {
-                do_move(cells, index_start, index_mid);
-                do_unstack(cells, index_mid, index_end);
-            }
-        }
-    }
-}
 
 /// `ActionTrait` trait for `Action`
 pub trait ActionTrait: Copy {
@@ -163,14 +83,17 @@ impl ActionTrait for Action {
     }
 }
 
-pub type ActionsLight = Actions<MAX_PLAYER_CAPTURES>;
-
-/// This struct is a fixed-length array that stores player actions
+/// This struct is a fixed-length array that stores player actions.
+/// By default, this struct contains 512 actions.
 #[derive(Debug, Clone, Copy)]
 pub struct Actions<const N: usize = MAX_PLAYER_ACTIONS> {
     data: [Action; N],
     current_index: usize,
 }
+
+/// This struct is an alias to a lower-size [`Actions`].
+/// It is used specifically to store available captures.
+pub type ActionsLight = Actions<MAX_PLAYER_CAPTURES>;
 
 impl<const N: usize> Actions<N> {
     /// Store a new action

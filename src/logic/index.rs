@@ -1,9 +1,6 @@
 //! Implements the Index trait with helper methods for board indices.
 
-use super::{
-    actions::Action,
-    lookup::{NEIGHBOURS1, NEIGHBOURS2},
-};
+use super::actions::Action;
 
 /// A cell index is represented as a usize.
 pub type CellIndex = usize;

@@ -10,7 +10,7 @@ use super::{
     lookup::NEIGHBOURS2,
     rules::is_action_win,
     translate::action_to_string,
-    Player, N_CELLS,
+    Player,
 };
 
 impl Board {
@@ -19,9 +19,9 @@ impl Board {
     /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the actions.
     #[inline]
     pub fn count_player_actions(&self, current_player: Player) -> u64 {
-        self.colour(current_player)
+        self.same_colour(current_player)
             .into_iter()
-            .map(|index| self.count_piece_actions(index))
+            .map(|index| self.count_piece_actions(index, current_player))
             .sum()
     }
 
@@ -29,9 +29,9 @@ impl Board {
     ///
     /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the actions.
     #[inline]
-    fn count_piece_actions(&self, index_start: CellIndex) -> u64 {
+    fn count_piece_actions(&self, index_start: CellIndex, current_player: Player) -> u64 {
         let mut count: u64 = 0;
-        let piece_start = self.get_piece(index_start);
+        let piece_start = self.get_player_piece(index_start, current_player);
 
         if piece_start.is_stack() {
             // 2-range first action
@@ -61,6 +61,7 @@ impl Board {
                 count += 1;
             }
 
+            // stack
             for index_mid in self.available_stacks(index_start, piece_start) {
                 // stack, 1-range or 2-range move
                 count += (self.available_moves2(index_mid, piece_start)
@@ -119,7 +120,7 @@ pub fn perft(board: &Board, current_player: Player, depth: u64) -> u64 {
 
             available_actions
                 .into_iter()
-                .par_bridge()
+                // .par_bridge()
                 .filter(|&action| !is_action_win(board, action))
                 .map(|action| {
                     let mut new_board = *board;
@@ -159,7 +160,7 @@ pub fn perft_player_actions(board: &Board, current_player: Player, depth: u64) -
         0 => 1u64,
         1 => board.count_player_actions(current_player),
         _ => board
-            .colour(current_player)
+            .same_colour(current_player)
             .into_iter()
             .map(|index| perft_piece_actions(board, index, current_player, depth))
             .sum(),

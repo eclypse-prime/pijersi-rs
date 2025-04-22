@@ -217,7 +217,7 @@ impl Game {
         let (board, current_player, half_moves, full_moves) = self.get_state();
         format!(
             "{} {} {} {}",
-            board.to_string(),
+            board.to_fen(),
             player_to_string(current_player).unwrap(),
             half_moves,
             full_moves,

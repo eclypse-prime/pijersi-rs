@@ -64,9 +64,9 @@ fn test_magic(index: usize, magic: u64, table: [u64; 64]) {
 }
 
 fn main() {
-    let magics: Vec<(u64, [u64; 64])> = (0..45).map(find_magic).collect();
+    let magics: Vec<(u64, [u64; 64])> = (0..N_CELLS).map(find_magic).collect();
     
-    for i in 0..45 {
+    for i in 0..N_CELLS {
         test_magic(i, magics[i].0, magics[i].1);
     }
     

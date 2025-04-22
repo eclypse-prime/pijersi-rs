@@ -1,19 +1,21 @@
-use pijersi_rs::hash::position::HashTrait;
+use pijersi_rs::{bitboard::Board, hash::position::HashTrait};
 
-use crate::{TEST_CELLS, TEST_CELLS2};
+use crate::{TEST_BOARD_STR, TEST_BOARD_STR2};
 
 /// Asserts that equal positions and starting players give the same hash.
 /// Asserts that different positions and/or different players give different hashes.
 #[test]
 fn test_to_hash() {
-    assert_eq!((&TEST_CELLS, 0).hash(), (&TEST_CELLS, 0).hash());
-    assert_eq!((&TEST_CELLS, 1).hash(), (&TEST_CELLS, 1).hash());
-    assert_eq!((&TEST_CELLS2, 0).hash(), (&TEST_CELLS2, 0).hash());
-    assert_eq!((&TEST_CELLS2, 1).hash(), (&TEST_CELLS2, 1).hash());
-    assert_ne!((&TEST_CELLS, 0).hash(), (&TEST_CELLS2, 0).hash());
-    assert_ne!((&TEST_CELLS, 1).hash(), (&TEST_CELLS2, 1).hash());
-    assert_ne!((&TEST_CELLS, 0).hash(), (&TEST_CELLS, 1).hash());
-    assert_ne!((&TEST_CELLS, 1).hash(), (&TEST_CELLS, 0).hash());
-    assert_ne!((&TEST_CELLS2, 0).hash(), (&TEST_CELLS2, 1).hash());
-    assert_ne!((&TEST_CELLS2, 1).hash(), (&TEST_CELLS2, 0).hash());
+    let test_board = Board::try_from(TEST_BOARD_STR).unwrap();
+    let test_board2 = Board::try_from(TEST_BOARD_STR2).unwrap();
+    assert_eq!((&test_board, 0).hash(), (&test_board, 0).hash());
+    assert_eq!((&test_board, 1).hash(), (&test_board, 1).hash());
+    assert_eq!((&test_board2, 0).hash(), (&test_board2, 0).hash());
+    assert_eq!((&test_board2, 1).hash(), (&test_board2, 1).hash());
+    assert_ne!((&test_board, 0).hash(), (&test_board2, 0).hash());
+    assert_ne!((&test_board, 1).hash(), (&test_board2, 1).hash());
+    assert_ne!((&test_board, 0).hash(), (&test_board, 1).hash());
+    assert_ne!((&test_board, 1).hash(), (&test_board, 0).hash());
+    assert_ne!((&test_board2, 0).hash(), (&test_board2, 1).hash());
+    assert_ne!((&test_board2, 1).hash(), (&test_board2, 0).hash());
 }

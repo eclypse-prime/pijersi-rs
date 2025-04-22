@@ -1,10 +1,10 @@
 use pijersi_rs::{
+    bitboard::{Bitboard, Board},
     logic::{
         actions::ActionTrait,
         translate::{
-            action_to_string, cells_to_pretty_string, cells_to_string, char_to_piece,
-            coords_to_index, index_to_coords, index_to_string, piece_to_char, player_to_string,
-            string_to_action, string_to_cells, string_to_player,
+            action_to_string, char_to_piece, coords_to_index, index_to_coords, index_to_string,
+            piece_to_char, player_to_string, string_to_action, string_to_player,
         },
     },
     piece::{
@@ -13,7 +13,26 @@ use pijersi_rs::{
     },
 };
 
-use crate::TEST_CELLS;
+use crate::TEST_BOARD_STR;
+
+const TEST_BOARD: Board = Board([
+    Bitboard(2551210573824),
+    Bitboard(9899899617280),
+    Bitboard(5102421147648),
+    Bitboard(34359738368),
+    Bitboard(2313),
+    Bitboard(16781378),
+    Bitboard(164),
+    Bitboard(512),
+    Bitboard(0),
+    Bitboard(274877906944),
+    Bitboard(0),
+    Bitboard(34359738368),
+    Bitboard(0),
+    Bitboard(0),
+    Bitboard(16777216),
+    Bitboard(512),
+]);
 
 #[test]
 fn test_char_to_piece() {
@@ -222,19 +241,19 @@ fn test_index_to_string() {
 
 #[test]
 fn test_string_to_action() {
-    assert_eq!(string_to_action(&TEST_CELLS, "a1b1").unwrap(), 2107175);
-    assert_eq!(string_to_action(&TEST_CELLS, "b1c1").unwrap(), 1769248);
-    assert_eq!(string_to_action(&TEST_CELLS, "a1b1c1").unwrap(), 1712167);
-    assert_eq!(string_to_action(&TEST_CELLS, "b4c5c5").unwrap(), 2031395);
-    assert_eq!(string_to_action(&TEST_CELLS, "b4b4c5").unwrap(), 1975075);
-    assert_eq!(string_to_action(&TEST_CELLS, "b4c3d4").unwrap(), 1448995);
-    assert_eq!(string_to_action(&TEST_CELLS, "b7b6c6").unwrap(), 2041126);
+    assert_eq!(string_to_action(&TEST_BOARD, "a1b1").unwrap(), 2107175);
+    assert_eq!(string_to_action(&TEST_BOARD, "b1c1").unwrap(), 1769248);
+    assert_eq!(string_to_action(&TEST_BOARD, "a1b1c1").unwrap(), 1712167);
+    assert_eq!(string_to_action(&TEST_BOARD, "b4c5c5").unwrap(), 2031395);
+    assert_eq!(string_to_action(&TEST_BOARD, "b4b4c5").unwrap(), 1975075);
+    assert_eq!(string_to_action(&TEST_BOARD, "b4c3d4").unwrap(), 1448995);
+    assert_eq!(string_to_action(&TEST_BOARD, "b7b6c6").unwrap(), 2041126);
 
-    assert!(string_to_action(&TEST_CELLS, "a1b1c1d1").is_err());
-    assert!(string_to_action(&TEST_CELLS, "z1a1a1").is_err());
-    assert!(string_to_action(&TEST_CELLS, "a9a1a1").is_err());
-    assert!(string_to_action(&TEST_CELLS, "a1").is_err());
-    assert!(string_to_action(&TEST_CELLS, "??????").is_err());
+    assert!(string_to_action(&TEST_BOARD, "a1b1c1d1").is_err());
+    assert!(string_to_action(&TEST_BOARD, "z1a1a1").is_err());
+    assert!(string_to_action(&TEST_BOARD, "a9a1a1").is_err());
+    assert!(string_to_action(&TEST_BOARD, "a1").is_err());
+    assert!(string_to_action(&TEST_BOARD, "??????").is_err());
 }
 
 #[test]
@@ -249,34 +268,47 @@ fn test_action_to_string() {
         (2041126, "b7b6c6"),
     ];
     for (input, output) in test_array {
-        assert_eq!(action_to_string(&TEST_CELLS, input), output);
+        assert_eq!(action_to_string(&TEST_BOARD, input), output);
     }
 }
 
 #[test]
-fn test_string_to_cells() {
-    assert_eq!(
-        string_to_cells("s-p-r-s-1r-/p-r-s-ww1s-p-/6/5rp1/6/P-S-R-WWS-R-PS/R-P-S-R-P-1").unwrap(),
-        TEST_CELLS
-    );
-    assert!(string_to_cells("s-p-r-s-p-r-/p-r-s-wwr-s-p-/6/7/6/P-S-R-WWS-R-PS").is_err());
-    assert!(
-        string_to_cells("s-p-r-s-p-r-/p-r-s-wwr-s-p-/6/7/6/P-S-R-WWS-R-PS/R-P-S-R-P-1/7").is_err()
-    );
-    assert!(string_to_cells("").is_err());
+fn test_board_to_string() {
+    assert_eq!(TEST_BOARD.to_string(), TEST_BOARD_STR);
 }
 
 #[test]
-fn test_cells_to_string() {
+fn test_board_try_from_string() {
+    assert_eq!(Board::try_from(TEST_BOARD_STR).unwrap(), TEST_BOARD);
+    assert!(Board::try_from("").is_err());
+}
+
+#[test]
+fn test_board_try_from_fen() {
     assert_eq!(
-        cells_to_string(&TEST_CELLS),
+        Board::try_from_fen("s-p-r-s-1r-/p-r-s-ww1s-p-/6/5rp1/6/P-S-R-WWS-R-PS/R-P-S-R-P-1")
+            .unwrap(),
+        TEST_BOARD
+    );
+    assert!(Board::try_from_fen("s-p-r-s-p-r-/p-r-s-wwr-s-p-/6/7/6/P-S-R-WWS-R-PS").is_err());
+    assert!(
+        Board::try_from_fen("s-p-r-s-p-r-/p-r-s-wwr-s-p-/6/7/6/P-S-R-WWS-R-PS/R-P-S-R-P-1/7")
+            .is_err()
+    );
+    assert!(Board::try_from_fen("").is_err());
+}
+
+#[test]
+fn test_board_to_fen() {
+    assert_eq!(
+        TEST_BOARD.to_fen(),
         "s-p-r-s-1r-/p-r-s-ww1s-p-/6/5rp1/6/P-S-R-WWS-R-PS/R-P-S-R-P-1"
     )
 }
 
 #[test]
-fn test_cells_to_pretty_string() {
-    assert_eq!(cells_to_pretty_string(&TEST_CELLS), " s- p- r- s- .  r- \np- r- s- ww .  s- p- \n .  .  .  .  .  .  \n.  .  .  .  .  pr .  \n .  .  .  .  .  .  \nP- S- R- WW S- R- SP \n R- P- S- R- P- .  ");
+fn test_board_to_pretty_string() {
+    assert_eq!(TEST_BOARD.to_pretty_string(), " s- p- r- s- .  r- \np- r- s- ww .  s- p- \n .  .  .  .  .  .  \n.  .  .  .  .  pr .  \n .  .  .  .  .  .  \nP- S- R- WW S- R- SP \n R- P- S- R- P- .  ");
 }
 
 #[test]

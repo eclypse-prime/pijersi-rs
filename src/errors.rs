@@ -79,6 +79,9 @@ pub enum InvalidPositionKind {
     /// Wrong number of lines
     #[error("Invalid number of lines in board notation: {0} (expected 7)")]
     WrongLineNumber(usize),
+    /// Wrong number of cells
+    #[error("Invalid number of characters in board notation: {0} (expected 45*2 = 90)")]
+    WrongCharNumber(usize),
 }
 
 /// The kind of coordinates error (vertical or horizontal)
