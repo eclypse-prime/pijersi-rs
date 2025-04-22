@@ -120,7 +120,7 @@ pub fn perft(board: &Board, current_player: Player, depth: u64) -> u64 {
 
             available_actions
                 .into_iter()
-                // .par_bridge()
+                .par_bridge()
                 .filter(|&action| !is_action_win(board, action))
                 .map(|action| {
                     let mut new_board = *board;
