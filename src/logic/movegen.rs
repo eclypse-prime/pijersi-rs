@@ -190,7 +190,7 @@ impl Board {
 
                 // 1-range capture on move
                 player_actions.push(Action::from_indices(index_start, INDEX_NULL, index_mid));
-                
+
                 // 1-range capture on unstack
                 player_actions.push(Action::from_indices(index_start, index_start, index_mid));
             }

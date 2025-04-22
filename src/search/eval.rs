@@ -30,7 +30,11 @@ pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> Score {
 pub fn evaluate_position(board: &Board, current_player: Player) -> Score {
     #[cfg(feature = "nps-count")]
     increment_node_count(1);
-    let eval = board.all().into_iter().map(|index| evaluate_cell(board.get_piece(index), index)).sum();
+    let eval = board
+        .all()
+        .into_iter()
+        .map(|index| evaluate_cell(board.get_piece(index), index))
+        .sum();
     if current_player == 0 {
         eval
     } else {
