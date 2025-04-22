@@ -96,6 +96,7 @@ impl Bitboard {
         self.0 ^= mask;
     }
 
+    /// When used on a bitboard of blockers, this function returns a bitboard of available 2-range moves.
     pub fn get_magic(&self, index: CellIndex) -> Bitboard {
         let (magic, ref table) = MAGICS[index];
         let magic_hash = self.0.wrapping_mul(magic.0);
@@ -237,47 +238,50 @@ impl Board {
 
     /// Returns the piece from the given index in the board.
     pub fn get_piece(&self, index: usize) -> Piece {
-        let mut piece = 0u8;
+        let mut piece = 0;
         for k in 0..8 {
             if self[k].get(index) {
-                piece = k as u8 | 0b1000;
+                piece = k as Piece | 0b1000;
                 break;
             }
         }
         for k in 8..N_BITBOARDS {
             if self[k].get(index) {
-                piece |= (k << 4) as u8 | 0b1000_0000;
+                piece |= (k << 4) as Piece | 0b1000_0000;
                 break;
             }
         }
         piece
     }
 
+    /// Returns the piece from the given index in the board knowing its owner (player).
+    ///
+    /// It is a bit more efficient because we only need to check half the bitboards.
     pub fn get_player_piece(&self, index: usize, player: Player) -> Piece {
-        let mut piece = 0u8;
+        let mut piece = 0;
         if player == 0 {
             for k in 0..4 {
                 if self[k].get(index) {
-                    piece = k as u8 | 0b1000;
+                    piece = k as Piece | 0b1000;
                     break;
                 }
             }
             for k in 8..12 {
                 if self[k].get(index) {
-                    piece |= (k << 4) as u8 | 0b1000_0000;
+                    piece |= (k << 4) as Piece | 0b1000_0000;
                     break;
                 }
             }
         } else {
             for k in 4..8 {
                 if self[k].get(index) {
-                    piece = k as u8 | 0b1000;
+                    piece = k as Piece | 0b1000;
                     break;
                 }
             }
             for k in 12..16 {
                 if self[k].get(index) {
-                    piece |= (k << 4) as u8 | 0b1000_0000;
+                    piece |= (k << 4) as Piece | 0b1000_0000;
                     break;
                 }
             }
@@ -366,82 +370,6 @@ impl Board {
             Some(1)
         } else {
             None
-        }
-    }
-
-    /// Applies a move between chosen coordinates.
-    pub fn do_move(&mut self, index_start: CellIndex, index_end: CellIndex) {
-        let start_piece = self.get_piece(index_start);
-        self.unset_piece(index_start, start_piece);
-        self.remove_piece(index_end);
-        self.set_piece(index_end, start_piece);
-    }
-
-    /// Applies a stack between chosen coordinates.
-    pub fn do_stack(&mut self, index_start: CellIndex, index_end: CellIndex) {
-        let piece_start = self.get_piece(index_start);
-        let piece_end = self.get_piece(index_end);
-
-        self.unset_piece(index_start, piece_start);
-        self.unset_piece(index_end, piece_end);
-
-        if piece_start.bottom() != 0 {
-            self.set_piece(index_start, piece_start.bottom());
-        }
-        self.set_piece(index_end, piece_start.stack_on(piece_end));
-    }
-
-    /// Applies an unstack between chosen coordinates.
-    pub fn do_unstack(&mut self, index_start: CellIndex, index_end: CellIndex) {
-        let piece_start: Piece = self.get_piece(index_start);
-
-        self.unset_piece(index_start, piece_start);
-        self.remove_piece(index_end);
-
-        if piece_start.bottom() != 0 {
-            self.set_piece(index_start, piece_start.bottom());
-        }
-
-        self.set_piece(index_end, piece_start.top());
-    }
-
-    /// Plays the selected action.
-    pub fn play_action(&mut self, action: Action) {
-        let (index_start, index_mid, index_end) = action.to_indices();
-
-        if index_start.is_null() {
-            return;
-        }
-
-        let piece_start: Piece = self.get_piece(index_start);
-
-        if !piece_start.is_empty() {
-            // If there is no intermediate move
-            if index_mid.is_null() {
-                // Simple move
-                self.do_move(index_start, index_end);
-            } else {
-                let piece_mid: Piece = self.get_piece(index_mid);
-                let piece_end: Piece = self.get_piece(index_end);
-                // The piece at the mid coordinates is an ally : stack and move
-                if !piece_mid.is_empty()
-                    && piece_mid.colour() == piece_start.colour()
-                    && (index_start != index_mid)
-                {
-                    self.do_stack(index_start, index_mid);
-                    self.do_move(index_mid, index_end);
-                }
-                // The piece at the end coordinates is an ally : move and stack
-                else if !piece_end.is_empty() && piece_end.colour() == piece_start.colour() {
-                    self.do_move(index_start, index_mid);
-                    self.do_stack(index_mid, index_end);
-                }
-                // The end coordinates contain an enemy or no piece : move and unstack
-                else {
-                    self.do_move(index_start, index_mid);
-                    self.do_unstack(index_mid, index_end);
-                }
-            }
         }
     }
 

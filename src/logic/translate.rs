@@ -11,8 +11,8 @@ use crate::{
     },
     logic::actions::ActionTrait,
     piece::{
-        Piece, PieceColour, PieceTrait, PieceType, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS,
-        BLACK_WISE, CELL_EMPTY, WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
+        Piece, PieceTrait, BLACK_PAPER, BLACK_ROCK, BLACK_SCISSORS, BLACK_WISE, CELL_EMPTY,
+        WHITE_PAPER, WHITE_ROCK, WHITE_SCISSORS, WHITE_WISE,
     },
 };
 
@@ -131,6 +131,9 @@ pub fn index_to_string(index: CellIndex) -> String {
 }
 
 impl Bitboard {
+    /// Converts the bitboard to a pretty formatted string.
+    ///
+    /// It shows how the bitboard looks on a Pijersi board.
     pub fn to_pretty_string(&self) -> String {
         let mut pretty_string = " ".to_owned();
         for i in 0..45 {
@@ -148,6 +151,7 @@ impl Bitboard {
 }
 
 impl Board {
+    /// Converts the board to a Pijersi Standard Notation string.
     pub fn to_fen(&self) -> String {
         let mut cells_string = String::new();
         for i in 0..7usize {
@@ -181,7 +185,7 @@ impl Board {
         cells_string
     }
 
-    /// Reads a Pijersi Standard Notation string to apply its state to the cells.
+    /// Reads a Pijersi Standard Notation string to apply its state to the board.
     pub fn try_from_fen(board_string: &str) -> Result<Self, ParseError> {
         let cell_lines: Vec<&str> = board_string.split('/').collect();
         if cell_lines.len() == 7 {
@@ -226,6 +230,7 @@ impl Board {
     }
 }
 
+// NOTE: The least significant bit (LSB) is at the right of the binary number and represents the top-left cell
 impl Display for Bitboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{:045b}", self.0))

@@ -11,10 +11,13 @@ use std::{
     sync::atomic::AtomicU32,
 };
 
-use crate::bitboard::Board;
+use crate::{
+    bitboard::Board,
+    piece::{Piece, PieceTrait},
+};
 
 use super::{
-    index::{CellIndex, INDEX_MASK, INDEX_WIDTH},
+    index::{CellIndex, CellIndexTrait, INDEX_MASK, INDEX_WIDTH},
     translate::action_to_string,
 };
 
@@ -213,5 +216,83 @@ impl<const N: usize> IndexMut<RangeFull> for Actions<N> {
     #[inline]
     fn index_mut(&mut self, _index: RangeFull) -> &mut Self::Output {
         &mut self.data[0..self.current_index]
+    }
+}
+
+impl Board {
+    /// Applies a move between chosen coordinates.
+    pub fn do_move(&mut self, index_start: CellIndex, index_end: CellIndex) {
+        let start_piece = self.get_piece(index_start);
+        self.unset_piece(index_start, start_piece);
+        self.remove_piece(index_end);
+        self.set_piece(index_end, start_piece);
+    }
+
+    /// Applies a stack between chosen coordinates.
+    pub fn do_stack(&mut self, index_start: CellIndex, index_end: CellIndex) {
+        let piece_start = self.get_piece(index_start);
+        let piece_end = self.get_piece(index_end);
+
+        self.unset_piece(index_start, piece_start);
+        self.unset_piece(index_end, piece_end);
+
+        if piece_start.bottom() != 0 {
+            self.set_piece(index_start, piece_start.bottom());
+        }
+        self.set_piece(index_end, piece_start.stack_on(piece_end));
+    }
+
+    /// Applies an unstack between chosen coordinates.
+    pub fn do_unstack(&mut self, index_start: CellIndex, index_end: CellIndex) {
+        let piece_start: Piece = self.get_piece(index_start);
+
+        self.unset_piece(index_start, piece_start);
+        self.remove_piece(index_end);
+
+        if piece_start.bottom() != 0 {
+            self.set_piece(index_start, piece_start.bottom());
+        }
+
+        self.set_piece(index_end, piece_start.top());
+    }
+
+    /// Plays the selected action.
+    pub fn play_action(&mut self, action: Action) {
+        let (index_start, index_mid, index_end) = action.to_indices();
+
+        if index_start.is_null() {
+            return;
+        }
+
+        let piece_start: Piece = self.get_piece(index_start);
+
+        if !piece_start.is_empty() {
+            // If there is no intermediate move
+            if index_mid.is_null() {
+                // Simple move
+                self.do_move(index_start, index_end);
+            } else {
+                let piece_mid: Piece = self.get_piece(index_mid);
+                let piece_end: Piece = self.get_piece(index_end);
+                // The piece at the mid coordinates is an ally : stack and move
+                if !piece_mid.is_empty()
+                    && piece_mid.colour() == piece_start.colour()
+                    && (index_start != index_mid)
+                {
+                    self.do_stack(index_start, index_mid);
+                    self.do_move(index_mid, index_end);
+                }
+                // The piece at the end coordinates is an ally : move and stack
+                else if !piece_end.is_empty() && piece_end.colour() == piece_start.colour() {
+                    self.do_move(index_start, index_mid);
+                    self.do_stack(index_mid, index_end);
+                }
+                // The end coordinates contain an enemy or no piece : move and unstack
+                else {
+                    self.do_move(index_start, index_mid);
+                    self.do_unstack(index_mid, index_end);
+                }
+            }
+        }
     }
 }
