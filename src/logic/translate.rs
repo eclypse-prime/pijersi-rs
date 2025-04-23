@@ -228,6 +228,65 @@ impl Board {
             })
         }
     }
+
+    /// Converts the cells to a pretty formatted string.
+    ///
+    /// The starting position is represented as such:
+    /// ```not_rust
+    ///  s- p- r- s- p- r-
+    /// p- r- s- ww r- s- p-
+    ///  .  .  .  .  .  .  
+    /// .  .  .  .  .  .  .  
+    ///  .  .  .  .  .  .  
+    /// P- S- R- WW S- R- P-
+    ///  R- P- S- R- P- S-
+    /// ```
+    pub fn to_pretty_string(&self) -> String {
+        let mut pretty_string = " ".to_owned();
+        for i in 0..N_CELLS {
+            let piece = self.get_piece(i);
+            let top_piece: Piece = piece.top();
+            let bottom_piece: Piece = piece.bottom();
+            let char1: char = match top_piece {
+                0b0000 => '.',
+                0b1000 => 'S',
+                0b1001 => 'P',
+                0b1010 => 'R',
+                0b1011 => 'W',
+                0b1100 => 's',
+                0b1101 => 'p',
+                0b1110 => 'r',
+                0b1111 => 'w',
+                _ => '?',
+            };
+            let char2: char = if top_piece == 0 {
+                ' '
+            } else {
+                match bottom_piece {
+                    0b0000 => '-',
+                    0b1000 => 'S',
+                    0b1001 => 'P',
+                    0b1010 => 'R',
+                    0b1011 => 'W',
+                    0b1100 => 's',
+                    0b1101 => 'p',
+                    0b1110 => 'r',
+                    0b1111 => 'w',
+                    _ => '?',
+                }
+            };
+            pretty_string += &format!("{char1}{char2} ");
+
+            if [5, 12, 18, 25, 31, 38].contains(&i) {
+                pretty_string += "\n";
+                if [12, 25, 38].contains(&i) {
+                    pretty_string += " ";
+                }
+            }
+        }
+
+        pretty_string
+    }
 }
 
 // NOTE: The least significant bit (LSB) is at the right of the binary number and represents the top-left cell
