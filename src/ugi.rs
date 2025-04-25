@@ -388,7 +388,7 @@ fn play_actions(board: &mut Game, actions: &[String]) {
 /// Sets the state of the board using PSN/FEN arguments
 fn set_fen(board: &mut Game, fen_args: &FenArgs) {
     let fen: &str = fen_args.fen.as_ref();
-    let new_board: Result<Board, ParseError> = fen.try_into();
+    let new_board: Result<Board, ParseError> = Board::try_from_fen(fen);
     let player = string_to_player(&fen_args.player);
     match (new_board, player) {
         (Ok(new_board), Ok(player)) => {
