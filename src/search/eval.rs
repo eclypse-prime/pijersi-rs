@@ -58,7 +58,6 @@ pub fn evaluate_position_for_player(board: &Board, current_player: Player) -> Sc
     }
 }
 
-
 #[inline]
 /// Evaluates the score of a position after an action.
 ///

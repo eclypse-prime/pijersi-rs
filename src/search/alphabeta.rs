@@ -18,7 +18,7 @@ use crate::logic::translate::action_to_string;
 use crate::logic::Player;
 use crate::utils::{argsort, reverse_argsort};
 
-use super::eval::{evaluate_position_incremental, evaluate_position, quiescence_search, MAX_SCORE};
+use super::eval::{evaluate_position, evaluate_position_incremental, quiescence_search, MAX_SCORE};
 use super::{AtomicScore, NodeType, Score};
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
@@ -108,8 +108,7 @@ pub fn sort_actions(
         if is_action_win(board, action) {
             return Some(action);
         }
-        if (!index_mid.is_null()
-            && board.capturable(current_player).get(index_mid))
+        if (!index_mid.is_null() && board.capturable(current_player).get(index_mid))
             || (board.capturable(current_player).get(index_end))
         {
             available_actions[i] = available_actions[index_sorted];
@@ -203,8 +202,12 @@ pub fn search_root(
                         } else {
                             let mut new_board = *board;
                             new_board.play_action(action);
-                            let new_static_eval =
-                                evaluate_position_incremental(board, &new_board, action, static_eval);
+                            let new_static_eval = evaluate_position_incremental(
+                                board,
+                                &new_board,
+                                action,
+                                static_eval,
+                            );
                             let alpha = alpha_atomic.load(Relaxed);
                             // Search with a null window
                             let eval_null_window = -search_node(
@@ -351,7 +354,8 @@ pub fn search_node(
     let mut new_board = *board;
     let first_action = available_actions[0];
     new_board.play_action(first_action);
-    let new_static_eval = evaluate_position_incremental(board, &new_board, first_action, static_eval);
+    let new_static_eval =
+        evaluate_position_incremental(board, &new_board, first_action, static_eval);
     let eval = -search_node(
         (&new_board, 1 - current_player),
         depth - 1,
