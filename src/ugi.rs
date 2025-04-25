@@ -7,13 +7,14 @@ use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 use std::{process::exit, sync::RwLock, time::Instant};
 
 use crate::{
-    board::Board,
-    errors::{get_error_trace, RuntimeError, UgiErrorKind},
+    bitboard::Board,
+    errors::{get_error_trace, ParseError, RuntimeError, UgiErrorKind},
+    game::Game,
     hash::search::SearchTable,
     logic::{
         perft::perft,
         rules::is_action_legal,
-        translate::{action_to_string, string_to_action, string_to_cells, string_to_player},
+        translate::{action_to_string, string_to_action, string_to_player},
     },
     search::{
         alphabeta::{BASE_ALPHA, BASE_BETA},
@@ -95,7 +96,7 @@ enum SetoptionArgs {
 
 /// The `UgiEngine` struct that implements the UGI protocol.
 pub struct UgiEngine {
-    board: Board,
+    game: Game,
     opening_book: Option<OpeningBook>,
     transposition_table: Option<RwLock<SearchTable>>,
 }
@@ -110,11 +111,11 @@ impl UgiEngine {
     /// Creates a new `UgiEngine`
     pub fn new() -> Self {
         let mut new_self = Self {
-            board: Board::default(),
+            game: Game::default(),
             opening_book: None,
             transposition_table: None,
         };
-        new_self.board.init();
+        new_self.game.init();
         new_self
     }
 
@@ -134,7 +135,7 @@ impl UgiEngine {
     }
 
     fn uginewgame(&mut self) {
-        self.board.init();
+        self.game.init();
     }
 
     // TODO: help function?
@@ -145,13 +146,13 @@ impl UgiEngine {
     fn go(&mut self, go_args: GoArgs) {
         match go_args {
             GoArgs::Depth { depth } => {
-                let result = self.board.search_to_depth(
+                let result = self.game.search_to_depth(
                     depth,
                     self.opening_book.as_ref(),
                     self.transposition_table.as_ref(),
                 );
                 let action_string = if let Some((action, _score)) = result {
-                    action_to_string(&self.board.cells, action)
+                    action_to_string(&self.game.board, action)
                 } else {
                     println!("info null move");
                     "------".to_owned()
@@ -159,13 +160,13 @@ impl UgiEngine {
                 println!("bestmove {action_string}");
             }
             GoArgs::Movetime { time } => {
-                let action = self.board.search_to_time(
+                let action = self.game.search_to_time(
                     time,
                     self.opening_book.as_ref(),
                     self.transposition_table.as_ref(),
                 );
                 let action_string = if let Some((action, _score)) = action {
-                    action_to_string(&self.board.cells, action)
+                    action_to_string(&self.game.board, action)
                 } else {
                     println!("info null move");
                     "------".to_owned()
@@ -173,7 +174,7 @@ impl UgiEngine {
                 println!("bestmove {action_string}");
             }
             GoArgs::Manual { action_string } => {
-                let result = self.board.play_from_string(&action_string);
+                let result = self.game.play_from_string(&action_string);
                 match result {
                     Ok(_v) => (),
                     Err(e) => print_error_trace(&e),
@@ -181,7 +182,7 @@ impl UgiEngine {
             }
             GoArgs::Perft { depth } => {
                 let start_time = Instant::now();
-                let count = perft(&self.board.cells, self.board.current_player, depth);
+                let count = perft(&self.game.board, self.game.current_player, depth);
                 let duration = start_time.elapsed();
                 let nps = count as u128 * 1_000_000_000 / duration.as_nanos();
                 let duration_ms = duration.as_millis();
@@ -196,7 +197,7 @@ impl UgiEngine {
                 let action_list = startpos_args.moves;
                 match action_list.len() {
                     0 => {
-                        self.board.init();
+                        self.game.init();
                     }
                     1 => print_error_trace(&RuntimeError::UGI(UgiErrorKind::InvalidUGIPosition(
                         action_list.join(" "),
@@ -205,8 +206,8 @@ impl UgiEngine {
                         UgiErrorKind::InvalidUGIPosition(action_list.join(" ")),
                     )),
                     _ => {
-                        self.board.init();
-                        play_actions(&mut self.board, &action_list[1..]);
+                        self.game.init();
+                        play_actions(&mut self.game, &action_list[1..]);
                     }
                 }
             }
@@ -214,7 +215,7 @@ impl UgiEngine {
                 let action_list: &Vec<String> = &fen_args.moves;
                 match action_list.len() {
                     0 => {
-                        set_fen(&mut self.board, &fen_args);
+                        set_fen(&mut self.game, &fen_args);
                     }
                     1 => print_error_trace(&RuntimeError::UGI(UgiErrorKind::InvalidUGIPosition(
                         action_list.join(" "),
@@ -223,8 +224,8 @@ impl UgiEngine {
                         UgiErrorKind::InvalidUGIPosition(action_list.join(" ")),
                     )),
                     _ => {
-                        set_fen(&mut self.board, &fen_args);
-                        play_actions(&mut self.board, &action_list[1..]);
+                        set_fen(&mut self.game, &fen_args);
+                        play_actions(&mut self.game, &action_list[1..]);
                     }
                 }
             }
@@ -234,22 +235,22 @@ impl UgiEngine {
     fn query(&self, query_args: QueryArgs) {
         match query_args {
             QueryArgs::Gameover => {
-                if self.board.is_win() || self.board.is_draw() {
+                if self.game.is_win() || self.game.is_draw() {
                     println!("response true");
                 } else {
                     println!("response false");
                 }
             }
             QueryArgs::P1turn => {
-                if self.board.current_player == 0 {
+                if self.game.current_player == 0 {
                     println!("response true");
                 } else {
                     println!("response false");
                 }
             }
             QueryArgs::Result => {
-                if self.board.is_win() {
-                    let winner = self.board.get_winner();
+                if self.game.is_win() {
+                    let winner = self.game.get_winner();
                     match winner {
                         Some(0) => {
                             println!("response p1win");
@@ -261,17 +262,17 @@ impl UgiEngine {
                             println!("response none");
                         }
                     };
-                } else if self.board.is_draw() {
+                } else if self.game.is_draw() {
                     println!("response draw");
                 } else {
                     println!("response none");
                 }
             }
             QueryArgs::Islegal { action_string } => {
-                let action_result = string_to_action(&self.board.cells, &action_string);
+                let action_result = string_to_action(&self.game.board, &action_string);
                 match action_result {
                     Ok(action) => {
-                        if is_action_legal(&self.board.cells, self.board.current_player, action) {
+                        if is_action_legal(&self.game.board, self.game.current_player, action) {
                             println!("response true");
                         } else {
                             println!("response false");
@@ -283,20 +284,20 @@ impl UgiEngine {
                 }
             }
             QueryArgs::Fen => {
-                println!("{}", self.board.get_string_state());
+                println!("{}", self.game.get_string_state());
             }
             QueryArgs::Eval => {
                 println!(
                     "info eval {}",
-                    evaluate_position(&self.board.cells, self.board.current_player)
+                    evaluate_position(&self.game.board, self.game.current_player)
                 );
             }
             QueryArgs::QS => {
                 println!(
                     "info qs {}",
                     quiescence_search(
-                        &self.board.cells,
-                        self.board.current_player,
+                        &self.game.board,
+                        self.game.current_player,
                         (BASE_ALPHA, BASE_BETA)
                     )
                 );
@@ -308,19 +309,19 @@ impl UgiEngine {
         match option {
             SetoptionArgs::UseBook { value } => match parse_bool_arg(&value) {
                 Ok(value) => {
-                    self.board.options.use_book = value;
+                    self.game.options.use_book = value;
                 }
                 Err(e) => print_error_trace(&e),
             },
             SetoptionArgs::UseTable { value } => match parse_bool_arg(&value) {
                 Ok(value) => {
-                    self.board.options.use_table = value;
+                    self.game.options.use_table = value;
                 }
                 Err(e) => print_error_trace(&e),
             },
             SetoptionArgs::Verbose { value } => match parse_bool_arg(&value) {
                 Ok(value) => {
-                    self.board.options.verbose = value;
+                    self.game.options.verbose = value;
                 }
                 Err(e) => print_error_trace(&e),
             },
@@ -367,7 +368,7 @@ fn print_error_trace(error: &dyn std::error::Error) {
 }
 
 /// Plays all the actions in the list. If there is an invalid action in the list, stops and rolls back to the initial state.
-fn play_actions(board: &mut Board, actions: &[String]) {
+fn play_actions(board: &mut Game, actions: &[String]) {
     let (cells, player, half_moves, full_moves) = board.get_state();
     for action_string in actions {
         let result = board.play_from_string(action_string);
@@ -383,12 +384,13 @@ fn play_actions(board: &mut Board, actions: &[String]) {
 }
 
 /// Sets the state of the board using PSN/FEN arguments
-fn set_fen(board: &mut Board, fen_args: &FenArgs) {
-    let new_cells = string_to_cells(&fen_args.fen);
+fn set_fen(board: &mut Game, fen_args: &FenArgs) {
+    let fen: &str = fen_args.fen.as_ref();
+    let new_board: Result<Board, ParseError> = fen.try_into();
     let player = string_to_player(&fen_args.player);
-    match (new_cells, player) {
-        (Ok(new_cells), Ok(player)) => {
-            board.set_state(&new_cells, player, fen_args.half_moves, fen_args.full_moves);
+    match (new_board, player) {
+        (Ok(new_board), Ok(player)) => {
+            board.set_state(&new_board, player, fen_args.half_moves, fen_args.full_moves);
         }
         (Err(e), Ok(_player)) => print_error_trace(&e),
         (Ok(_player), Err(e)) => print_error_trace(&e),

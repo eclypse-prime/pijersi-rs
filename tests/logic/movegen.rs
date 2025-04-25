@@ -1,9 +1,11 @@
-use pijersi_rs::logic::{
-    actions::{Action, ActionTrait, Actions},
-    movegen::{available_piece_actions, available_player_actions},
+use std::collections::HashSet;
+
+use pijersi_rs::{
+    bitboard::Board,
+    logic::actions::{Action, ActionTrait, Actions},
 };
 
-use crate::TEST_CELLS;
+use crate::TEST_BOARD_STR;
 
 const TEST_AVAILABLE_PLAYER_ACTIONS: &[Action] = &[
     1769248, 1253664, 1384736, 1712416, 1777952, 2105632, 2170912, 2107168, 2564128, 1769249,
@@ -44,15 +46,19 @@ fn test_half_action() {
 
 #[test]
 fn test_available_player_actions() {
-    assert_eq!(
-        available_player_actions(&TEST_CELLS, 0),
-        Actions::from(TEST_AVAILABLE_PLAYER_ACTIONS)
-    )
+    let test_board = Board::try_from(TEST_BOARD_STR).unwrap();
+    let input_set: HashSet<Action> = test_board.available_player_actions(0).into_iter().collect();
+    let output_set: HashSet<Action> = TEST_AVAILABLE_PLAYER_ACTIONS.iter().cloned().collect();
+    assert_eq!(input_set, output_set)
 }
 
 #[test]
 fn test_available_piece_actions() {
     let mut player_actions: Actions = Actions::default();
-    available_piece_actions(&TEST_CELLS, 39, &mut player_actions);
-    assert_eq!(player_actions, Actions::from(TEST_AVAILABLE_PIECE_ACTIONS));
+
+    let test_board = Board::try_from(TEST_BOARD_STR).unwrap();
+    test_board.available_piece_actions(39, 1, &mut player_actions);
+    let input_set: HashSet<Action> = player_actions.into_iter().collect();
+    let output_set: HashSet<Action> = TEST_AVAILABLE_PIECE_ACTIONS.iter().cloned().collect();
+    assert_eq!(input_set, output_set)
 }

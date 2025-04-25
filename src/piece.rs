@@ -16,11 +16,11 @@ pub type Piece = u8;
 pub const HALF_PIECE_WIDTH: usize = 4;
 
 /// Mandaory bit on pieces
-pub const PIECE_BIT: Piece = 0b0001;
+pub const PIECE_BIT: Piece = 0b1000;
 /// Mask to get the piece colour
-pub const COLOUR_MASK: Piece = 0b0010;
+pub const COLOUR_MASK: Piece = 0b0100;
 /// Mask to get the piece type
-pub const TYPE_MASK: Piece = 0b1100;
+pub const TYPE_MASK: Piece = 0b0011;
 /// Mask to get the top piece
 pub const TOP_MASK: Piece = 0b1111;
 
@@ -32,18 +32,19 @@ const STACK_THRESHOLD: Piece = 16;
 /// White piece after applying the colour mask
 pub const COLOUR_WHITE: Piece = 0b0000;
 /// Black piece after applying the colour mask
-pub const COLOUR_BLACK: Piece = 0b0010;
+pub const COLOUR_BLACK: Piece = 0b0100;
 
 /// Scissors piece after applying the type mask
 pub const TYPE_SCISSORS: Piece = 0b0000;
 /// Paper piece after applying the type mask
-pub const TYPE_PAPER: Piece = 0b0100;
+pub const TYPE_PAPER: Piece = 0b0001;
 /// Rock piece after applying the type mask
-pub const TYPE_ROCK: Piece = 0b1000;
+pub const TYPE_ROCK: Piece = 0b0010;
 /// Wise piece after applying the type mask
-pub const TYPE_WISE: Piece = 0b1100;
+pub const TYPE_WISE: Piece = 0b0011;
 
 /// Represents the colour of a piece
+#[derive(Debug)]
 pub enum PieceColour {
     /// White
     White,
@@ -52,6 +53,7 @@ pub enum PieceColour {
 }
 
 /// Represents the type of a piece
+#[derive(Debug)]
 pub enum PieceType {
     /// Scissors
     Scissors,

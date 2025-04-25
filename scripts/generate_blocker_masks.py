@@ -18,19 +18,19 @@ def find_neighbours(i: int, j: int) -> List[int]:
     index = coords_index(i, j)
     if j > 0:
         if j > 1:
-            neighbours.append(index - 2)
+            neighbours.append(index - 1)
         if i > 1:
-            neighbours.append(index - 14)
+            neighbours.append(index - 7)
         if i < 5:
-            neighbours.append(index + 12)
+            neighbours.append(index + 6)
 
     if (i % 2 == 0 and j < 5) or (i % 2 == 1 and j < 6):
         if (i % 2 == 0 and j < 4) or (i % 2 == 1 and j < 5):
-            neighbours.append(index + 2)
+            neighbours.append(index + 1)
         if i > 1:
-            neighbours.append(index - 12)
+            neighbours.append(index - 6)
         if i < 5:
-            neighbours.append(index + 14)
+            neighbours.append(index + 7)
 
     neighbours.sort()
     return neighbours

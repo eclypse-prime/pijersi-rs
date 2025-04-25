@@ -5,8 +5,9 @@
 //!
 //! The engine is named Natural Selection. It uses the Alpha-Beta search to find the best move for a given position.
 
-pub mod board;
+pub mod bitboard;
 pub mod errors;
+pub mod game;
 pub mod hash;
 pub mod logic;
 pub mod piece;

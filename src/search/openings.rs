@@ -6,15 +6,16 @@
 //!
 //! The stored actions contain search depth values (see [`crate::logic::actions`]).
 
+#![allow(unused)]
+
 use std::collections::HashMap;
 
-use bincode::{deserialize, serialized_size};
 use miniz_oxide::inflate::decompress_to_vec;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    board::Board,
-    logic::{actions::Action, Cells, Player, CELLS_EMPTY},
+    game::Game,
+    logic::{actions::Action, Player, N_CELLS},
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, Debug)]
@@ -22,22 +23,23 @@ use crate::{
 pub struct Position {
     #[serde(with = "serde_bytes")]
     /// The current cells storing the piece data as `Piece` (see [`crate::piece`])
-    pub cells: Cells,
+    pub cells: [u8; N_CELLS],
     /// The current player: 0 if white, 1 if black
     pub current_player: Player,
 }
 
 impl Position {
     /// Creates a new `Position` from a board. Copies its cells and current player.
-    pub fn new(board: &Board) -> Self {
+    pub fn new(game: &Game) -> Self {
         Self {
-            cells: board.cells,
-            current_player: board.current_player,
+            cells: [0; N_CELLS],
+            current_player: game.current_player,
         }
     }
+
     const fn empty() -> Self {
         Self {
-            cells: CELLS_EMPTY,
+            cells: [0; N_CELLS],
             current_player: 0,
         }
     }
@@ -83,7 +85,7 @@ pub struct OpeningBook {
 const OPENINGS_BYTES_COMPRESSED: &[u8] = include_bytes!("../../data/openings");
 
 fn decode_response(response_bytes: &[u8; RESPONSE_SIZE]) -> Option<Response> {
-    deserialize(response_bytes).ok()
+    None
 }
 
 fn decode_responses(responses_bytes: &[u8]) -> Vec<Response> {
@@ -105,7 +107,7 @@ impl OpeningBook {
     /// Loads the precompiled opening book.
     pub fn new() -> Self {
         let openings_bytes = decompress_to_vec(OPENINGS_BYTES_COMPRESSED).unwrap();
-        assert!(RESPONSE_SIZE == serialized_size(&Response::empty()).unwrap() as usize);
+        // assert!(RESPONSE_SIZE == serialized_size(&Response::empty()).unwrap() as usize);
         assert!(openings_bytes.len() % RESPONSE_SIZE == 0);
         let responses = decode_responses(&openings_bytes);
         let map: HashMap<Position, (Action, i64)> = responses
@@ -121,7 +123,7 @@ impl OpeningBook {
     }
 
     /// Looks for a stored move corresponding to the provided board state and returns it if it exists.
-    pub fn lookup(&self, board: &Board) -> Option<&(Action, i64)> {
+    pub fn lookup(&self, board: &Game) -> Option<&(Action, i64)> {
         self.map.get(&Position::new(board))
     }
 }

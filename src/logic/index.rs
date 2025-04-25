@@ -1,9 +1,6 @@
 //! Implements the Index trait with helper methods for board indices.
 
-use super::{
-    actions::Action,
-    lookup::{NEIGHBOURS1, NEIGHBOURS2},
-};
+use super::actions::Action;
 
 /// A cell index is represented as a usize.
 pub type CellIndex = usize;
@@ -23,10 +20,6 @@ pub trait CellIndexTrait: Copy {
     fn is_white_home(self) -> bool;
     /// Returns true if the index is in the first row on black's side
     fn is_black_home(self) -> bool;
-    /// Returns a slice of the 1-range neighbours of this index
-    fn neighbours1(self) -> &'static [Self];
-    /// Returns a slice of the 2-range neighbours of this index
-    fn neighbours2(self) -> &'static [Self];
 }
 
 impl CellIndexTrait for usize {
@@ -43,15 +36,5 @@ impl CellIndexTrait for usize {
     #[inline(always)]
     fn is_black_home(self) -> bool {
         self <= 5
-    }
-
-    #[inline(always)]
-    fn neighbours1(self) -> &'static [Self] {
-        NEIGHBOURS1[self]
-    }
-
-    #[inline(always)]
-    fn neighbours2(self) -> &'static [Self] {
-        NEIGHBOURS2[self]
     }
 }

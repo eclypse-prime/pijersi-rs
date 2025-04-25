@@ -2,134 +2,106 @@
 
 use rayon::prelude::*;
 
-use crate::piece::{Piece, PieceTrait};
+use crate::{bitboard::Board, piece::PieceTrait};
 
 use super::{
-    actions::{play_action, Action, ActionTrait},
-    index::{CellIndex, CellIndexTrait, INDEX_NULL},
-    movegen::available_player_actions,
-    rules::{can_move1, can_move2, can_stack, can_unstack, is_action_win},
+    actions::{Action, ActionTrait},
+    index::{CellIndex, INDEX_NULL},
+    lookup::NEIGHBOURS2,
+    rules::is_action_win,
     translate::action_to_string,
-    Cells, Player,
+    Player,
 };
 
-/// Returns the number of possible actions for a player at a given position.
-///
-/// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the actions.
-#[inline(always)]
-fn count_player_actions_terminal(cells: &Cells, current_player: Player) -> u64 {
-    cells
-        .iter()
-        .enumerate()
-        .filter(|(_index, piece)| !piece.is_empty() && (piece.colour() == (current_player << 1)))
-        .map(|(index, _piece)| count_piece_actions_terminal(cells, index))
-        .sum::<u64>()
-}
+impl Board {
+    /// Returns the number of possible actions for a player at a given position.
+    ///
+    /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the actions.
+    #[inline]
+    pub fn count_player_actions(&self, current_player: Player) -> u64 {
+        self.same_colour(current_player)
+            .into_iter()
+            .map(|index| self.count_piece_actions(index, current_player))
+            .sum()
+    }
 
-/// Returns the number of possible actions for a specific piece at a given position.
-///
-/// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the actions.
-#[inline]
-fn count_piece_actions_terminal(cells: &Cells, index_start: CellIndex) -> u64 {
-    let mut piece_action_count: u64 = 0u64;
+    /// Returns the number of possible actions for a specific piece at a given position.
+    ///
+    /// Is used to speed up perft at depth=1 since it only needs the number of leaf nodes, not the actions.
+    #[inline]
+    fn count_piece_actions(&self, index_start: CellIndex, current_player: Player) -> u64 {
+        let mut count: u64 = 0;
+        let piece_start = self.get_player_piece(index_start, current_player);
 
-    let piece_start: Piece = cells[index_start];
-
-    // If the piece is not a stack
-    if piece_start.is_stack() {
-        // 2 range first action
-        for &index_mid in index_start.neighbours2() {
-            if can_move2(cells, piece_start, index_start, index_mid) {
+        if piece_start.is_stack() {
+            // 2-range first action
+            for index_mid in self.available_moves2(index_start, piece_start) {
                 // 2-range move, stack or unstack
-                for &index_end in index_mid.neighbours1() {
-                    // 2-range move, unstack or 2-range move, stack
-                    if can_unstack(cells, piece_start, index_end)
-                        || can_stack(cells, piece_start, index_end)
-                    {
-                        piece_action_count += 1;
-                    }
-                }
-                // 2-range move;
-                piece_action_count += 1;
+                count += (self.available_unstacks(index_mid, piece_start)
+                    | self.available_stacks(index_mid, piece_start))
+                .0
+                .count_ones() as u64;
+
+                // 2-range move
+                count += 1;
             }
-        }
-        // 1-range first action
-        for &index_mid in index_start.neighbours1() {
-            // 1-range move, [stack or unstack] optional
-            if can_move1(cells, piece_start, index_mid) {
+
+            // 1-range first action
+            for index_mid in self.available_moves1(index_start, piece_start) {
                 // 1-range move, stack or unstack
-                for &index_end in index_mid.neighbours1() {
-                    // 1-range move, unstack or 1-range move, stack
-                    if can_unstack(cells, piece_start, index_end)
-                        || can_stack(cells, piece_start, index_end)
-                    {
-                        piece_action_count += 1;
-                    }
-                }
+                count += (self.available_unstacks(index_mid, piece_start)
+                    | self.available_stacks(index_mid, piece_start))
+                .0
+                .count_ones() as u64;
+
                 // 1-range move, unstack on starting position
-                piece_action_count += 1;
+                count += 1;
 
                 // 1-range move
-                piece_action_count += 1;
+                count += 1;
             }
-            // stack, [1/2-range move] optional
-            else if can_stack(cells, piece_start, index_mid) {
-                // stack, 2-range move
-                for &index_end in index_mid.neighbours2() {
-                    if can_move2(cells, piece_start, index_mid, index_end) {
-                        piece_action_count += 1;
-                    }
-                }
 
-                // stack, 1-range move
-                for &index_end in index_mid.neighbours1() {
-                    if can_move1(cells, piece_start, index_end) {
-                        piece_action_count += 1;
-                    }
-                }
+            // stack
+            for index_mid in self.available_stacks(index_start, piece_start) {
+                // stack, 1-range or 2-range move
+                count += (self.available_moves2(index_mid, piece_start)
+                    | self.available_moves1(index_mid, piece_start))
+                .0
+                .count_ones() as u64;
 
                 // stack only
-                piece_action_count += 1;
+                count += 1;
             }
 
             // unstack
-            if can_unstack(cells, piece_start, index_mid) {
-                // unstack only
-                piece_action_count += 1;
-            }
-        }
-    } else {
-        // 1-range first action
-        for &index_mid in index_start.neighbours1() {
-            // stack, [1/2-range move] optional
-            if can_stack(cells, piece_start, index_mid) {
-                // stack, 2-range move
-                for &index_end in index_mid.neighbours2() {
-                    if can_move2(cells, piece_start, index_mid, index_end)
-                        || (index_start == ((index_mid + index_end) / 2)
-                            && can_move1(cells, piece_start, index_end))
-                    {
-                        piece_action_count += 1;
-                    }
-                }
+            count += self
+                .available_unstacks(index_start, piece_start)
+                .0
+                .count_ones() as u64;
+        } else {
+            // 1-range first action
+            for index_mid in self.available_stacks(index_start, piece_start) {
+                // stack, 1-range or 2-range move
+                count += (self.available_moves2(index_mid, piece_start)
+                    | self.available_moves1(index_mid, piece_start)
+                    | (NEIGHBOURS2[index_mid] & self.available_moves1(index_start, piece_start)))
+                .0
+                .count_ones() as u64;
 
-                // stack, 0/1-range move
-                for &index_end in index_mid.neighbours1() {
-                    if can_move1(cells, piece_start, index_end) || index_start == index_end {
-                        piece_action_count += 1;
-                    }
-                }
+                // stack, 1-range move to starting position
+                count += 1;
 
                 // stack only
-                piece_action_count += 1;
+                count += 1;
             }
             // 1-range move
-            else if can_move1(cells, piece_start, index_mid) {
-                piece_action_count += 1;
-            }
+            count += self
+                .available_moves1(index_start, piece_start)
+                .0
+                .count_ones() as u64;
         }
+        count
     }
-    piece_action_count
 }
 
 /// Debug function to measure the number of leaf nodes (possible actions) at a given depth.
@@ -139,21 +111,21 @@ fn count_piece_actions_terminal(cells: &Cells, index_start: CellIndex) -> u64 {
 /// Uses parallel search.
 ///
 /// At depth 0, returns 1.
-pub fn perft(cells: &Cells, current_player: Player, depth: u64) -> u64 {
+pub fn perft(board: &Board, current_player: Player, depth: u64) -> u64 {
     match depth {
         0 => 1u64,
-        1 | 2 => count_player_actions(cells, current_player, depth),
+        1 | 2 => perft_player_actions(board, current_player, depth),
         _ => {
-            let available_actions = available_player_actions(cells, current_player);
+            let available_actions = board.available_player_actions(0);
 
             available_actions
                 .into_iter()
                 .par_bridge()
-                .filter(|&action| !is_action_win(cells, action))
+                .filter(|&action| !is_action_win(board, action))
                 .map(|action| {
-                    let mut new_cells: Cells = *cells;
-                    play_action(&mut new_cells, action);
-                    count_player_actions(&new_cells, 1 - current_player, depth - 1)
+                    let mut new_board = *board;
+                    new_board.play_action(action);
+                    perft_player_actions(&new_board, 1 - current_player, depth - 1)
                 })
                 .sum()
         }
@@ -162,13 +134,18 @@ pub fn perft(cells: &Cells, current_player: Player, depth: u64) -> u64 {
 
 /// Returns the number of leaf nodes (possible actions) for a player at a given depth and position after an action.
 #[inline]
-fn count_after_action(cells: &Cells, action: Action, current_player: Player, depth: u64) -> u64 {
-    if is_action_win(cells, action) {
+fn perft_count_after_action(
+    board: &Board,
+    action: Action,
+    current_player: Player,
+    depth: u64,
+) -> u64 {
+    if is_action_win(board, action) {
         0
     } else {
-        let mut new_cells = *cells;
-        play_action(&mut new_cells, action);
-        count_player_actions(&new_cells, 1 - current_player, depth - 1)
+        let mut new_board = *board;
+        new_board.play_action(action);
+        perft_player_actions(&new_board, 1 - current_player, depth - 1)
     }
 }
 
@@ -178,196 +155,155 @@ fn count_after_action(cells: &Cells, action: Action, current_player: Player, dep
 ///
 /// At depth 0, returns 1.
 #[inline(always)]
-pub fn count_player_actions(cells: &Cells, current_player: Player, depth: u64) -> u64 {
+pub fn perft_player_actions(board: &Board, current_player: Player, depth: u64) -> u64 {
     match depth {
         0 => 1u64,
-        1 => count_player_actions_terminal(cells, current_player),
-        _ => cells
-            .iter()
-            .enumerate()
-            .filter(|(_index, piece)| {
-                !piece.is_empty() && (piece.colour() == (current_player << 1))
-            })
-            .map(|(index, _piece)| count_piece_actions(cells, index, current_player, depth))
-            .sum::<u64>(),
+        1 => board.count_player_actions(current_player),
+        _ => board
+            .same_colour(current_player)
+            .into_iter()
+            .map(|index| perft_piece_actions(board, index, current_player, depth))
+            .sum(),
     }
 }
 
 /// Returns the number of leaf nodes (possible actions) for a player at a given depth and position.
 #[inline]
-fn count_piece_actions(
-    cells: &Cells,
+fn perft_piece_actions(
+    board: &Board,
     index_start: CellIndex,
     current_player: Player,
     depth: u64,
 ) -> u64 {
-    let mut piece_action_count: u64 = 0u64;
+    let mut count = 0;
+    let piece_start = board.get_piece(index_start);
 
-    let piece_start: Piece = cells[index_start];
-
-    // If the piece is not a stack
     if piece_start.is_stack() {
-        // 2 range first action
-        for &index_mid in index_start.neighbours2() {
+        // 2-range first action
+
+        for index_mid in board.available_moves2(index_start, piece_start) {
             let half_action: Action = Action::from_indices_half(index_start, index_mid);
-            if can_move2(cells, piece_start, index_start, index_mid) {
-                // 2-range move, stack or unstack
-                for &index_end in index_mid.neighbours1() {
-                    // 2-range move, unstack or 2-range move, stack
-                    if can_unstack(cells, piece_start, index_end)
-                        || can_stack(cells, piece_start, index_end)
-                    {
-                        piece_action_count += count_after_action(
-                            cells,
-                            half_action.add_last_index(index_end),
-                            current_player,
-                            depth,
-                        );
-                    }
-                }
-                // 2-range move
-                piece_action_count += count_after_action(
-                    cells,
-                    Action::from_indices(index_start, INDEX_NULL, index_mid),
+
+            count += perft_count_after_action(
+                board,
+                Action::from_indices(index_start, INDEX_NULL, index_mid),
+                current_player,
+                depth,
+            );
+
+            for index_end in board.available_unstacks(index_mid, piece_start)
+                | board.available_stacks(index_mid, piece_start)
+            {
+                count += perft_count_after_action(
+                    board,
+                    half_action.add_last_index(index_end),
                     current_player,
                     depth,
                 );
             }
         }
-        // 1-range first action
-        for &index_mid in index_start.neighbours1() {
+
+        for index_mid in board.available_moves1(index_start, piece_start) {
             let half_action: Action = Action::from_indices_half(index_start, index_mid);
-            // 1-range move, [stack or unstack] optional
-            if can_move1(cells, piece_start, index_mid) {
-                // 1-range move, stack or unstack
-                for &index_end in index_mid.neighbours1() {
-                    // 1-range move, unstack or 1-range move, stack
-                    if can_unstack(cells, piece_start, index_end)
-                        || can_stack(cells, piece_start, index_end)
-                    {
-                        piece_action_count += count_after_action(
-                            cells,
-                            half_action.add_last_index(index_end),
-                            current_player,
-                            depth,
-                        );
-                    }
-                }
-                // 1-range move, unstack on starting position
-                piece_action_count += count_after_action(
-                    cells,
-                    Action::from_indices(index_start, index_mid, index_start),
-                    current_player,
-                    depth,
-                );
 
-                // 1-range move
-                piece_action_count += count_after_action(
-                    cells,
-                    Action::from_indices(index_start, INDEX_NULL, index_mid),
+            for index_end in board.available_unstacks(index_mid, piece_start)
+                | board.available_stacks(index_mid, piece_start)
+            {
+                count += perft_count_after_action(
+                    board,
+                    half_action.add_last_index(index_end),
                     current_player,
                     depth,
                 );
             }
-            // stack, [1/2-range move] optional
-            else if can_stack(cells, piece_start, index_mid) {
-                // stack, 2-range move
-                for &index_end in index_mid.neighbours2() {
-                    if can_move2(cells, piece_start, index_mid, index_end) {
-                        piece_action_count += count_after_action(
-                            cells,
-                            half_action.add_last_index(index_end),
-                            current_player,
-                            depth,
-                        );
-                    }
-                }
+            // 1-range move, unstack on starting position
+            count += perft_count_after_action(
+                board,
+                Action::from_indices(index_start, index_mid, index_start),
+                current_player,
+                depth,
+            );
 
-                // stack, 1-range move
-                for &index_end in index_mid.neighbours1() {
-                    if can_move1(cells, piece_start, index_end) {
-                        piece_action_count += count_after_action(
-                            cells,
-                            half_action.add_last_index(index_end),
-                            current_player,
-                            depth,
-                        );
-                    }
-                }
+            // 1-range move
+            count += perft_count_after_action(
+                board,
+                Action::from_indices(index_start, INDEX_NULL, index_mid),
+                current_player,
+                depth,
+            );
+        }
 
-                // stack only
-                piece_action_count += count_after_action(
-                    cells,
-                    Action::from_indices(index_start, index_start, index_mid),
+        for index_mid in board.available_stacks(index_start, piece_start) {
+            let half_action: Action = Action::from_indices_half(index_start, index_mid);
+
+            for index_end in board.available_moves2(index_mid, piece_start)
+                | board.available_moves1(index_mid, piece_start)
+            {
+                count += perft_count_after_action(
+                    board,
+                    half_action.add_last_index(index_end),
                     current_player,
                     depth,
                 );
             }
 
-            // unstack
-            if can_unstack(cells, piece_start, index_mid) {
-                // unstack only
-                piece_action_count += count_after_action(
-                    cells,
-                    Action::from_indices(index_start, index_start, index_mid),
-                    current_player,
-                    depth,
-                );
-            }
+            count += perft_count_after_action(
+                board,
+                Action::from_indices(index_start, index_start, index_mid),
+                current_player,
+                depth,
+            );
+        }
+
+        for index_mid in board.available_unstacks(index_start, piece_start) {
+            count += perft_count_after_action(
+                board,
+                Action::from_indices(index_start, index_start, index_mid),
+                current_player,
+                depth,
+            );
         }
     } else {
-        // 1-range first action
-        for &index_mid in index_start.neighbours1() {
+        for index_mid in board.available_stacks(index_start, piece_start) {
             let half_action: Action = Action::from_indices_half(index_start, index_mid);
-            // stack, [1/2-range move] optional
-            if can_stack(cells, piece_start, index_mid) {
-                // stack, 2-range move
-                for &index_end in index_mid.neighbours2() {
-                    if can_move2(cells, piece_start, index_mid, index_end)
-                        || (index_start == ((index_mid + index_end) / 2)
-                            && can_move1(cells, piece_start, index_end))
-                    {
-                        piece_action_count += count_after_action(
-                            cells,
-                            half_action.add_last_index(index_end),
-                            current_player,
-                            depth,
-                        );
-                    }
-                }
 
-                // stack, 0/1-range move
-                for &index_end in index_mid.neighbours1() {
-                    if can_move1(cells, piece_start, index_end) || index_start == index_end {
-                        piece_action_count += count_after_action(
-                            cells,
-                            half_action.add_last_index(index_end),
-                            current_player,
-                            depth,
-                        );
-                    }
-                }
-
-                // stack only
-                piece_action_count += count_after_action(
-                    cells,
-                    Action::from_indices(index_start, index_start, index_mid),
+            for index_end in board.available_moves2(index_mid, piece_start)
+                | board.available_moves1(index_mid, piece_start)
+                | (NEIGHBOURS2[index_mid] & board.available_moves1(index_start, piece_start))
+            {
+                count += perft_count_after_action(
+                    board,
+                    half_action.add_last_index(index_end),
                     current_player,
                     depth,
                 );
             }
-            // 1-range move
-            else if can_move1(cells, piece_start, index_mid) {
-                piece_action_count += count_after_action(
-                    cells,
-                    Action::from_indices(index_start, INDEX_NULL, index_mid),
-                    current_player,
-                    depth,
-                );
-            }
+
+            count += perft_count_after_action(
+                board,
+                half_action.add_last_index(index_start),
+                current_player,
+                depth,
+            );
+
+            count += perft_count_after_action(
+                board,
+                Action::from_indices(index_start, index_start, index_mid),
+                current_player,
+                depth,
+            );
+        }
+        for index_mid in board.available_moves1(index_start, piece_start) {
+            count += perft_count_after_action(
+                board,
+                Action::from_indices(index_start, INDEX_NULL, index_mid),
+                current_player,
+                depth,
+            );
         }
     }
-    piece_action_count
+
+    count
 }
 
 /// Split Perft debug function to measure the number of leaf nodes (possible actions) at a given depth.
@@ -380,26 +316,26 @@ fn count_piece_actions(
 ///
 /// At depth 0, returns an empty vector.
 pub fn perft_split(
-    cells: &Cells,
+    board: &Board,
     current_player: Player,
     depth: u64,
 ) -> Vec<(String, Action, u64)> {
     if depth == 0 {
         vec![]
     } else {
-        let available_actions = available_player_actions(cells, current_player);
+        let available_actions = board.available_player_actions(current_player);
 
         available_actions
             .into_iter()
             .par_bridge()
-            .filter(|&action| !is_action_win(cells, action))
+            .filter(|&action| !is_action_win(board, action))
             .map(|action| {
-                let mut new_cells = *cells;
-                play_action(&mut new_cells, action);
+                let mut new_board = *board;
+                new_board.play_action(action);
                 (
-                    action_to_string(cells, action),
+                    action_to_string(board, action),
                     action,
-                    count_player_actions(&new_cells, 1 - current_player, depth - 1),
+                    perft_player_actions(&new_board, 1 - current_player, depth - 1),
                 )
             })
             .collect()
