@@ -64,6 +64,15 @@ impl Board {
         }
     }
 
+    /// Returns a bitboard representing the pieces that are capturable by the given player.
+    pub fn capturable(&self, player: Player) -> Bitboard {
+        if player == 0 {
+            self.black_not_wise()
+        } else {
+            self.white_not_wise()
+        }
+    }
+
     /// Returns a bitboard with the available range-2 moves for the piece at the given index.
     pub fn available_moves2(&self, index: CellIndex, piece: Piece) -> Bitboard {
         let blockers = BLOCKER_MASKS[index] & !self.all();

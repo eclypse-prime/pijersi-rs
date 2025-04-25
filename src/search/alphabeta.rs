@@ -16,10 +16,9 @@ use crate::logic::index::CellIndexTrait;
 use crate::logic::rules::is_action_win;
 use crate::logic::translate::action_to_string;
 use crate::logic::Player;
-use crate::piece::PieceTrait;
 use crate::utils::{argsort, reverse_argsort};
 
-use super::eval::{evaluate_action_incremental, evaluate_position, quiescence_search, MAX_SCORE};
+use super::eval::{evaluate_position_incremental, evaluate_position, quiescence_search, MAX_SCORE};
 use super::{AtomicScore, NodeType, Score};
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
@@ -110,10 +109,8 @@ pub fn sort_actions(
             return Some(action);
         }
         if (!index_mid.is_null()
-            && !board.get_piece(index_mid).is_empty()
-            && board.get_piece(index_mid).colour() != current_player << 2)
-            || (!board.get_piece(index_end).is_empty()
-                && board.get_piece(index_end).colour() != current_player << 2)
+            && board.capturable(current_player).get(index_mid))
+            || (board.capturable(current_player).get(index_end))
         {
             available_actions[i] = available_actions[index_sorted];
             available_actions[index_sorted] = action;
@@ -172,7 +169,7 @@ pub fn search_root(
             let mut new_board = *board;
             new_board.play_action(first_action);
             let new_static_eval =
-                evaluate_action_incremental(board, &new_board, first_action, static_eval);
+                evaluate_position_incremental(board, &new_board, first_action, static_eval);
             -search_node(
                 (&new_board, 1 - current_player),
                 depth - 1,
@@ -207,7 +204,7 @@ pub fn search_root(
                             let mut new_board = *board;
                             new_board.play_action(action);
                             let new_static_eval =
-                                evaluate_action_incremental(board, &new_board, action, static_eval);
+                                evaluate_position_incremental(board, &new_board, action, static_eval);
                             let alpha = alpha_atomic.load(Relaxed);
                             // Search with a null window
                             let eval_null_window = -search_node(
@@ -354,7 +351,7 @@ pub fn search_node(
     let mut new_board = *board;
     let first_action = available_actions[0];
     new_board.play_action(first_action);
-    let new_static_eval = evaluate_action_incremental(board, &new_board, first_action, static_eval);
+    let new_static_eval = evaluate_position_incremental(board, &new_board, first_action, static_eval);
     let eval = -search_node(
         (&new_board, 1 - current_player),
         depth - 1,
@@ -403,7 +400,7 @@ pub fn search_node(
                     let mut new_board = *board;
                     new_board.play_action(action);
                     let new_static_eval =
-                        evaluate_action_incremental(board, &new_board, action, static_eval);
+                        evaluate_position_incremental(board, &new_board, action, static_eval);
                     // Search with a null window
                     let eval_null_window = -search_node(
                         (&new_board, 1 - current_player),

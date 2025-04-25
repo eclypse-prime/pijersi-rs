@@ -8,7 +8,7 @@ use crate::logic::index::CellIndex;
 use crate::logic::lookup::PIECE_TO_INDEX;
 use crate::logic::rules::is_action_win;
 use crate::logic::{Player, N_CELLS};
-use crate::piece::{Piece, PieceTrait};
+use crate::piece::Piece;
 use crate::search::lookup::PIECE_SCORES;
 
 #[cfg(feature = "nps-count")]
@@ -58,126 +58,12 @@ pub fn evaluate_position_for_player(board: &Board, current_player: Player) -> Sc
     }
 }
 
-/// Returns the score of a board along with its individual cell scores.
-pub fn evaluate_position_with_details(board: &Board) -> (Score, [Score; N_CELLS]) {
-    let piece_scores: [Score; N_CELLS] = (0..45)
-        .map(|index| evaluate_cell(board.get_piece(index), index))
-        .collect::<Vec<Score>>()
-        .try_into()
-        .unwrap();
-    (piece_scores.iter().sum(), piece_scores)
-}
 
 #[inline]
-/// Evaluates the score of a given action at depth 1.
+/// Evaluates the score of a position after an action.
 ///
-/// Efficient method that only calculates the scores of the board that would change and compares it to the current score.
-pub fn evaluate_action_terminal(
-    board: &Board,
-    current_player: Player,
-    action: Action,
-    previous_score: Score,
-    previous_piece_scores: &[Score; N_CELLS],
-) -> Score {
-    let (index_start, index_mid, index_end) = action.to_indices();
-
-    if is_action_win(board, action) {
-        return -MAX_SCORE;
-    }
-
-    let mut current_score = previous_score;
-
-    if index_mid > 44 {
-        // Starting cell
-        current_score -= previous_piece_scores[index_start];
-
-        // Ending cell
-        current_score -= previous_piece_scores[index_end];
-        current_score += evaluate_cell(board.get_piece(index_start), index_end);
-    } else {
-        let mut start_piece: Piece = board.get_piece(index_start);
-        let mut mid_piece: Piece = board.get_piece(index_mid);
-        let mut end_piece: Piece = board.get_piece(index_end);
-        // The piece at the mid coordinates is an ally : stack and action
-        if !mid_piece.is_empty()
-            && mid_piece.colour() == start_piece.colour()
-            && (index_mid != index_start)
-        {
-            end_piece = start_piece.stack_on(mid_piece);
-            start_piece = start_piece.bottom();
-            mid_piece.set_empty();
-
-            // Starting cell
-            current_score -= previous_piece_scores[index_start];
-            current_score += evaluate_cell(start_piece, index_start);
-
-            // Middle cell
-            current_score -= previous_piece_scores[index_mid];
-            current_score += evaluate_cell(mid_piece, index_mid);
-
-            // Ending cell
-            if index_start != index_end {
-                current_score -= previous_piece_scores[index_end];
-            }
-            current_score += evaluate_cell(end_piece, index_end);
-        }
-        // The piece at the end coordinates is an ally : action and stack
-        else if !end_piece.is_empty() && end_piece.colour() == start_piece.colour() {
-            mid_piece = start_piece;
-            end_piece = mid_piece.stack_on(end_piece);
-            if index_start == index_end {
-                end_piece = mid_piece.top();
-            }
-            mid_piece = mid_piece.bottom();
-
-            // Starting cell
-            if index_start != index_mid {
-                current_score -= previous_piece_scores[index_start];
-            }
-
-            // Middle cell
-            current_score -= previous_piece_scores[index_mid];
-            current_score += evaluate_cell(mid_piece, index_mid);
-
-            // Ending cell
-            if index_start != index_end {
-                current_score -= previous_piece_scores[index_end];
-            }
-            current_score += evaluate_cell(end_piece, index_end);
-        }
-        // The end coordinates contain an enemy or no piece : action and unstack
-        else {
-            mid_piece = start_piece;
-            end_piece = mid_piece.top();
-            mid_piece = mid_piece.bottom();
-
-            // Starting cell
-            if index_start != index_mid {
-                current_score -= previous_piece_scores[index_start];
-            }
-
-            // Middle cell
-            current_score -= previous_piece_scores[index_mid];
-            current_score += evaluate_cell(mid_piece, index_mid);
-
-            // Ending cell
-            current_score -= previous_piece_scores[index_end];
-            current_score += evaluate_cell(end_piece, index_end);
-        }
-    }
-
-    if current_player == 0 {
-        current_score
-    } else {
-        -current_score
-    }
-}
-
-#[inline]
-/// Evaluates the score of a given action at depth 1.
-///
-/// Efficient method that only calculates the scores of the board that would change and compares it to the current score.
-pub fn evaluate_action_incremental(
+/// Efficient method that only calculates the cells of the board that changed and compares it to the current score.
+pub fn evaluate_position_incremental(
     old_board: &Board,
     new_board: &Board,
     action: Action,
@@ -198,20 +84,18 @@ pub fn evaluate_action_incremental(
         score += evaluate_cell(new_end_piece, index_end);
     } else {
         let old_start_piece = old_board.get_piece(index_start);
-        let old_mid_piece = old_board.get_piece(index_mid);
-        let old_end_piece = old_board.get_piece(index_end);
-
         let new_start_piece = new_board.get_piece(index_start);
-        let new_mid_piece = new_board.get_piece(index_mid);
-        let new_end_piece = new_board.get_piece(index_end);
-
         score -= evaluate_cell(old_start_piece, index_start);
         score += evaluate_cell(new_start_piece, index_start);
         if index_mid != index_start {
+            let old_mid_piece = old_board.get_piece(index_mid);
+            let new_mid_piece = new_board.get_piece(index_mid);
             score -= evaluate_cell(old_mid_piece, index_mid);
             score += evaluate_cell(new_mid_piece, index_mid);
         }
         if index_end != index_start {
+            let old_end_piece = old_board.get_piece(index_end);
+            let new_end_piece = new_board.get_piece(index_end);
             score -= evaluate_cell(old_end_piece, index_end);
             score += evaluate_cell(new_end_piece, index_end);
         }
@@ -255,7 +139,7 @@ pub fn quiescence_search(
         }
         new_board = *board;
         new_board.play_action(action);
-        let new_static_eval = evaluate_action_incremental(board, &new_board, action, static_eval);
+        let new_static_eval = evaluate_position_incremental(board, &new_board, action, static_eval);
         let eval = max(
             score,
             -quiescence_search(
