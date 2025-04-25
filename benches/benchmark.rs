@@ -34,6 +34,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 None,
                 Default::default(),
                 None,
+                0,
             ))
         })
     });
@@ -46,6 +47,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 None,
                 Default::default(),
                 None,
+                0,
             ))
         })
     });
@@ -58,6 +60,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 None,
                 Default::default(),
                 None,
+                0,
             ))
         })
     });
@@ -70,6 +73,7 @@ fn bench_evaluate_action(c: &mut Criterion) {
                 None,
                 Default::default(),
                 None,
+                0,
             ))
         })
     });
