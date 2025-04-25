@@ -18,7 +18,7 @@ use crate::{
     },
     search::{
         alphabeta::{BASE_ALPHA, BASE_BETA},
-        eval::{evaluate_position, quiescence_search},
+        eval::{evaluate_position, evaluate_position_for_player, quiescence_search},
         openings::OpeningBook,
     },
     utils::parse_bool_arg,
@@ -289,16 +289,18 @@ impl UgiEngine {
             QueryArgs::Eval => {
                 println!(
                     "info eval {}",
-                    evaluate_position(&self.game.board, self.game.current_player)
+                    evaluate_position_for_player(&self.game.board, self.game.current_player)
                 );
             }
             QueryArgs::QS => {
+                let static_eval = evaluate_position(&self.game.board);
                 println!(
                     "info qs {}",
                     quiescence_search(
                         &self.game.board,
                         self.game.current_player,
-                        (BASE_ALPHA, BASE_BETA)
+                        (BASE_ALPHA, BASE_BETA),
+                        static_eval,
                     )
                 );
             }

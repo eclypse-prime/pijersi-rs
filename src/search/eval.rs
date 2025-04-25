@@ -27,7 +27,23 @@ pub const fn evaluate_cell(piece: Piece, index: CellIndex) -> Score {
 }
 
 /// Returns the score of a board.
-pub fn evaluate_position(board: &Board, current_player: Player) -> Score {
+///
+/// If the score is positive, the position favours the white player.
+/// If the score is negative, the position favours the black player.
+pub fn evaluate_position(board: &Board) -> Score {
+    #[cfg(feature = "nps-count")]
+    increment_node_count(1);
+    board
+        .all()
+        .into_iter()
+        .map(|index| evaluate_cell(board.get_piece(index), index))
+        .sum()
+}
+
+/// Returns the score of a board from the point of view of the chosen player.
+///
+/// The higher the score, the better the position.
+pub fn evaluate_position_for_player(board: &Board, current_player: Player) -> Score {
     #[cfg(feature = "nps-count")]
     increment_node_count(1);
     let eval = board
@@ -157,6 +173,53 @@ pub fn evaluate_action_terminal(
     }
 }
 
+#[inline]
+/// Evaluates the score of a given action at depth 1.
+///
+/// Efficient method that only calculates the scores of the board that would change and compares it to the current score.
+pub fn evaluate_action_incremental(
+    old_board: &Board,
+    new_board: &Board,
+    action: Action,
+    previous_score: Score,
+) -> Score {
+    let (index_start, index_mid, index_end) = action.to_indices();
+
+    let mut score = previous_score;
+
+    if index_mid > 44 {
+        let old_start_piece = old_board.get_piece(index_start);
+        let old_end_piece = old_board.get_piece(index_end);
+        let new_end_piece = new_board.get_piece(index_end);
+
+        score -= evaluate_cell(old_start_piece, index_start);
+
+        score -= evaluate_cell(old_end_piece, index_end);
+        score += evaluate_cell(new_end_piece, index_end);
+    } else {
+        let old_start_piece = old_board.get_piece(index_start);
+        let old_mid_piece = old_board.get_piece(index_mid);
+        let old_end_piece = old_board.get_piece(index_end);
+
+        let new_start_piece = new_board.get_piece(index_start);
+        let new_mid_piece = new_board.get_piece(index_mid);
+        let new_end_piece = new_board.get_piece(index_end);
+
+        score -= evaluate_cell(old_start_piece, index_start);
+        score += evaluate_cell(new_start_piece, index_start);
+        if index_mid != index_start {
+            score -= evaluate_cell(old_mid_piece, index_mid);
+            score += evaluate_cell(new_mid_piece, index_mid);
+        }
+        if index_end != index_start {
+            score -= evaluate_cell(old_end_piece, index_end);
+            score += evaluate_cell(new_end_piece, index_end);
+        }
+    }
+
+    score
+}
+
 /// Evaluates a position using quiescence search.
 ///
 /// Resolves all capture chains before evaluating positions and returns the best score using alphabeta.
@@ -164,12 +227,18 @@ pub fn quiescence_search(
     board: &Board,
     current_player: Player,
     (alpha, beta): (Score, Score),
+    static_eval: Score,
 ) -> Score {
     let available_actions = board.available_player_captures(current_player);
     let n_actions = available_actions.len();
 
     // Heuristic to return early
-    let stand_pat = evaluate_position(board, current_player);
+    // let stand_pat = evaluate_position(board, current_player);
+    let stand_pat = if current_player == 0 {
+        static_eval
+    } else {
+        -static_eval
+    };
 
     if n_actions == 0 || stand_pat > beta {
         return stand_pat;
@@ -186,9 +255,15 @@ pub fn quiescence_search(
         }
         new_board = *board;
         new_board.play_action(action);
+        let new_static_eval = evaluate_action_incremental(board, &new_board, action, static_eval);
         let eval = max(
             score,
-            -quiescence_search(&new_board, 1 - current_player, (-beta, -alpha)),
+            -quiescence_search(
+                &new_board,
+                1 - current_player,
+                (-beta, -alpha),
+                new_static_eval,
+            ),
         );
         score = max(score, eval);
         alpha = max(alpha, eval);

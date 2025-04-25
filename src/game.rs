@@ -57,7 +57,7 @@ impl GameOptions {
     /// ```
     pub const fn new() -> Self {
         Self {
-            use_book: true,
+            use_book: false,
             use_table: true,
             verbose: true,
         }

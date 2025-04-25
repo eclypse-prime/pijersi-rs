@@ -19,7 +19,7 @@ use crate::logic::Player;
 use crate::piece::PieceTrait;
 use crate::utils::{argsort, reverse_argsort};
 
-use super::eval::{quiescence_search, MAX_SCORE};
+use super::eval::{evaluate_action_incremental, evaluate_position, quiescence_search, MAX_SCORE};
 use super::{AtomicScore, NodeType, Score};
 
 /// Starting beta value for the alphabeta search (starting alpha is equal to -beta)
@@ -162,6 +162,8 @@ pub fn search_root(
 
         let mut scores: Vec<Score> = vec![-MAX_SCORE; n_actions];
 
+        let static_eval = evaluate_position(board);
+
         let first_action = available_actions[order[0]];
         let first_eval = if is_action_win(board, first_action) {
             MAX_SCORE
@@ -169,6 +171,8 @@ pub fn search_root(
             // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
             let mut new_board = *board;
             new_board.play_action(first_action);
+            let new_static_eval =
+                evaluate_action_incremental(board, &new_board, first_action, static_eval);
             -search_node(
                 (&new_board, 1 - current_player),
                 depth - 1,
@@ -176,6 +180,7 @@ pub fn search_root(
                 end_time,
                 NodeType::PV,
                 transposition_table,
+                new_static_eval,
             )
         };
         scores[0] = first_eval;
@@ -201,6 +206,8 @@ pub fn search_root(
                         } else {
                             let mut new_board = *board;
                             new_board.play_action(action);
+                            let new_static_eval =
+                                evaluate_action_incremental(board, &new_board, action, static_eval);
                             let alpha = alpha_atomic.load(Relaxed);
                             // Search with a null window
                             let eval_null_window = -search_node(
@@ -210,6 +217,7 @@ pub fn search_root(
                                 end_time,
                                 NodeType::Cut,
                                 transposition_table,
+                                new_static_eval,
                             );
                             // If fail high, do the search with the full window
                             if alpha < eval_null_window && eval_null_window < beta {
@@ -220,6 +228,7 @@ pub fn search_root(
                                     end_time,
                                     NodeType::PV,
                                     transposition_table,
+                                    new_static_eval,
                                 )
                             } else {
                                 eval_null_window
@@ -272,9 +281,10 @@ pub fn search_node(
     end_time: Option<Instant>,
     node_type: NodeType,
     transposition_table: Option<&RwLock<SearchTable>>,
+    static_eval: Score,
 ) -> Score {
     if depth == 0 {
-        return quiescence_search(board, current_player, (alpha, beta));
+        return quiescence_search(board, current_player, (alpha, beta), static_eval);
     }
 
     // Stop searching if the allocated time is up (if there are time controls)
@@ -342,7 +352,9 @@ pub fn search_node(
     // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
     // Evaluate first action sequentially
     let mut new_board = *board;
-    new_board.play_action(available_actions[0]);
+    let first_action = available_actions[0];
+    new_board.play_action(first_action);
+    let new_static_eval = evaluate_action_incremental(board, &new_board, first_action, static_eval);
     let eval = -search_node(
         (&new_board, 1 - current_player),
         depth - 1,
@@ -354,6 +366,7 @@ pub fn search_node(
             NodeType::All => NodeType::Cut,
         },
         transposition_table,
+        new_static_eval,
     );
     alpha = max(alpha, eval);
     // Beta-cutoff, stop the search
@@ -389,7 +402,8 @@ pub fn search_node(
 
                     let mut new_board = *board;
                     new_board.play_action(action);
-
+                    let new_static_eval =
+                        evaluate_action_incremental(board, &new_board, action, static_eval);
                     // Search with a null window
                     let eval_null_window = -search_node(
                         (&new_board, 1 - current_player),
@@ -402,6 +416,7 @@ pub fn search_node(
                             NodeType::All => NodeType::Cut,
                         },
                         transposition_table,
+                        new_static_eval,
                     );
 
                     // If fail high, do the search with the full window
@@ -417,6 +432,7 @@ pub fn search_node(
                                 NodeType::All => NodeType::Cut,
                             },
                             transposition_table,
+                            new_static_eval,
                         )
                     } else {
                         eval_null_window
