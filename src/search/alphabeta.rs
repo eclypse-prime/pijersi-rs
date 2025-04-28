@@ -13,7 +13,6 @@ use crate::hash::position::HashTrait;
 use crate::hash::search::SearchTable;
 use crate::logic::actions::{Action, ActionTrait, Actions, AtomicAction};
 use crate::logic::index::CellIndexTrait;
-use crate::logic::rules::is_action_win;
 use crate::logic::translate::action_to_string;
 use crate::logic::Player;
 use crate::utils::{argsort, reverse_argsort};
@@ -74,7 +73,7 @@ pub fn write_transposition_table(
 
 /// Sorts the available actions based on how good they are estimated to be (in descending order -> best actions first).
 #[inline]
-pub fn sort_actions(
+fn sort_actions(
     board: &Board,
     current_player: Player,
     table_action: Option<Action>,
@@ -88,7 +87,7 @@ pub fn sort_actions(
         for i in 0..n_actions {
             if available_actions[i] == table_action {
                 // Immediately returns if action is win
-                if is_action_win(board, table_action) {
+                if board.is_action_win(table_action, current_player) {
                     return Some(table_action);
                 }
                 available_actions[..].swap(0, i);
@@ -103,11 +102,11 @@ pub fn sort_actions(
     // Find all the captures and put them at the beginning
     for i in index_start..n_actions {
         let action = available_actions[i];
-        let (_index_start, index_mid, index_end) = action.to_indices();
         // Immediately return if the action is a win
-        if is_action_win(board, action) {
+        if board.is_action_win(action, current_player) {
             return Some(action);
         }
+        let (_index_start, index_mid, index_end) = action.to_indices();
         if (!index_mid.is_null() && board.capturable(current_player).get(index_mid))
             || (board.capturable(current_player).get(index_end))
         {
@@ -161,7 +160,7 @@ pub fn search_root(
         let static_eval = evaluate_position(board);
 
         let first_action = available_actions[order[0]];
-        let first_eval = if is_action_win(board, first_action) {
+        let first_eval = if board.is_action_win(first_action, current_player) {
             MAX_SCORE
         } else {
             // Principal Variation Search: search the first move with the full window, search subsequent moves with a null window first then if they fail high, search them with a full window
@@ -197,7 +196,7 @@ pub fn search_root(
                         Score::MIN
                     } else {
                         let action = available_actions[order[k]];
-                        let eval = if is_action_win(board, action) {
+                        let eval = if board.is_action_win(action, current_player) {
                             MAX_SCORE
                         } else {
                             let mut new_board = *board;

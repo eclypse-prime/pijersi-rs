@@ -3,10 +3,9 @@
 use std::cmp::max;
 
 use crate::bitboard::Board;
-use crate::logic::actions::{Action, ActionTrait};
-use crate::logic::index::CellIndex;
+use crate::logic::actions::{Action, ActionTrait, ActionsLight};
+use crate::logic::index::{CellIndex, CellIndexTrait};
 use crate::logic::lookup::PIECE_TO_INDEX;
-use crate::logic::rules::is_action_win;
 use crate::logic::{Player, N_CELLS};
 use crate::piece::Piece;
 use crate::search::lookup::PIECE_SCORES;
@@ -103,6 +102,46 @@ pub fn evaluate_position_incremental(
     score
 }
 
+fn sort_captures(
+    board: &Board,
+    current_player: Player,
+    available_captures: &mut ActionsLight,
+) -> Option<Action> {
+    let mut index_sorted = 0;
+    let n_actions = available_captures.len();
+    for i in 0..n_actions {
+        let action = available_captures[i];
+        if board.is_action_win(action, current_player) {
+            return Some(action);
+        }
+        let (_index_start, index_mid, index_end) = action.to_indices();
+        if (!index_mid.is_null() && board.opposite_stacks(current_player).get(index_mid))
+            || (board.opposite_stacks(current_player).get(index_end))
+        {
+            available_captures[i] = available_captures[index_sorted];
+            available_captures[index_sorted] = action;
+            index_sorted += 1;
+        }
+    }
+    let index_start = index_sorted;
+    for i in index_start..n_actions {
+        let action = available_captures[i];
+        if board.is_action_win(action, current_player) {
+            return Some(action);
+        }
+        let (_index_start, index_mid, index_end) = action.to_indices();
+        if (!index_mid.is_null() && board.capturable(current_player).get(index_mid))
+            && (board.capturable(current_player).get(index_end))
+        {
+            available_captures[i] = available_captures[index_sorted];
+            available_captures[index_sorted] = action;
+            index_sorted += 1;
+        }
+    }
+
+    None
+}
+
 /// Evaluates a position using quiescence search.
 ///
 /// Resolves all capture chains before evaluating positions and returns the best score using alphabeta.
@@ -112,11 +151,10 @@ pub fn quiescence_search(
     (alpha, beta): (Score, Score),
     static_eval: Score,
 ) -> Score {
-    let available_actions = board.available_player_captures(current_player);
-    let n_actions = available_actions.len();
+    let mut available_captures = board.available_player_captures_and_wins(current_player);
+    let n_actions = available_captures.len();
 
     // Heuristic to return early
-    // let stand_pat = evaluate_position(board, current_player);
     let stand_pat = if current_player == 0 {
         static_eval
     } else {
@@ -127,14 +165,20 @@ pub fn quiescence_search(
         return stand_pat;
     }
 
+    let winning_action = sort_captures(board, current_player, &mut available_captures);
+
+    if winning_action.is_some() {
+        return MAX_SCORE;
+    }
+
     let mut score = stand_pat;
 
     let mut alpha = max(alpha, stand_pat);
 
     let mut new_board;
-    for action in available_actions.into_iter() {
-        if is_action_win(board, action) {
-            return MAX_SCORE / 4;
+    for action in available_captures.into_iter() {
+        if board.is_action_win(action, current_player) {
+            return MAX_SCORE;
         }
         new_board = *board;
         new_board.play_action(action);

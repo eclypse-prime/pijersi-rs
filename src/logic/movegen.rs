@@ -114,25 +114,25 @@ impl Board {
         }
     }
 
-    /// Returns the possible captures for a player.
+    /// Returns the possible captures and winning actions for a player.
     /// The result is a `Actions` struct (fixed-length vector).
-    pub fn available_player_captures(&self, current_player: Player) -> ActionsLight {
+    pub fn available_player_captures_and_wins(&self, current_player: Player) -> ActionsLight {
         let mut player_actions = ActionsLight::default();
 
         // Calculate possible player_actions
         for index in 0..N_CELLS {
             // Choose pieces of the current player's colour
             if self.same_colour_not_wise(current_player).get(index) {
-                self.available_piece_captures(index, current_player, &mut player_actions);
+                self.available_piece_captures_and_wins(index, current_player, &mut player_actions);
             }
         }
         player_actions
     }
 
-    /// Calculates the possible captures for a piece.
+    /// Calculates the possible captures and winning actions for a piece.
     /// The result is stored in a `Actions` struct (fixed-length vector).
     /// This array is passed in parameter and modified by this function.
-    fn available_piece_captures(
+    fn available_piece_captures_and_wins(
         &self,
         index_start: CellIndex,
         current_player: Player,
@@ -146,12 +146,16 @@ impl Board {
                 let half_action: Action = Action::from_indices_half(index_start, index_mid);
 
                 // 2-range move, capture on unstack
-                for index_end in self.available_captures1(index_mid, piece_start) {
+                for index_end in
+                    self.available_captures_and_win1(index_mid, piece_start, current_player)
+                {
                     player_actions.push(half_action.add_last_index(index_end));
                 }
             }
             // 2-range capture
-            for index_mid in self.available_captures2(index_start, piece_start) {
+            for index_mid in
+                self.available_captures_and_win2(index_start, piece_start, current_player)
+            {
                 let half_action: Action = Action::from_indices_half(index_start, index_mid);
 
                 // 2-range capture, stack or unstack
@@ -170,12 +174,16 @@ impl Board {
                 let half_action: Action = Action::from_indices_half(index_start, index_mid);
 
                 // 1-range move, capture on unstack
-                for index_end in self.available_captures1(index_mid, piece_start) {
+                for index_end in
+                    self.available_captures_and_win1(index_mid, piece_start, current_player)
+                {
                     player_actions.push(half_action.add_last_index(index_end));
                 }
             }
             // 1-range capture
-            for index_mid in self.available_captures1(index_start, piece_start) {
+            for index_mid in
+                self.available_captures_and_win1(index_start, piece_start, current_player)
+            {
                 let half_action: Action = Action::from_indices_half(index_start, index_mid);
 
                 // 1-range capture, stack or unstack
@@ -200,8 +208,9 @@ impl Board {
                 let half_action: Action = Action::from_indices_half(index_start, index_mid);
 
                 // stack, 1-range or 2-range capture
-                for index_end in self.available_captures2(index_mid, piece_start)
-                    | self.available_captures1(index_mid, piece_start)
+                for index_end in
+                    self.available_captures_and_win2(index_mid, piece_start, current_player)
+                        | self.available_captures_and_win1(index_mid, piece_start, current_player)
                 {
                     player_actions.push(half_action.add_last_index(index_end));
                 }
@@ -212,15 +221,23 @@ impl Board {
                 let half_action: Action = Action::from_indices_half(index_start, index_mid);
 
                 // stack, 1-range or 2-range capture
-                for index_end in self.available_captures2(index_mid, piece_start)
-                    | self.available_captures1(index_mid, piece_start)
-                    | (NEIGHBOURS2[index_mid] & self.available_captures1(index_start, piece_start))
+                for index_end in
+                    self.available_captures_and_win2(index_mid, piece_start, current_player)
+                        | self.available_captures_and_win1(index_mid, piece_start, current_player)
+                        | (NEIGHBOURS2[index_mid]
+                            & self.available_captures_and_win1(
+                                index_start,
+                                piece_start,
+                                current_player,
+                            ))
                 {
                     player_actions.push(half_action.add_last_index(index_end));
                 }
             }
             // 1-range capture
-            for index_mid in self.available_captures1(index_start, piece_start) {
+            for index_mid in
+                self.available_captures_and_win1(index_start, piece_start, current_player)
+            {
                 player_actions.push(Action::from_indices(index_start, INDEX_NULL, index_mid));
             }
         }
