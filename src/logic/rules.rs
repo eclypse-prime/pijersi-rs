@@ -11,25 +11,8 @@ use super::{
     Player,
 };
 
-const WHITE_WIN_MASK: u64 = 0b000000000000000000000000000000000000000111111;
-const BLACK_WIN_MASK: u64 = 0b111111000000000000000000000000000000000000000;
-
-/// Returns true if the chosen action leads to a win.
-///
-/// To win, one allied piece (except wise) must reach the last row in the opposite side.
-#[inline]
-pub fn is_action_win(board: &Board, action: Action) -> bool {
-    let (index_start, index_mid, index_end) = action.to_indices();
-
-    let moving_piece: Piece = board.get_piece(index_start);
-
-    !moving_piece.is_wise()
-        && (index_mid != INDEX_NULL
-            && ((moving_piece.is_white() && index_mid.is_black_home())
-                || (moving_piece.is_black() && index_mid.is_white_home()))
-            || (moving_piece.is_white() && index_end.is_black_home())
-            || (moving_piece.is_black() && index_end.is_white_home()))
-}
+const WHITE_WIN_MASK: Bitboard = Bitboard(0b000000000000000000000000000000000000000111111);
+const BLACK_WIN_MASK: Bitboard = Bitboard(0b111111000000000000000000000000000000000000000);
 
 /// Returns true if the given action is legal.
 pub fn is_action_legal(board: &Board, current_player: Player, action: Action) -> bool {
@@ -38,6 +21,14 @@ pub fn is_action_legal(board: &Board, current_player: Player, action: Action) ->
     available_actions
         .into_iter()
         .any(|available_action| available_action == action)
+}
+
+fn win_mask(player: Player) -> Bitboard {
+    if player == 0 {
+        WHITE_WIN_MASK
+    } else {
+        BLACK_WIN_MASK
+    }
 }
 
 impl Bitboard {
@@ -61,6 +52,15 @@ impl Board {
             0b101 => self[2],
             0b110 => self[0],
             _ => Bitboard(0),
+        }
+    }
+
+    /// Returns a bitboard representing the pieces that are capturable by the given player.
+    pub fn capturable(&self, player: Player) -> Bitboard {
+        if player == 0 {
+            self.black_not_wise()
+        } else {
+            self.white_not_wise()
         }
     }
 
@@ -95,15 +95,25 @@ impl Board {
     }
 
     /// Returns a bitboard with the available range-1 captures (moves or unstacks) for the piece at the given index.
-    pub fn available_captures1(&self, index: CellIndex, piece: Piece) -> Bitboard {
+    pub fn available_captures_and_win1(
+        &self,
+        index: CellIndex,
+        piece: Piece,
+        player: Player,
+    ) -> Bitboard {
         let neighbours = NEIGHBOURS1[index];
-        neighbours & self.victims(piece)
+        neighbours & (self.victims(piece) | win_mask(player))
     }
 
     /// Returns a bitboard with the available range-2 captures for the piece at the given index.
-    pub fn available_captures2(&self, index: CellIndex, piece: Piece) -> Bitboard {
+    pub fn available_captures_and_win2(
+        &self,
+        index: CellIndex,
+        piece: Piece,
+        player: Player,
+    ) -> Bitboard {
         let blockers = BLOCKER_MASKS[index] & !self.all();
-        blockers.get_magic(index) & self.victims(piece)
+        blockers.get_magic(index) & (self.victims(piece) | win_mask(player))
     }
 
     /// Returns a bitboard with the available range-1 non-capture actions for the piece at the given index.
@@ -120,8 +130,8 @@ impl Board {
 
     /// Returns true if the current position is winning for one of the players.
     pub fn is_win(&self) -> bool {
-        (self.white_not_wise() & Bitboard(WHITE_WIN_MASK)).0 != 0
-            || (self.black_not_wise() & Bitboard(BLACK_WIN_MASK)).0 != 0
+        (self.white_not_wise() & WHITE_WIN_MASK).0 != 0
+            || (self.black_not_wise() & BLACK_WIN_MASK).0 != 0
     }
 
     /// Returns true if the current position is a stalemate for one of the players.
@@ -133,9 +143,9 @@ impl Board {
 
     /// Returns the winning player if there is one.
     pub fn get_winner(&self) -> Option<Player> {
-        if (self.white_not_wise() & Bitboard(WHITE_WIN_MASK)).0 != 0 {
+        if (self.white_not_wise() & WHITE_WIN_MASK).0 != 0 {
             Some(0)
-        } else if (self.black_not_wise() & Bitboard(BLACK_WIN_MASK)).0 != 0 {
+        } else if (self.black_not_wise() & BLACK_WIN_MASK).0 != 0 {
             Some(1)
         } else {
             None
@@ -145,17 +155,15 @@ impl Board {
     /// Returns true if the chosen action leads to a win.
     ///
     /// To win, one allied piece (except wise) must reach the last row in the opposite side.
-    pub fn is_action_win(&self, action: Action) -> bool {
+    pub fn is_action_win(&self, action: Action, player: Player) -> bool {
         let (index_start, index_mid, index_end) = action.to_indices();
 
-        let moving_piece: Piece = self.get_piece(index_start);
-
-        !moving_piece.is_wise()
+        !self.same_wise(player).get(index_start)
             && (index_mid != INDEX_NULL
-                && ((moving_piece.is_white() && index_mid.is_black_home())
-                    || (moving_piece.is_black() && index_mid.is_white_home()))
-                || (moving_piece.is_white() && index_end.is_black_home())
-                || (moving_piece.is_black() && index_end.is_white_home()))
+                && ((player == 0 && index_mid.is_black_home())
+                    || (player == 1 && index_mid.is_white_home()))
+                || (player == 0 && index_end.is_black_home())
+                || (player == 1 && index_end.is_white_home()))
     }
 
     /// Counts the number of pieces on the board.

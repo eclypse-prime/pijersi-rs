@@ -8,7 +8,6 @@ use super::{
     actions::{Action, ActionTrait},
     index::{CellIndex, INDEX_NULL},
     lookup::NEIGHBOURS2,
-    rules::is_action_win,
     translate::action_to_string,
     Player,
 };
@@ -121,7 +120,7 @@ pub fn perft(board: &Board, current_player: Player, depth: u64) -> u64 {
             available_actions
                 .into_iter()
                 .par_bridge()
-                .filter(|&action| !is_action_win(board, action))
+                .filter(|&action| !board.is_action_win(action, current_player))
                 .map(|action| {
                     let mut new_board = *board;
                     new_board.play_action(action);
@@ -140,7 +139,7 @@ fn perft_count_after_action(
     current_player: Player,
     depth: u64,
 ) -> u64 {
-    if is_action_win(board, action) {
+    if board.is_action_win(action, current_player) {
         0
     } else {
         let mut new_board = *board;
@@ -328,7 +327,7 @@ pub fn perft_split(
         available_actions
             .into_iter()
             .par_bridge()
-            .filter(|&action| !is_action_win(board, action))
+            .filter(|&action| !board.is_action_win(action, current_player))
             .map(|action| {
                 let mut new_board = *board;
                 new_board.play_action(action);

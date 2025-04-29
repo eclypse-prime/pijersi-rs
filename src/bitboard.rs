@@ -182,6 +182,15 @@ impl Board {
         }
     }
 
+    /// Returns a bitboard representing the stacks that are the opposite colour to the given player.
+    pub fn opposite_stacks(&self, player: Player) -> Bitboard {
+        if player == 1 {
+            self[8] | self[9] | self[10] | self[11]
+        } else {
+            self[12] | self[13] | self[14] | self[15]
+        }
+    }
+
     /// Returns a bitboard representing the wise pieces that are the same colour as the given player.
     pub fn same_wise(&self, player: Player) -> Bitboard {
         if player == 0 {

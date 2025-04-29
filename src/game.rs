@@ -57,7 +57,7 @@ impl GameOptions {
     /// ```
     pub const fn new() -> Self {
         Self {
-            use_book: true,
+            use_book: false,
             use_table: true,
             verbose: true,
         }
@@ -229,7 +229,7 @@ impl Game {
         if let [board_string, player_string, half_moves_string, full_moves_string] =
             state_string.split(' ').collect::<Vec<&str>>()[..]
         {
-            let new_board = board_string.try_into()?;
+            let new_board = Board::try_from_fen(board_string)?;
             let player = string_to_player(player_string)?;
             let half_moves = half_moves_string.parse::<u64>().map_err(|err| ParseError {
                 kind: ParseErrorKind::InvalidInt(err),

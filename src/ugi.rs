@@ -18,7 +18,7 @@ use crate::{
     },
     search::{
         alphabeta::{BASE_ALPHA, BASE_BETA},
-        eval::{evaluate_position, quiescence_search},
+        eval::{evaluate_position, evaluate_position_for_player, quiescence_search},
         openings::OpeningBook,
     },
     utils::parse_bool_arg,
@@ -289,16 +289,18 @@ impl UgiEngine {
             QueryArgs::Eval => {
                 println!(
                     "info eval {}",
-                    evaluate_position(&self.game.board, self.game.current_player)
+                    evaluate_position_for_player(&self.game.board, self.game.current_player)
                 );
             }
             QueryArgs::QS => {
+                let static_eval = evaluate_position(&self.game.board);
                 println!(
                     "info qs {}",
                     quiescence_search(
                         &self.game.board,
                         self.game.current_player,
-                        (BASE_ALPHA, BASE_BETA)
+                        (BASE_ALPHA, BASE_BETA),
+                        static_eval,
                     )
                 );
             }
@@ -386,7 +388,7 @@ fn play_actions(board: &mut Game, actions: &[String]) {
 /// Sets the state of the board using PSN/FEN arguments
 fn set_fen(board: &mut Game, fen_args: &FenArgs) {
     let fen: &str = fen_args.fen.as_ref();
-    let new_board: Result<Board, ParseError> = fen.try_into();
+    let new_board: Result<Board, ParseError> = Board::try_from_fen(fen);
     let player = string_to_player(&fen_args.player);
     match (new_board, player) {
         (Ok(new_board), Ok(player)) => {

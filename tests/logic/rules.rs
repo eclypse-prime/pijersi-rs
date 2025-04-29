@@ -1,7 +1,4 @@
-use pijersi_rs::{
-    bitboard::Board,
-    logic::rules::{is_action_legal, is_action_win},
-};
+use pijersi_rs::{bitboard::Board, logic::rules::is_action_legal};
 
 /// Cells state for testing
 /// startpos > a6b7 g5f5d6 b6a5b6 d6c6c6
@@ -63,8 +60,8 @@ const TEST_BOARD_BLACK_WIN_STR: &str =
 #[test]
 fn test_is_action_win() {
     let test_board_2 = Board::try_from(TEST_BOARD_2_STR).unwrap();
-    assert!(!is_action_win(&test_board_2, 1975583));
-    assert!(is_action_win(&test_board_2, 2893087));
+    assert!(!test_board_2.is_action_win(1975583, 1));
+    assert!(test_board_2.is_action_win(2893087, 1));
 }
 
 #[test]
